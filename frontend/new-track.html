@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Track Request — Procurement Monitoring</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="container">
+    <div id="alertBox" class="hidden"></div>
+    <div id="successBox" class="hidden"></div>
+
+    <div class="card">
+      <h2>New Track Request</h2>
+      <p class="text-muted">Register a new procurement item for monitoring. A <strong>Tracking ID</strong> is assigned so Budget and Procurement offices can update progress.</p>
+
+      <form id="createForm" style="margin-top: 1rem;">
+        <div class="form-group">
+          <label for="tracking_number">Tracking Number</label>
+          <input type="text" id="tracking_number" name="tracking_number" placeholder="Auto-suggested" maxlength="50">
+          <small class="text-muted">Leave blank to auto-generate (e.g. PR-0006), or enter your own ID.</small>
+        </div>
+        <div class="form-group">
+          <label for="title">Title <span class="text-muted">(optional)</span></label>
+          <input type="text" id="title" name="title" placeholder="Brief description of the request">
+        </div>
+        <div class="form-group">
+          <label for="description">Description <span class="text-muted">(optional)</span></label>
+          <textarea id="description" name="description" rows="3" placeholder="Additional details…"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Track Request</button>
+      </form>
+    </div>
+
+    <div class="card hidden" id="createdCard">
+      <h2>Track Request Created</h2>
+      <div class="detail-grid" id="createdDetails"></div>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
+        <a href="#" id="viewDetailsBtn" class="btn btn-primary">View Details &amp; Timeline</a>
+        <a href="upload.html" id="uploadDocsBtn" class="btn btn-secondary">Upload Documents</a>
+        <button type="button" id="createAnotherBtn" class="btn btn-secondary">Create Another</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>What happens next?</h3>
+      <div class="flow-steps">
+        <span class="flow-step active">Tracking ID</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">Budget</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">Procurement</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">Accounting</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">Cashier</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">Completed</span>
+      </div>
+      <p class="text-muted" style="margin-top: 0.75rem;">After creation, use <strong>Track Request</strong> anytime to check status, or upload supporting documents.</p>
+    </div>
+  </main>
+
+  <footer class="app-footer">Procurement Monitoring System</footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const session = await requireAuth(['requesting']);
+      if (!session) return;
+      initAppLayout(session);
+
+      const trackingInput = document.getElementById('tracking_number');
+      const next = await Api.nextTrackingId();
+      if (next.success) {
+        trackingInput.placeholder = next.tracking_number + ' (suggested)';
+        trackingInput.dataset.suggested = next.tracking_number;
+      }
+
+      document.getElementById('createForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAlert(document.getElementById('alertBox'));
+        clearAlert(document.getElementById('successBox'));
+        document.getElementById('createdCard').classList.add('hidden');
+
+        const payload = {
+          tracking_number: trackingInput.value.trim(),
+          title: document.getElementById('title').value.trim(),
+          description: document.getElementById('description').value.trim(),
+        };
+
+        const result = await Api.createRequest(payload);
+        if (!result.success) {
+          showAlert(document.getElementById('alertBox'), result.message);
+          return;
+        }
+
+        const r = result.request;
+        document.getElementById('createdDetails').innerHTML = `
+          <div class="detail-item"><div class="label">Tracking ID</div><div class="value"><strong>${r.tracking_number}</strong></div></div>
+          <div class="detail-item"><div class="label">Title</div><div class="value">${r.title || '—'}</div></div>
+          <div class="detail-item"><div class="label">Status</div><div class="value"><span class="status-badge">${r.status}</span></div></div>
+        `;
+        document.getElementById('viewDetailsBtn').href =
+          `details.html?tracking=${encodeURIComponent(r.tracking_number)}`;
+        document.getElementById('uploadDocsBtn').href =
+          `upload.html?tracking=${encodeURIComponent(r.tracking_number)}`;
+        document.getElementById('createdCard').classList.remove('hidden');
+        showAlert(document.getElementById('successBox'), result.message, 'success');
+        e.target.reset();
+
+        const refreshed = await Api.nextTrackingId();
+        if (refreshed.success) {
+          trackingInput.placeholder = refreshed.tracking_number + ' (suggested)';
+          trackingInput.dataset.suggested = refreshed.tracking_number;
+        }
+      });
+
+      document.getElementById('createAnotherBtn').addEventListener('click', () => {
+        document.getElementById('createdCard').classList.add('hidden');
+        clearAlert(document.getElementById('successBox'));
+        trackingInput.focus();
+      });
+    });
+  </script>
+</body>
+</html>

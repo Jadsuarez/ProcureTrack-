@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request Details — Procurement Monitoring</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="container">
+    <div id="alertBox" class="hidden"></div>
+    <div id="successBox" class="hidden"></div>
+
+    <div class="card" id="loadingCard">
+      <p class="text-muted">Loading request details…</p>
+    </div>
+
+    <div class="hidden" id="detailsContent">
+      <div class="card">
+        <h2 id="detailTitle">Request Details</h2>
+        <div class="flow-steps" id="flowDiagram"></div>
+        <div class="detail-grid" id="detailGrid"></div>
+      </div>
+
+      <div class="card">
+        <h2>Status Timeline</h2>
+        <div class="timeline" id="timeline"></div>
+      </div>
+
+      <div class="card">
+        <h2>Attached Documents</h2>
+        <ul class="doc-list" id="docList">
+          <li class="text-muted">No documents attached.</li>
+        </ul>
+        <p style="margin-top: 0.75rem;">
+          <a href="#" id="uploadLink" class="btn btn-sm btn-secondary">Upload Document</a>
+        </p>
+      </div>
+
+      <div class="card hidden" id="budgetInfoCard">
+        <h2>Budget Information (BUR / ORS)</h2>
+        <div class="detail-grid" id="budgetGrid"></div>
+      </div>
+
+      <div class="card hidden update-section" id="updateCard">
+        <h2>Update Monitoring Status</h2>
+        <p class="text-muted">Manual status update for monitoring purposes only — not an approval action.</p>
+        <form id="updateForm">
+          <input type="hidden" id="updateTracking" name="tracking_number">
+
+          <div class="form-group">
+            <label for="newStatus">New Status</label>
+            <select id="newStatus" name="status" required></select>
+          </div>
+
+          <div id="budgetFields" class="hidden">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="bur">BUR (optional)</label>
+                <input type="text" id="bur" name="bur" placeholder="BUR number">
+              </div>
+              <div class="form-group">
+                <label for="ors">ORS (optional)</label>
+                <input type="text" id="ors" name="ors" placeholder="ORS number">
+              </div>
+              <div class="form-group">
+                <label for="budget_type">Budget Type (optional)</label>
+                <input type="text" id="budget_type" name="budget_type" placeholder="e.g. MOOE">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="notes">Notes (optional)</label>
+            <textarea id="notes" name="notes" rows="2" placeholder="Monitoring notes…"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Update Status</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">Procurement Monitoring System — Tracking only</footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/details.js"></script>
+</body>
+</html>

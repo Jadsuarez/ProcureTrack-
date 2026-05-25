@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Procurement Monitoring</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="container-wide">
+    <div id="alertBox" class="hidden"></div>
+
+    <div class="card">
+      <h2>Dashboard</h2>
+      <p class="text-muted" id="dashboardSubtitle">Search by Tracking ID to view or update monitoring status.</p>
+
+      <form id="searchForm" class="search-bar" style="margin-top: 1rem;">
+        <input type="text" id="searchInput" placeholder="e.g. PR-0001" required>
+        <button type="submit" class="btn btn-primary">Search</button>
+      </form>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-box">
+        <div class="number" id="statTotal">—</div>
+        <div class="label">Total Requests</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Status Overview</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Status</th><th>Count</th></tr>
+          </thead>
+          <tbody id="statusTableBody">
+            <tr><td colspan="2" class="text-muted">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Recently Updated</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tracking ID</th>
+              <th>Title</th>
+              <th>Status</th>
+              <th>Updated</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="recentTableBody">
+            <tr><td colspan="5" class="text-muted">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card hidden" id="searchResultsCard">
+      <h2>Search Results</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tracking ID</th>
+              <th>Title</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="searchResultsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">Procurement Monitoring System — Tracking only</footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const session = await requireAuth();
+      if (!session) return;
+
+      initAppLayout(session);
+
+      const subtitles = {
+        accounting: 'Financial monitoring — search by Tracking ID, update DV Processing → For Payment, attach documents.',
+        cashier: 'Payment completion monitoring — search by Tracking ID, mark Paid → Completed.',
+        budget: 'Budget pipeline monitoring — search by Tracking ID and update budget statuses.',
+        procurement: 'Procurement monitoring — search by Tracking ID and update procurement stages.',
+        requesting: 'Search by Tracking ID to view request status across all offices.',
+      };
+      const subtitleEl = document.getElementById('dashboardSubtitle');
+      if (subtitleEl) {
+        subtitleEl.textContent = subtitles[session.role] || subtitles.requesting;
+      }
+
+      const summary = await Api.summary();
+      if (summary.success) {
+        document.getElementById('statTotal').textContent = summary.total;
+
+        const focus = summary.focus_statuses || [];
+        const sorted = [...summary.by_status].sort((a, b) => {
+          const aFocus = focus.includes(a.status) ? 0 : 1;
+          const bFocus = focus.includes(b.status) ? 0 : 1;
+          if (aFocus !== bFocus) return aFocus - bFocus;
+          return b.count - a.count;
+        });
+
+        const statusBody = document.getElementById('statusTableBody');
+        statusBody.innerHTML = sorted.length
+          ? sorted.map((s) => {
+              const rowClass = focus.includes(s.status) ? ' class="row-focus"' : '';
+              return `<tr${rowClass}><td><span class="status-badge ${statusBadgeClass(s.status)}">${s.status}</span></td><td>${s.count}</td></tr>`;
+            }).join('')
+          : '<tr><td colspan="2">No data</td></tr>';
+
+        const recentBody = document.getElementById('recentTableBody');
+        recentBody.innerHTML = summary.recent.length
+          ? summary.recent.map((r) => `
+              <tr>
+                <td><strong>${r.tracking_number}</strong></td>
+                <td>${r.title || '—'}</td>
+                <td><span class="status-badge ${statusBadgeClass(r.status)}">${r.status}</span></td>
+                <td>${formatDate(r.updated_at)}</td>
+                <td><a href="details.html?tracking=${encodeURIComponent(r.tracking_number)}" class="btn btn-sm btn-secondary">View</a></td>
+              </tr>
+            `).join('')
+          : '<tr><td colspan="5">No requests</td></tr>';
+      }
+
+      document.getElementById('searchForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const q = document.getElementById('searchInput').value.trim();
+        const data = await Api.search(q);
+        const card = document.getElementById('searchResultsCard');
+        const body = document.getElementById('searchResultsBody');
+
+        if (!data.success) {
+          showAlert(document.getElementById('alertBox'), data.message);
+          return;
+        }
+
+        card.classList.remove('hidden');
+        if (!data.requests.length) {
+          body.innerHTML = '<tr><td colspan="4">No matching requests.</td></tr>';
+          return;
+        }
+
+        body.innerHTML = data.requests.map((r) => `
+          <tr>
+            <td><strong>${r.tracking_number}</strong></td>
+            <td>${r.title || '—'}</td>
+            <td><span class="status-badge ${statusBadgeClass(r.status)}">${r.status}</span></td>
+            <td><a href="details.html?tracking=${encodeURIComponent(r.tracking_number)}" class="btn btn-sm btn-primary">Open</a></td>
+          </tr>
+        `).join('');
+      });
+    });
+  </script>
+</body>
+</html>

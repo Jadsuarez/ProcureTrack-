@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics — Procurement Monitoring</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <main class="container-wide">
+    <div id="alertBox" class="hidden"></div>
+
+    <div class="card">
+      <h2>Office Analytics</h2>
+      <p class="text-muted" id="officeSubtitle">Loading analytics for your office…</p>
+    </div>
+
+    <!-- Descriptive -->
+    <section class="analytics-section" id="sectionDescriptive">
+      <div class="analytics-section-header">
+        <span class="analytics-type-badge descriptive">Descriptive</span>
+        <h2>What is happening?</h2>
+      </div>
+      <p class="analytics-insight" id="insightDescriptive"></p>
+
+      <div class="stats-grid" id="descKpis"></div>
+
+      <div class="analytics-charts-row">
+        <div class="card chart-card">
+          <h3>Status distribution</h3>
+          <canvas id="statusChart" height="220"></canvas>
+        </div>
+        <div class="card chart-card">
+          <h3>Monthly activity (last 6 months)</h3>
+          <canvas id="trendChart" height="220"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Diagnostic -->
+    <section class="analytics-section" id="sectionDiagnostic">
+      <div class="analytics-section-header">
+        <span class="analytics-type-badge diagnostic">Diagnostic</span>
+        <h2>Why is it happening?</h2>
+      </div>
+      <p class="analytics-insight" id="insightDiagnostic"></p>
+
+      <div class="stats-grid" id="diagKpis"></div>
+
+      <p class="bottleneck-note" id="bottleneckNote"></p>
+
+      <div class="analytics-charts-row">
+        <div class="card chart-card chart-card-wide">
+          <h3>Average time per stage (days)</h3>
+          <canvas id="stageDurationChart" height="200"></canvas>
+        </div>
+      </div>
+
+      <div class="card" id="missingDocsCard">
+        <h3>Requests without documents</h3>
+        <div id="missingDocsList"></div>
+      </div>
+
+      <div class="card">
+        <h3>Longest time in current stage</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tracking ID</th>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Days in stage</th>
+              </tr>
+            </thead>
+            <tbody id="stalledTableBody">
+              <tr><td colspan="4" class="text-muted">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Predictive -->
+    <section class="analytics-section" id="sectionPredictive">
+      <div class="analytics-section-header">
+        <span class="analytics-type-badge predictive">Predictive</span>
+        <h2>What may happen next?</h2>
+      </div>
+      <p class="analytics-insight" id="insightPredictive"></p>
+
+      <div class="stats-grid" id="predKpis"></div>
+
+      <div class="analytics-charts-row">
+        <div class="card chart-card chart-card-wide">
+          <h3>Estimated days to completion (active requests)</h3>
+          <canvas id="forecastChart" height="200"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Completion forecasts</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tracking ID</th>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Est. remaining</th>
+                <th>Projected date</th>
+              </tr>
+            </thead>
+            <tbody id="forecastTableBody">
+              <tr><td colspan="5" class="text-muted">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">Procurement Monitoring System — Analytics</footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/analytics.js"></script>
+  <script>
+    let charts = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const session = await requireAuth();
+      if (!session) return;
+
+      initAppLayout(session);
+
+      const data = await loadAnalytics();
+      if (!data) return;
+
+      document.getElementById('officeSubtitle').textContent =
+        `${data.office_label} — descriptive, diagnostic, and predictive views based on current tracking data.`;
+
+      setInsightText('insightDescriptive', data.insights.descriptive);
+      setInsightText('insightDiagnostic', data.insights.diagnostic);
+      setInsightText('insightPredictive', data.insights.predictive);
+
+      const d = data.descriptive;
+      const diag = data.diagnostic;
+      const pred = data.predictive;
+
+      const descKpis = session.role === 'requesting'
+        ? [
+            { label: 'In scope', value: d.total_in_scope },
+            { label: 'Active', value: d.active },
+            { label: 'Completed', value: d.completed },
+            { label: 'Completion rate', value: d.completion_rate_pct + '%' },
+            { label: 'With documents', value: d.with_documents },
+            { label: 'Missing documents', value: d.without_documents },
+          ]
+        : [
+            { label: 'In scope', value: d.total_in_scope },
+            { label: 'Active', value: d.active },
+            { label: 'Completed', value: d.completed },
+            { label: 'Completion rate', value: d.completion_rate_pct + '%' },
+            { label: 'New (30 days)', value: d.created_last_30_days },
+            { label: 'In queue', value: d.queue_count, hint: d.queue_status },
+          ];
+      renderAnalyticsKpis('descKpis', descKpis);
+
+      renderAnalyticsKpis('diagKpis', [
+        { label: 'Avg. days in queue', value: diag.avg_days_in_queue },
+        { label: 'Backlog ratio', value: diag.backlog_ratio ?? '—' },
+        {
+          label: 'Bottleneck samples',
+          value: diag.bottleneck_stage ? diag.bottleneck_stage.samples : '—',
+        },
+      ]);
+
+      renderAnalyticsKpis('predKpis', [
+        { label: 'Avg. ETA (active)', value: '~' + pred.avg_eta_days_active + ' days' },
+        { label: 'At-risk requests', value: pred.at_risk_count },
+        { label: 'May complete ≤30 days', value: pred.projected_completions_30_days },
+        {
+          label: 'Projected completion rate',
+          value: pred.projected_completion_rate_pct + '%',
+        },
+      ]);
+
+      setBottleneckText('bottleneckNote', diag.bottleneck_stage);
+      renderStalledTable('stalledTableBody', diag.stalled_requests);
+      renderForecastTable('forecastTableBody', pred.forecasts);
+
+      const missingCard = document.getElementById('missingDocsCard');
+      if (session.role === 'requesting') {
+        renderMissingDocsList('missingDocsList', diag.missing_documents);
+      } else {
+        missingCard.classList.add('hidden');
+      }
+
+      charts.push(buildStatusChart('statusChart', d.by_status));
+      charts.push(buildTrendChart('trendChart', d.monthly_trend));
+      charts.push(buildStageDurationChart('stageDurationChart', diag.avg_days_per_stage));
+      charts.push(buildForecastChart('forecastChart', pred.forecasts));
+    });
+  </script>
+</body>
+</html>

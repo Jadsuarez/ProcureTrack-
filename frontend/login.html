@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Procurement Monitoring</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-card">
+      <h1>Procurement Monitoring System</h1>
+      <p class="subtitle">Tracking &amp; status monitoring only</p>
+
+
+
+      <div id="alertBox" class="hidden"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Select your office</label>
+          <div class="role-cards">
+            <label class="role-option selected">
+              <input type="radio" name="role" value="requesting" checked>
+              <span><strong>Requesting Office</strong><br><small class="text-muted">Create new tracks, monitor &amp; upload documents</small></span>
+            </label>
+            <label class="role-option">
+              <input type="radio" name="role" value="budget">
+              <span><strong>Budget Office</strong><br><small class="text-muted">Budget monitoring &amp; status updates</small></span>
+            </label>
+            <label class="role-option">
+              <input type="radio" name="role" value="procurement">
+              <span><strong>Procurement Office</strong><br><small class="text-muted">Procurement stage monitoring</small></span>
+            </label>
+            <label class="role-option">
+              <input type="radio" name="role" value="accounting">
+              <span><strong>Accounting Office</strong><br><small class="text-muted">Financial status &amp; document monitoring</small></span>
+            </label>
+            <label class="role-option">
+              <input type="radio" name="role" value="cashier">
+              <span><strong>Cashier</strong><br><small class="text-muted">Payment completion monitoring</small></span>
+            </label>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Enter System</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

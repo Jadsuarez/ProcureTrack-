@@ -1,0 +1,140 @@
+================================================================================
+  PROCUREMENT MONITORING SYSTEM — HOW TO RUN MANUALLY
+================================================================================
+
+This project uses PHP (backend), MySQL (database), and HTML/JavaScript (frontend).
+It is set up for XAMPP on Windows. You need Apache and MySQL running; do not open
+the HTML files directly in the browser (file://) — the API calls will not work.
+
+--------------------------------------------------------------------------------
+PREREQUISITES
+--------------------------------------------------------------------------------
+
+1. Install XAMPP for Windows (includes Apache, MySQL, PHP):
+   https://www.apachefriends.org/
+
+2. Optional: Edit backend/db.php if your MySQL user or password is not the
+   XAMPP defaults:
+     DB_HOST = localhost
+     DB_NAME = procurement_monitoring
+     DB_USER = root
+     DB_PASS = (empty)
+
+--------------------------------------------------------------------------------
+STEP 1 — PLACE THE PROJECT IN HTDOCS
+--------------------------------------------------------------------------------
+
+Copy or move this entire Web1 folder into your XAMPP web root, for example:
+
+  C:\xampp\htdocs\Web1\
+
+Your folder should contain index.html, frontend/, backend/, importdb.sql, etc.
+
+If you keep the project in OneDrive (e.g. Documents\CAPSTONE\Web1), you can
+instead create a junction/symlink in htdocs pointing to that folder, or change
+Apache's DocumentRoot — using htdocs\Web1 is the simplest approach.
+
+--------------------------------------------------------------------------------
+STEP 2 — START APACHE AND MYSQL
+--------------------------------------------------------------------------------
+
+1. Open the XAMPP Control Panel.
+2. Click Start next to Apache.
+3. Click Start next to MySQL.
+
+Both should show a green "Running" status.
+
+--------------------------------------------------------------------------------
+STEP 3 — CREATE THE DATABASE
+--------------------------------------------------------------------------------
+
+Choose ONE of these methods:
+
+  A) phpMyAdmin (easiest)
+     1. In your browser, go to: http://localhost/phpmyadmin
+     2. Click the Import tab.
+     3. Choose file: importdb.sql (in the Web1 project root).
+     4. Click Go at the bottom.
+
+  B) MySQL command line
+     1. Open a terminal.
+     2. Run (adjust path if XAMPP is not on C:):
+
+        cd C:\xampp\htdocs\Web1
+        C:\xampp\mysql\bin\mysql -u root < importdb.sql
+
+This creates the database procurement_monitoring, tables, and sample tracking
+numbers (PR-0001 through PR-0006).
+
+--------------------------------------------------------------------------------
+STEP 4 — OPEN THE APPLICATION
+--------------------------------------------------------------------------------
+
+In your browser, go to:
+
+  http://localhost/Web1/
+
+(or http://localhost/Web1/frontend/login.html)
+
+You will be redirected to the login page. Select an office role (Requesting,
+Budget, Procurement, Accounting, or Cashier) and click "Enter System". No
+password is required — login only stores your selected role in the PHP session.
+
+--------------------------------------------------------------------------------
+QUICK TEST
+--------------------------------------------------------------------------------
+
+1. Log in as "Requesting Office".
+2. Open Analytics for descriptive, diagnostic, and predictive reports.
+3. Use Track Request and search for: PR-0001
+4. Log out, then log in as Budget, Procurement, Accounting, or Cashier to
+   update statuses on the dashboard or request details page (each role has its
+   own Analytics view). Accounting: DV Processing → For Payment. Cashier:
+   Paid → Completed. PR-0006 is at For Payment for accounting/cashier testing.
+
+--------------------------------------------------------------------------------
+FOLDER NOTES
+--------------------------------------------------------------------------------
+
+  uploads/     Created automatically when you upload a document (Requesting
+               Office). Must be writable by Apache.
+
+  backend/     PHP API (login, fetch, create request, upload, status updates).
+
+  frontend/    HTML pages and client-side JavaScript.
+
+--------------------------------------------------------------------------------
+TROUBLESHOOTING
+--------------------------------------------------------------------------------
+
+  "Database error" or blank API responses
+    - Confirm MySQL is running in XAMPP.
+    - Confirm importdb.sql was imported and database procurement_monitoring
+      exists in phpMyAdmin.
+    - Check DB_USER and DB_PASS in backend/db.php.
+
+  Login or fetch always fails / CORS or network errors
+    - You must use http://localhost/... not file:///... paths.
+    - Confirm Apache is running.
+
+  404 on backend/*.php
+    - Project must live under htdocs (or your Apache document root).
+    - URL should match your folder name (e.g. /Web1/ not /web1/ on case-sensitive
+      setups).
+
+  Upload fails
+    - Ensure the Web1 folder allows Apache to write (uploads/ subfolder).
+    - Check PHP upload limits in php.ini (upload_max_filesize, post_max_size)
+      if large files fail.
+
+  Port 80 already in use
+    - Stop Skype/IIS/other services using port 80, or change Apache's port in
+      XAMPP config and use http://localhost:8080/Web1/ instead.
+
+--------------------------------------------------------------------------------
+STOPPING THE APP
+--------------------------------------------------------------------------------
+
+In XAMPP Control Panel, click Stop for Apache and MySQL when you are done.
+
+================================================================================
