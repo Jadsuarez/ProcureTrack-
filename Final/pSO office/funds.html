@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fund Allocation</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+  />
+
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+
+    <aside class="sidebar">
+
+    <div>
+
+      <div class="brand">
+        <div class="brand-logo">PH</div>
+
+        <div class="brand-text">
+          <h2>PSO<br>OFFICE</h2>
+          <span>BSU Lipa</span>
+        </div>
+      </div>
+
+
+      <nav class="sidebar-menu" aria-label="Main navigation">
+
+        <a href="psodash.html" class="menu-item">
+          <i class="fa-solid fa-border-all"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="funds.html" class="menu-item active" aria-current="page">
+          <i class="fa-regular fa-square-minus"></i>
+          <span>Fund Allocation</span>
+        </a>
+        <a href="track.html" class="menu-item">
+          <i class="fa-solid fa-route"></i>
+          <span>Track Request</span>
+        </a>
+
+      </nav>
+
+    </div>
+
+
+    <div class="sidebar-bottom">
+
+      <button class="new-request-sidebar" type="button">
+        + New Request
+      </button>
+
+      <div class="sidebar-bottom-links">
+
+        <a href="#">
+          <i class="fa-solid fa-terminal"></i>
+          <span>System Logs</span>
+        </a>
+
+        <a href="#">
+          <i class="fa-regular fa-circle-question"></i>
+          <span>Support</span>
+        </a>
+
+      </div>
+
+    </div>
+
+  </aside>
+
+
+  <main class="main">
+
+    <header class="topbar">
+
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+
+        <input
+          type="text"
+          placeholder="Search CAA records, PR numbers..."
+        />
+      </div>
+
+      <div class="topbar-right">
+
+        <a href="#">Documents</a>
+        <a href="#">Pending Actions</a>
+        <a href="#">Archives</a>
+
+        <button class="icon-button" aria-label="Notifications">
+          <i class="fa-regular fa-bell" aria-hidden="true"></i>
+        </button>
+
+        <div class="profile">
+          <img
+            src="https://i.pravatar.cc/100?img=12"
+            alt="Profile"
+          />
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <section class="fund-page">
+
+      <div class="page-header">
+
+        <div>
+          <div class="breadcrumb">
+            <span>PROCUREMENT</span>
+            <i class="fa-solid fa-chevron-right"></i>
+            <strong>FUND ALLOCATION</strong>
+          </div>
+
+          <h1>FUND ALLOCATION</h1>
+        </div>
+
+
+        <button class="download-btn">
+          <i class="fa-solid fa-download"></i>
+          Download Report
+        </button>
+
+      </div>
+
+
+      <div class="summary-grid">
+
+        <div class="summary-card">
+
+          <div class="summary-icon">
+            <i class="fa-solid fa-building-columns"></i>
+          </div>
+
+          <span class="summary-label">
+            TOTAL ALLOCATED FUNDS
+          </span>
+
+          <h2>₱14,260,000.00</h2>
+
+          <p class="positive">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            +4.2% increase from last quarter
+          </p>
+
+        </div>
+
+
+        <div class="summary-card">
+
+          <div class="summary-icon">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+
+          <span class="summary-label">
+            BALANCE (REMAINING)
+          </span>
+
+          <h2>₱1,245,200.00</h2>
+
+          <div class="summary-progress">
+            <div></div>
+          </div>
+
+          <p>
+            8.7% of total budget available
+          </p>
+
+        </div>
+
+
+        <div class="summary-card">
+
+          <div class="summary-icon">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+
+          <span class="summary-label">
+            TOTAL EXPENDITURES
+          </span>
+
+          <h2>₱13,014,800.00</h2>
+
+          <p>
+            <i class="fa-regular fa-file-lines"></i>
+            112 Transactions Processed
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="allocation-main-grid">
+
+        <div class="requests-card">
+
+          <div class="requests-header">
+
+            <div>
+              <h2>Pending Allocation Requests</h2>
+              <p>Review and allocate available university funds.</p>
+            </div>
+
+            <div class="request-tabs">
+              <button class="active">Pending</button>
+              <button>Review</button>
+              <button>All</button>
+            </div>
+
+          </div>
+
+
+          <div class="table-wrapper">
+
+            <table class="allocation-table">
+
+              <thead>
+                <tr>
+                  <th>Department</th>
+                  <th>Project Name</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+
+
+              <tbody>
+
+                <tr>
+
+                  <td>
+                    <strong>CPD</strong>
+                    <span>Campus Planning</span>
+                  </td>
+
+                  <td>
+                    Main Hall Restoration<br>
+                    - Phase 2
+                  </td>
+
+                  <td class="amount">
+                    ₱2,450,000.00
+                  </td>
+
+                  <td>
+                    <span class="status pending">
+                      <i></i>
+                      PENDING
+                    </span>
+                  </td>
+
+                  <td>
+                    <button class="table-action" aria-label="More actions">
+                      <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                  </td>
+
+                </tr>
+
+
+                <tr>
+
+                  <td>
+                    <strong>CICS</strong>
+                    <span>Information Science</span>
+                  </td>
+
+                  <td>
+                    Server Cluster<br>
+                    Expansion
+                  </td>
+
+                  <td class="amount">
+                    ₱890,000.00
+                  </td>
+
+                  <td>
+                    <span class="status review">
+                      <i></i>
+                      IN REVIEW
+                    </span>
+                  </td>
+
+                  <td>
+                    <button class="table-action" aria-label="Open actions for CICS Information Science request">
+                      <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                    </button>
+                  </td>
+
+                </tr>
+
+
+                <tr>
+
+                  <td>
+                    <strong>CASM</strong>
+                    <span>Arts & Social Sciences</span>
+                  </td>
+
+                  <td>
+                    Annual Symposium<br>
+                    Fund
+                  </td>
+
+                  <td class="amount">
+                    ₱120,000.00
+                  </td>
+
+                  <td>
+                    <span class="status pending">
+                      <i></i>
+                      PENDING
+                    </span>
+                  </td>
+
+                  <td>
+                    <button class="table-action" aria-label="View fund details">
+                      <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                  </td>
+
+                </tr>
+
+
+                <tr>
+
+                  <td>
+                    <strong>COE</strong>
+                    <span>Engineering</span>
+                  </td>
+
+                  <td>
+                    Laboratory Equipment<br>
+                    Acquisition
+                  </td>
+
+                  <td class="amount">
+                    ₱675,000.00
+                  </td>
+
+                  <td>
+                    <span class="status review">
+                      <i></i>
+                      IN REVIEW
+                    </span>
+                  </td>
+
+                  <td>
+                    <button class="table-action" aria-label="More actions">
+                      <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                    </button>
+                  </td>
+
+                </tr>
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+
+        <div class="alternate-card">
+
+          <div class="alternate-icon">
+            <i class="fa-regular fa-file"></i>
+          </div>
+
+          <h2>Alternate Funds</h2>
+
+          <p>
+            No historical department budgets or alternate funding
+            sources found for this fiscal period.
+          </p>
+
+          <button>
+            Initialize History Log
+          </button>
+
+          <div class="placeholder-lines">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="history-card">
+
+        <div class="history-header">
+
+          <h2>Recent Allocation History</h2>
+
+          <div class="history-header-right">
+
+            <span class="legend success-dot"></span>
+            <small>Approved</small>
+
+            <span class="legend danger-dot"></span>
+            <small>Denied</small>
+
+          </div>
+
+        </div>
+
+
+        <div class="history-row">
+
+          <div class="history-icon success">
+            <i class="fa-solid fa-check"></i>
+          </div>
+
+          <div class="history-content">
+            <strong>
+              Transferred ₱450,000.00 to CAS
+            </strong>
+
+            <span>
+              Reference: #FA-2023-0982 • October 24, 2:15 PM
+            </span>
+          </div>
+
+          <div class="history-amount">
+            ₱450,000.00
+          </div>
+
+        </div>
+
+
+        <div class="history-row">
+
+          <div class="history-icon success">
+            <i class="fa-solid fa-check"></i>
+          </div>
+
+          <div class="history-content">
+            <strong>
+              Approved CICS Server Infrastructure Allocation
+            </strong>
+
+            <span>
+              Reference: #FA-2023-0977 • October 24, 10:20 AM
+            </span>
+          </div>
+
+          <div class="history-amount">
+            ₱890,000.00
+          </div>
+
+        </div>
+
+
+        <div class="history-row">
+
+          <div class="history-icon danger">
+            <i class="fa-solid fa-xmark"></i>
+          </div>
+
+          <div class="history-content">
+            <strong>
+              Request Denied: COE Laboratory Equipment
+            </strong>
+
+            <span>
+              Reason: Budget Exhausted for Q4 • October 23, 11:30 AM
+            </span>
+          </div>
+
+          <div class="history-amount danger-text">
+            ₱675,000.00
+          </div>
+
+        </div>
+
+
+        <div class="history-footer">
+
+          <button aria-label="Previous page">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <button class="active-page">1</button>
+
+          <button>2</button>
+          <button>3</button>
+
+          <button aria-label="Next page">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</body>
+  <script src="../office-app.js" defer></script>
+</html>

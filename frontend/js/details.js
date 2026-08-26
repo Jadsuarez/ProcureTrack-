@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('uploadLink').href =
     `upload.html?tracking=${encodeURIComponent(req.tracking_number)}`;
 
-  const canUpdate = ['budget', 'procurement', 'accounting', 'cashier'].includes(session.role);
+  const canUpdate = ['budget', 'procurement', 'pso', 'accounting', 'cashier'].includes(session.role);
   if (canUpdate) {
     const opts = await Api.statusOptions();
     if (opts.success && opts.options.length) {
@@ -98,6 +98,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (hint) {
           hint.textContent =
             'Mark payment monitoring status (Paid → Completed). Monitoring only — no actual payment execution.';
+        }
+      } else if (session.role === 'procurement') {
+        if (hint) {
+          hint.textContent =
+            'Update procurement monitoring status (Canvass → Abstract of Canvass → PO → For Bidding → Bidding Award).';
+        }
+      } else if (session.role === 'pso') {
+        if (hint) {
+          hint.textContent =
+            'Update property and supply monitoring status (Delivered → For Inspection → Accepted).';
         }
       }
 

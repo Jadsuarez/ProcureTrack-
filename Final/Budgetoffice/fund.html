@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fund Allocation - Budgeting Office</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<aside class="sidebar">
+
+  <div>
+
+    <div class="brand">
+
+      <div class="brand-logo">
+        PH
+      </div>
+
+      <div class="brand-name">
+        <h2>BUDGETING<br>OFFICE</h2>
+        <span>BSU Lipa</span>
+      </div>
+
+    </div>
+
+
+    <nav class="sidebar-menu" aria-label="Main navigation">
+
+      <a href="dashbudget.html" class="menu-link"><i class="fa-solid fa-border-all"></i><span>Dashboard</span></a>
+      <a href="fund.html" class="menu-link active" aria-current="page"><i class="fa-regular fa-square-minus"></i><span>FUND ALLOCATION</span></a>
+      <a href="track.html" class="menu-link"><i class="fa-solid fa-route"></i><span>TRACK REQUEST</span></a>
+      <a href="analytics.html" class="menu-link"><i class="fa-regular fa-chart-bar"></i><span>Analytics</span></a>
+
+    </nav>
+
+  </div>
+
+
+  <div class="sidebar-footer">
+
+    <button class="new-request-button" type="button">
+      + New Request
+    </button>
+
+    <div class="sidebar-footer-links">
+
+      <a href="#">
+        <i class="fa-solid fa-terminal"></i>
+        System Logs
+      </a>
+
+      <a href="#">
+        <i class="fa-regular fa-circle-question"></i>
+        Support
+      </a>
+
+    </div>
+
+  </div>
+
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <input type="search" placeholder="Search CAA records, PR numbers..." aria-label="Search records">
+    </div>
+    <nav class="topbar-links" aria-label="Utility navigation">
+      <a href="#">Documents</a>
+      <a href="#">Pending Actions</a>
+      <a href="#">Archives</a>
+      <button class="notification" type="button" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button>
+      <div class="profile"><img src="https://i.pravatar.cc/100?img=12" alt="User profile"></div>
+    </nav>
+  </header>
+
+<section class="fund-page">
+
+  <!-- PAGE HEADER -->
+  <div class="fund-header">
+    <div>
+      <h1>Fund Allocation</h1>
+      <p>
+        Review and distribute university funds across departments based on
+        approved requisitions and budget availability.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button class="download-btn">
+        Download Report
+      </button>
+
+      <button class="header-gold-btn" type="button" aria-label="Allocation options"><i class="fa-solid fa-sliders"></i></button>
+    </div>
+  </div>
+
+
+  <!-- FUND SUMMARY CARDS -->
+  <div class="fund-summary-grid">
+
+    <div class="fund-summary-card">
+      <div class="summary-icon">
+        <i class="fa-solid fa-building-columns"></i>
+      </div>
+
+      <span class="fund-label">General Appropriations Act (GAA)</span>
+
+      <h2 class="fund-red">₱14,250,000.00</h2>
+
+      <div class="fund-meta">
+        <span class="badge-active">Active</span>
+        <span>Remaining: 68%</span>
+      </div>
+
+      <div class="summary-progress">
+        <div class="summary-progress-bar gaa-bar"></div>
+      </div>
+    </div>
+
+
+    <div class="fund-summary-card">
+      <div class="summary-icon">
+        <i class="fa-regular fa-money-bill-1"></i>
+      </div>
+
+      <span class="fund-label">Income Generating Projects (IGP)</span>
+
+      <h2 class="fund-gold">₱3,845,200.50</h2>
+
+      <div class="fund-meta">
+        <span class="badge-active">Active</span>
+        <span>Remaining: 42%</span>
+      </div>
+
+      <div class="summary-progress">
+        <div class="summary-progress-bar igp-bar"></div>
+      </div>
+    </div>
+
+
+    <div class="fund-summary-card">
+      <div class="summary-icon">
+        <i class="fa-regular fa-file-lines"></i>
+      </div>
+
+      <span class="fund-label">Fiduciary Fund</span>
+
+      <h2>₱1,120,450.00</h2>
+
+      <div class="fund-meta">
+        <span class="badge-review">Review Required</span>
+        <span>Remaining: 15%</span>
+      </div>
+
+      <div class="summary-progress">
+        <div class="summary-progress-bar fiduciary-bar"></div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- MAIN GRID -->
+  <div class="allocation-layout">
+
+    <!-- LEFT -->
+    <div class="allocation-left">
+
+      <!-- REQUESTS -->
+      <div class="allocation-card">
+
+        <div class="allocation-card-header">
+          <h2>Pending Allocation Requests</h2>
+
+          <span class="request-count">
+            12 Requests
+          </span>
+        </div>
+
+
+        <div class="allocation-table-wrap">
+
+          <table class="allocation-table">
+
+            <thead>
+              <tr>
+                <th>Department</th>
+                <th>Requested<br>Amount</th>
+                <th>Purpose</th>
+                <th>Priority</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              <tr>
+                <td>
+                  <strong>CAS - Lab Supplies</strong>
+                  <span>REF: PR-2023-001</span>
+                </td>
+
+                <td class="amount-red">
+                  ₱45,000.00
+                </td>
+
+                <td>
+                  Chemical reagents for Chemistry Lab
+                </td>
+
+                <td>
+                  <span class="priority high">
+                    HIGH
+                  </span>
+                </td>
+
+                <td>
+                  <button class="review-btn">
+                    Review
+                  </button>
+                </td>
+              </tr>
+
+
+              <tr>
+                <td>
+                  <strong>CICS - IT Equipment</strong>
+                  <span>REF: PR-2023-014</span>
+                </td>
+
+                <td class="amount-red">
+                  ₱215,800.00
+                </td>
+
+                <td>
+                  Network switch upgrades
+                </td>
+
+                <td>
+                  <span class="priority medium">
+                    MEDIUM
+                  </span>
+                </td>
+
+                <td>
+                  <button class="review-btn">
+                    Review
+                  </button>
+                </td>
+              </tr>
+
+
+              <tr>
+                <td>
+                  <strong>CAFAD - Printing</strong>
+                  <span>REF: PR-2023-022</span>
+                </td>
+
+                <td class="amount-red">
+                  ₱12,500.00
+                </td>
+
+                <td>
+                  Exhibition catalogs
+                </td>
+
+                <td>
+                  <span class="priority low">
+                    LOW
+                  </span>
+                </td>
+
+                <td>
+                  <button class="review-btn">
+                    Review
+                  </button>
+                </td>
+              </tr>
+
+
+              <tr>
+                <td>
+                  <strong>Admin - Office Furn.</strong>
+                  <span>REF: PR-2023-009</span>
+                </td>
+
+                <td class="amount-red">
+                  ₱78,000.00
+                </td>
+
+                <td>
+                  Ergonomic chairs for registry
+                </td>
+
+                <td>
+                  <span class="priority medium">
+                    MEDIUM
+                  </span>
+                </td>
+
+                <td>
+                  <button class="review-btn">
+                    Review
+                  </button>
+                </td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- RIGHT -->
+    <div class="allocation-right">
+
+      <div class="allocate-panel">
+
+        <div class="allocate-title">
+          <i class="fa-regular fa-square-check"></i>
+          Allocate Funds
+        </div>
+
+        <div class="empty-allocation">
+
+          <div class="empty-icon">
+            <i class="fa-regular fa-hand-pointer"></i>
+          </div>
+
+          <h3>No Request Selected</h3>
+
+          <p>
+            Select a pending request from the list
+            to start the allocation process.
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- RECENT HISTORY -->
+  <div class="history-card">
+
+    <div class="history-header">
+
+      <div>
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <h2>Recent Allocation History</h2>
+      </div>
+
+      <a href="#">
+        View All Records
+      </a>
+
+    </div>
+
+
+    <div class="history-grid">
+
+      <div class="history-item">
+
+        <div class="history-top">
+          <span class="history-status approved">
+            APPROVED
+          </span>
+
+          <span class="history-time">
+            2h ago
+          </span>
+        </div>
+
+        <h3>CTE - Office Supplies</h3>
+
+        <strong>₱28,400.00</strong>
+
+        <p>
+          Source: GAA-2023
+        </p>
+
+      </div>
+
+
+      <div class="history-item">
+
+        <div class="history-top">
+          <span class="history-status partial">
+            PARTIALLY FUNDED
+          </span>
+
+          <span class="history-time">
+            5h ago
+          </span>
+        </div>
+
+        <h3>RET - Research Grant</h3>
+
+        <strong>₱150,000.00</strong>
+
+        <p>
+          Source: IGP-Services
+        </p>
+
+      </div>
+
+
+      <div class="history-item">
+
+        <div class="history-top">
+          <span class="history-status approved">
+            APPROVED
+          </span>
+
+          <span class="history-time">
+            Yesterday
+          </span>
+        </div>
+
+        <h3>Library - Digital Subs</h3>
+
+        <strong>₱412,000.00</strong>
+
+        <p>
+          Source: GAA-Library
+        </p>
+
+      </div>
+
+
+      <div class="history-item">
+
+        <div class="history-top">
+          <span class="history-status rejected">
+            REJECTED
+          </span>
+
+          <span class="history-time">
+            Yesterday
+          </span>
+        </div>
+
+        <h3>HR - Staff Outing</h3>
+
+        <strong>₱0.00</strong>
+
+        <p>
+          Reason: Non-procure item
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+</main>
+</body>
+  <script src="../office-app.js" defer></script>
+</html>

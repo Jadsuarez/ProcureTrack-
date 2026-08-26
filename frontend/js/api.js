@@ -2,14 +2,15 @@
  * API helpers — paths relative to frontend pages
  */
 const API_BASE = '../backend';
+const APP_ASSET_VERSION = '15';
 
 const Api = {
-  async login(role) {
+  async login(username, password) {
     const res = await fetch(`${API_BASE}/login.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ role }),
+      body: JSON.stringify({ username, password }),
     });
     return res.json();
   },
@@ -24,6 +25,76 @@ const Api = {
   async logout() {
     const res = await fetch(`${API_BASE}/login.php?action=logout`, {
       credentials: 'include',
+    });
+    return res.json();
+  },
+
+  async createAccount(data) {
+    const res = await fetch(`${API_BASE}/users.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'create', ...data }),
+    });
+    return res.json();
+  },
+
+  async listUsers() {
+    const res = await fetch(`${API_BASE}/users.php`, { credentials: 'include' });
+    return res.json();
+  },
+
+  async updateUser(data) {
+    const res = await fetch(`${API_BASE}/users.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'update', ...data }),
+    });
+    return res.json();
+  },
+
+  async deleteUser(id) {
+    const res = await fetch(`${API_BASE}/users.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'delete', id }),
+    });
+    return res.json();
+  },
+
+  async listOffices() {
+    const res = await fetch(`${API_BASE}/offices.php`, { credentials: 'include' });
+    return res.json();
+  },
+
+  async createOffice(data) {
+    const res = await fetch(`${API_BASE}/offices.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'create', ...data }),
+    });
+    return res.json();
+  },
+
+  async updateOffice(data) {
+    const res = await fetch(`${API_BASE}/offices.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'update', ...data }),
+    });
+    return res.json();
+  },
+
+  async deleteOffice(id) {
+    const res = await fetch(`${API_BASE}/offices.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'delete', id }),
     });
     return res.json();
   },
@@ -113,7 +184,8 @@ const Api = {
 function statusBadgeClass(status) {
   if (status === 'Completed') return 'completed';
   if (['Under Budget Review', 'Reviewed'].includes(status)) return 'budget';
-  if (['Canvass', 'Abstract of Canvass', 'PO'].includes(status)) return 'procurement';
+  if (['Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'].includes(status)) return 'procurement';
+  if (['Delivered', 'For Inspection', 'Accepted'].includes(status)) return 'pso';
   if (['DV Processing', 'For Payment'].includes(status)) return 'accounting';
   if (status === 'Paid') return 'cashier';
   return '';
@@ -154,9 +226,12 @@ async function requireAuth(allowedRoles = null) {
   return data;
 }
 
-function renderHeader(roleLabel) {
-  const el = document.getElementById('roleBadge');
-  if (el) el.textContent = roleLabel;
+function renderHeader(roleLabel, username) {
+  const officeEl = document.getElementById('roleBadge');
+  if (officeEl) officeEl.textContent = roleLabel;
+
+  const userEl = document.getElementById('userBadge');
+  if (userEl && username) userEl.textContent = username;
 }
 
 const FLOW_STEPS = [
@@ -166,6 +241,11 @@ const FLOW_STEPS = [
   'Canvass',
   'Abstract of Canvass',
   'PO',
+  'For Bidding',
+  'Bidding Award',
+  'Delivered',
+  'For Inspection',
+  'Accepted',
   'DV Processing',
   'For Payment',
   'Paid',

@@ -76,21 +76,46 @@ In your browser, go to:
 
 (or http://localhost/Web1/frontend/login.html)
 
-You will be redirected to the login page. Select an office role (Requesting,
-Budget, Procurement, Accounting, or Cashier) and click "Enter System". No
-password is required — login only stores your selected role in the PHP session.
+You will be redirected to the login page. Sign in with a username and password.
+Your account's assigned office determines which dashboard and features you see.
+
+DEFAULT LOGIN ACCOUNTS (stored in the users table):
+
+  Username            Password           Office
+  ----------------    ----------------   ------------------
+  requesting_user     requesting123      Requesting Office
+  budget_user         budget123          Budget Office
+  procurement_user    procurement123     Procurement Office
+  pso_user            pso123             Property and Supply Office
+  accounting_user     accounting123      Accounting Office
+  cashier_user        cashier123         Cashier
+
+If you already imported an older database, re-import importdb.sql in phpMyAdmin
+(fresh install) or run only the offices/users sections from that file.
+
+EXISTING DATABASE — add PSO without full re-import (phpMyAdmin SQL tab):
+
+  INSERT IGNORE INTO offices (slug, label, is_system, created_by) VALUES
+  ('pso', 'Property and Supply Office', 1, 'system');
+
+  INSERT INTO users (username, password_hash, office, created_by) VALUES
+  ('pso_user', '$2y$10$JsFngouf3C0Mk.o2OtMEiuVmFL/LAwvnx81BK7CvHh.a.OrSr.xTa', 'pso', 'system');
+  -- password: pso123
+
+PROCUREMENT OFFICE — ACCOUNT MANAGEMENT:
+  Log in as procurement_user, open "Account Management" in the sidebar to list,
+  create, edit, and delete user accounts, add new offices, and assign offices.
 
 --------------------------------------------------------------------------------
 QUICK TEST
 --------------------------------------------------------------------------------
 
-1. Log in as "Requesting Office".
+1. Log in as requesting_user / requesting123.
 2. Open Analytics for descriptive, diagnostic, and predictive reports.
 3. Use Track Request and search for: PR-0001
-4. Log out, then log in as Budget, Procurement, Accounting, or Cashier to
-   update statuses on the dashboard or request details page (each role has its
-   own Analytics view). Accounting: DV Processing → For Payment. Cashier:
-   Paid → Completed. PR-0006 is at For Payment for accounting/cashier testing.
+4. Log out, then log in with budget_user, procurement_user, pso_user, accounting_user,
+   or cashier_user to update statuses (each office has its own Analytics view).
+5. As procurement_user, use Account Management to create, edit, or delete users.
 
 --------------------------------------------------------------------------------
 FOLDER NOTES
@@ -101,7 +126,7 @@ FOLDER NOTES
 
   backend/     PHP API (login, fetch, create request, upload, status updates).
 
-  frontend/    HTML pages and client-side JavaScript.
+  frontend/    Final HTML pages and client-side JavaScript.
 
 --------------------------------------------------------------------------------
 TROUBLESHOOTING

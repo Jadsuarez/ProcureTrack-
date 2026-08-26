@@ -41,14 +41,69 @@ function currentRole(): string
     return $_SESSION['role'] ?? '';
 }
 
+function defaultOfficeRows(): array
+{
+    return [
+        ['id' => 0, 'slug' => 'requesting', 'label' => 'Requesting Office', 'is_system' => 1],
+        ['id' => 0, 'slug' => 'budget', 'label' => 'Budget Office', 'is_system' => 1],
+        ['id' => 0, 'slug' => 'procurement', 'label' => 'Procurement Office', 'is_system' => 1],
+        ['id' => 0, 'slug' => 'pso', 'label' => 'Property and Supply Office', 'is_system' => 1],
+        ['id' => 0, 'slug' => 'accounting', 'label' => 'Accounting Office', 'is_system' => 1],
+        ['id' => 0, 'slug' => 'cashier', 'label' => 'Cashier', 'is_system' => 1],
+    ];
+}
+
+function getOfficeRows(bool $forceReload = false): array
+{
+    static $rows = null;
+    if ($forceReload) {
+        $rows = null;
+    }
+    if ($rows !== null) {
+        return $rows;
+    }
+
+    try {
+        $pdo = getConnection();
+        $stmt = $pdo->query(
+            'SELECT id, slug, label, is_system FROM offices ORDER BY label ASC'
+        );
+        $fetched = $stmt->fetchAll();
+        if ($fetched) {
+            $rows = $fetched;
+            return $rows;
+        }
+    } catch (PDOException $e) {
+        // offices table may not exist yet
+    }
+
+    $rows = defaultOfficeRows();
+    return $rows;
+}
+
+function refreshOfficeCache(): void
+{
+    getOfficeRows(true);
+}
+
+function allowedOffices(): array
+{
+    return array_column(getOfficeRows(), 'slug');
+}
+
 function roleLabel(string $role): string
 {
-    $labels = [
-        'requesting' => 'Requesting Office',
-        'budget' => 'Budget Office',
-        'procurement' => 'Procurement Office',
-        'accounting' => 'Accounting Office',
-        'cashier' => 'Cashier',
-    ];
-    return $labels[$role] ?? $role;
+    foreach (getOfficeRows() as $row) {
+        if ($row['slug'] === $role) {
+            return $row['label'];
+        }
+    }
+    return $role;
 }
+
+function isValidOffice(string $office): bool
+{
+    return in_array($office, allowedOffices(), true);
+}
+
+require_once __DIR__ . '/workflow.php';

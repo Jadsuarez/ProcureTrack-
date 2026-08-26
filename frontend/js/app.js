@@ -4,6 +4,42 @@ const SIDEBAR_LOGO = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.
   <path d="M26 26l4 4 2-2-4-4-2 2z" fill="currentColor" fill-opacity="0.85"/>
 </svg>`;
 
+const NAV_BY_ROLE = {
+  requesting: [
+    { href: '../Final/requesting%20office/requestinghome.html', label: 'Dashboard' },
+    { href: '../Final/requesting%20office/requestinganalytics.html', label: 'Analytics' },
+    { href: '../Final/requesting%20office/newtrackrequest.html', label: 'New Request' },
+    { href: '../Final/requesting%20office/trackrequest.html', label: 'Track Requests' },
+  ],
+  budget: [
+    { href: '../Final/Budgetoffice/dashbudget.html', label: 'Dashboard' },
+    { href: '../Final/Budgetoffice/analytics.html', label: 'Analytics' },
+    { href: '../Final/Budgetoffice/track.html', label: 'Track Request' },
+    { href: '../Final/Budgetoffice/fund.html', label: 'Fund Allocation' },
+  ],
+  procurement: [
+    { href: '../Final/procurement%20office/procurementdash.html', label: 'Dashboard' },
+    { href: '../Final/procurement%20office/track.html', label: 'Track Request' },
+    { href: '../Final/procurement%20office/funds.html', label: 'Fund Allocation' },
+  ],
+  pso: [
+    { href: '../Final/pSO%20office/psodash.html', label: 'Dashboard' },
+    { href: '../Final/pSO%20office/track.html', label: 'Track Request' },
+    { href: '../Final/pSO%20office/funds.html', label: 'Fund Allocation' },
+  ],
+  accounting: [
+    { href: '../Final/ACCOUNTING%20office/accountingdash.html', label: 'Dashboard' },
+    { href: '../Final/ACCOUNTING%20office/analytics.html', label: 'Analytics' },
+    { href: '../Final/ACCOUNTING%20office/track.html', label: 'Track Request' },
+    { href: '../Final/ACCOUNTING%20office/funds.html', label: 'Fund Allocation' },
+  ],
+  cashier: [
+    { href: '../Final/Cashier%20office/cashdash.html', label: 'Dashboard' },
+    { href: '../Final/Cashier%20office/track.html', label: 'Track Request' },
+    { href: '../Final/Cashier%20office/funds.html', label: 'Fund Allocation' },
+  ],
+};
+
 function initAppLayout(session) {
   document.body.classList.add('app-layout');
 
@@ -22,6 +58,7 @@ function initAppLayout(session) {
       <div class="sidebar-office">
         <span class="sidebar-office-label">Office</span>
         <strong class="sidebar-office-name" id="roleBadge">—</strong>
+        <span class="sidebar-user-name" id="userBadge"></span>
       </div>
       <nav class="sidebar-nav" id="mainNav" aria-label="Main navigation"></nav>
     `;
@@ -35,15 +72,24 @@ function initAppLayout(session) {
       mainWrap = document.createElement('div');
       mainWrap.className = 'app-main';
       const toMove = [...document.body.children].filter(
-        (el) => el !== sidebar && el.tagName !== 'SCRIPT'
+        (el) =>
+          el !== sidebar &&
+          el.tagName !== 'SCRIPT' &&
+          el.tagName !== 'DIALOG' &&
+          !el.classList.contains('modal-overlay')
       );
       toMove.forEach((el) => mainWrap.appendChild(el));
       document.body.appendChild(mainWrap);
     }
+  } else if (!document.getElementById('mainNav')) {
+    sidebar.insertAdjacentHTML(
+      'beforeend',
+      '<nav class="sidebar-nav" id="mainNav" aria-label="Main navigation"></nav>'
+    );
   }
 
-  renderHeader(session.role_label);
-  buildNav(session.role);
+  renderHeader(session.role_label, session.username);
+  buildNav(session);
   initTopNavbar();
 }
 
@@ -54,6 +100,8 @@ const PAGE_TITLES = {
   'track.html': 'Track Request',
   'upload.html': 'Upload Documents',
   'details.html': 'Request Details',
+  'manage-accounts.html': 'Account Management',
+  'create-account.html': 'Account Management',
 };
 
 function initTopNavbar() {
@@ -124,42 +172,38 @@ function bindGlobalSearch() {
   }
 }
 
-function buildNav(role) {
+function normalizeRole(role) {
+  const r = String(role || '').trim().toLowerCase();
+  const aliases = {
+    'requesting office': 'requesting',
+    'budget office': 'budget',
+    'procurement office': 'procurement',
+    'property and supply office': 'pso',
+    'accounting office': 'accounting',
+  };
+  return aliases[r] || r;
+}
+
+function getNavLinksForRole(role) {
+  const office = normalizeRole(role);
+  return NAV_BY_ROLE[office] || NAV_BY_ROLE.budget;
+}
+
+function buildNav(session) {
   const nav = document.getElementById('mainNav');
   if (!nav) return;
 
+  const role = typeof session === 'string' ? session : session?.role;
   const current = window.location.pathname.split('/').pop() || 'dashboard.html';
-
-  const links = [];
-
-  if (role === 'requesting') {
-    links.push(
-      { href: 'dashboard.html', label: 'Dashboard' },
-      { href: 'analytics.html', label: 'Analytics' },
-      { href: 'new-track.html', label: 'New Track' },
-      { href: 'track.html', label: 'Track Request' },
-      { href: 'upload.html', label: 'Upload Documents' }
-    );
-  } else if (role === 'accounting') {
-    links.push(
-      { href: 'dashboard.html', label: 'Dashboard' },
-      { href: 'analytics.html', label: 'Analytics' },
-      { href: 'track.html', label: 'Track Request' },
-      { href: 'upload.html', label: 'Upload Documents' }
-    );
-  } else {
-    links.push(
-      { href: 'dashboard.html', label: 'Dashboard' },
-      { href: 'analytics.html', label: 'Analytics' },
-      { href: 'track.html', label: 'Track Request' }
-    );
-  }
-
-  links.push({ href: '#', label: 'Logout', logout: true });
+  const links = [...getNavLinksForRole(role), { href: '#', label: 'Logout', logout: true }];
 
   nav.innerHTML = links
     .map((l) => {
-      const active = l.href === current ? ' active' : '';
+      const active =
+        l.href === current ||
+        (l.href === 'manage-accounts.html' && current === 'create-account.html')
+          ? ' active'
+          : '';
       const extra = l.logout ? ' sidebar-link-logout' : '';
       if (l.logout) {
         return `<a href="${l.href}" class="sidebar-link${extra}" data-logout="1">${l.label}</a>`;
