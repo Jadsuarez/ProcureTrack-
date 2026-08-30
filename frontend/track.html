@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Track Request — Procurement Monitoring</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>Track Request — PROCUREMENT</title>
+  <link rel="stylesheet" href="css/style.css?v=13">
 </head>
 <body>
   <main class="container">
@@ -31,18 +31,27 @@
 
     <div class="card">
       <h3>Monitoring Flow</h3>
-      <div class="flow-steps" id="flowHint">
-        <span class="flow-step">Tracking ID</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-step">Budget</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-step">Procurement</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-step">Accounting</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-step">Cashier</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-step">Completed</span>
+      <div class="multi-step-progress office-stepper">
+        <div class="progress-step">
+          <div class="progress-step-icon">1</div>
+          <div class="progress-step-label">Office</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">2</div>
+          <div class="progress-step-label">Budget</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">3</div>
+          <div class="progress-step-label">Procurement</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">4</div>
+          <div class="progress-step-label">Accounting</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">5</div>
+          <div class="progress-step-label">Cashier</div>
+        </div>
       </div>
       <p class="text-muted">Sample IDs: PR-0001 through PR-0006</p>
     </div>
@@ -50,8 +59,8 @@
 
   <footer class="app-footer">Procurement Monitoring System — Tracking only</footer>
 
-  <script src="js/api.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/api.js?v=13"></script>
+  <script src="js/app.js?v=13"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const session = await requireAuth();

@@ -1,11 +1,56 @@
 -- Procurement Monitoring System - Database
--- Import via phpMyAdmin or: mysql -u root procurement_monitoring < importdb.sql
+-- Import via phpMyAdmin or: mysql -u root < importdb.sql
+--
+-- Creates: offices (with fund_allocation), users, requests, status_logs, documents
+-- Seeds:   5 system offices with sample fund allocations, 5 login accounts, sample tracking PR-0001–PR-0006
 
 CREATE DATABASE IF NOT EXISTS procurement_monitoring
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 USE procurement_monitoring;
+
+-- Office registry (assignable roles for user accounts)
+CREATE TABLE IF NOT EXISTS offices (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(30) NOT NULL UNIQUE,
+  label VARCHAR(100) NOT NULL,
+  is_system TINYINT(1) NOT NULL DEFAULT 0,
+  fund_allocation DECIMAL(15, 2) NOT NULL DEFAULT 0,
+  created_by VARCHAR(50) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO offices (slug, label, is_system, created_by, fund_allocation) VALUES
+('requesting', 'Requesting Office', 1, 'system', 5000000.00),
+('budget', 'Budget Office', 1, 'system', 250000.00),
+('procurement', 'Procurement Office', 1, 'system', 1200000.00),
+('accounting', 'Accounting Office', 1, 'system', 400000.00),
+('cashier', 'Cashier', 1, 'system', 150000.00);
+
+UPDATE offices SET fund_allocation = 5000000.00 WHERE slug = 'requesting' AND fund_allocation = 0;
+UPDATE offices SET fund_allocation = 250000.00 WHERE slug = 'budget' AND fund_allocation = 0;
+UPDATE offices SET fund_allocation = 1200000.00 WHERE slug = 'procurement' AND fund_allocation = 0;
+UPDATE offices SET fund_allocation = 400000.00 WHERE slug = 'accounting' AND fund_allocation = 0;
+UPDATE offices SET fund_allocation = 150000.00 WHERE slug = 'cashier' AND fund_allocation = 0;
+
+-- User accounts (login credentials and office assignment)
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  office VARCHAR(30) NOT NULL,
+  created_by VARCHAR(50) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Default accounts (passwords shown in howtorun.txt)
+INSERT INTO users (username, password_hash, office, created_by) VALUES
+('requesting_user', '$2y$10$tIPD0DYkgn16OwJKa.Mt8.WgLLdFhfkzng9HoGuXiL7pvPK.nwc8G', 'requesting', 'system'),
+('budget_user', '$2y$10$tVchF91xzKgzG1T/eM3OnetLESLwliFYycU3jqGlu5/tRDPaI0YLK', 'budget', 'system'),
+('procurement_user', '$2y$10$JPNmPLbP329e6OFwbv0Qour18/TsEsclGH.zWa.kYe0Phv973Jtbi', 'procurement', 'system'),
+('accounting_user', '$2y$10$6hM6pG4eabnbzg.Xmndf7OuhbY4EWaP2OcF4XWylm00Otp9UDT8z2', 'accounting', 'system'),
+('cashier_user', '$2y$10$GbVe3da3AKH37vecHjx/D.iJquKVZDrbWMMQiJnBFtnE8.GXlmwMe', 'cashier', 'system');
 
 -- Main requests table (pre-seeded; no creation via UI)
 CREATE TABLE IF NOT EXISTS requests (

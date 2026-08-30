@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard — Procurement Monitoring</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>Faculty Dashboard — Procurement Monitoring</title>
+  <link rel="stylesheet" href="css/style.css?v=13">
 </head>
 <body>
   <main class="container-wide">
     <div id="alertBox" class="hidden"></div>
 
     <div class="card">
-      <h2>Dashboard</h2>
+      <h2 id="dashboardHeading">Dashboard</h2>
       <p class="text-muted" id="dashboardSubtitle">Search by Tracking ID to view or update monitoring status.</p>
 
       <form id="searchForm" class="search-bar" style="margin-top: 1rem;">
@@ -24,6 +24,40 @@
       <div class="stat-box">
         <div class="number" id="statTotal">—</div>
         <div class="label">Total Requests</div>
+      </div>
+      <div class="stat-box">
+        <div class="number" id="statActive">—</div>
+        <div class="label">Approved / Active</div>
+      </div>
+      <div class="stat-box">
+        <div class="number" id="statPending">—</div>
+        <div class="label">Pending</div>
+      </div>
+      <div class="stat-box">
+        <div class="number" id="statCompleted">—</div>
+        <div class="label">Completed</div>
+      </div>
+    </div>
+
+    <div class="dashboard-layout">
+    <div class="dashboard-main">
+    <div class="card">
+      <h2>Recent Requests</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tracking ID</th>
+              <th>Title</th>
+              <th>Status</th>
+              <th>Updated</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="recentTableBody">
+            <tr><td colspan="5" class="text-muted">Loading…</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -41,23 +75,86 @@
       </div>
     </div>
 
+    </div>
+    <aside class="dashboard-aside">
+      <div class="card">
+        <h2>Notifications</h2>
+        <ul class="notification-list" id="notificationList">
+          <li class="text-muted">Loading…</li>
+        </ul>
+      </div>
+    </aside>
+    </div>
+
     <div class="card">
-      <h2>Recently Updated</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Tracking ID</th>
-              <th>Title</th>
-              <th>Status</th>
-              <th>Updated</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="recentTableBody">
-            <tr><td colspan="5" class="text-muted">Loading…</td></tr>
-          </tbody>
-        </table>
+      <h2>Tracking Progress</h2>
+      <div class="multi-step-progress" id="workflowProgress">
+        <div class="progress-step" id="stepRequesting">
+          <div class="progress-step-icon">1</div>
+          <div class="progress-step-label">Requesting</div>
+        </div>
+        <div class="progress-step" id="stepBudget">
+          <div class="progress-step-icon">2</div>
+          <div class="progress-step-label">Budget</div>
+        </div>
+        <div class="progress-step" id="stepProcurement">
+          <div class="progress-step-icon">3</div>
+          <div class="progress-step-label">Procurement</div>
+        </div>
+        <div class="progress-step" id="stepAccounting">
+          <div class="progress-step-icon">4</div>
+          <div class="progress-step-label">Accounting</div>
+        </div>
+        <div class="progress-step" id="stepCashier">
+          <div class="progress-step-icon">5</div>
+          <div class="progress-step-label">Cashier</div>
+        </div>
+      </div>
+      
+      <div class="progress-bar-container">
+        <div class="progress-bar-label">
+          <span>Overall Progress</span>
+          <span class="percentage" id="overallProgress">0%</span>
+        </div>
+        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+      </div>
+
+      <div class="tracking-overview">
+        <div class="tracking-step">
+          <div class="step-icon">1</div>
+          <div class="step-info">
+            <div class="step-title">Requesting Office</div>
+            <div class="step-status" id="trackingRequesting">Loading...</div>
+          </div>
+        </div>
+        <div class="tracking-step">
+          <div class="step-icon">2</div>
+          <div class="step-info">
+            <div class="step-title">Budget Office</div>
+            <div class="step-status" id="trackingBudget">Loading...</div>
+          </div>
+        </div>
+        <div class="tracking-step">
+          <div class="step-icon">3</div>
+          <div class="step-info">
+            <div class="step-title">Procurement</div>
+            <div class="step-status" id="trackingProcurement">Loading...</div>
+          </div>
+        </div>
+        <div class="tracking-step">
+          <div class="step-icon">4</div>
+          <div class="step-info">
+            <div class="step-title">Accounting</div>
+            <div class="step-status" id="trackingAccounting">Loading...</div>
+          </div>
+        </div>
+        <div class="tracking-step">
+          <div class="step-icon">5</div>
+          <div class="step-info">
+            <div class="step-title">Cashier</div>
+            <div class="step-status" id="trackingCashier">Loading...</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -79,10 +176,10 @@
     </div>
   </main>
 
-  <footer class="app-footer">Procurement Monitoring System — Tracking only</footer>
+  <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
-  <script src="js/api.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/api.js?v=13"></script>
+  <script src="js/app.js?v=13"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const session = await requireAuth();
@@ -102,9 +199,67 @@
         subtitleEl.textContent = subtitles[session.role] || subtitles.requesting;
       }
 
+      const heading = document.getElementById('dashboardHeading');
+      if (heading) {
+        heading.textContent = session.role === 'budget' ? 'Budget Dashboard' : `${session.role_label || 'Office'} Dashboard`;
+      }
+
       const summary = await Api.summary();
       if (summary.success) {
         document.getElementById('statTotal').textContent = summary.total;
+        
+        // Calculate additional stats
+        const activeCount = summary.by_status.find(s => s.status === 'Active')?.count || 0;
+        const completedCount = summary.by_status.find(s => s.status === 'Completed')?.count || 0;
+        const pendingCount = summary.by_status.find(s => s.status === 'Pending')?.count || 0;
+        
+        document.getElementById('statActive').textContent = activeCount;
+        document.getElementById('statCompleted').textContent = completedCount;
+        document.getElementById('statPending').textContent = pendingCount;
+
+        // Update tracking progress
+        const requestingCount = summary.by_status.find(s => s.status === 'Submitted')?.count || 0;
+        const budgetCount = summary.by_status.find(s => s.status === 'Budget Review')?.count || 0;
+        const procurementCount = summary.by_status.find(s => s.status === 'Procurement')?.count || 0;
+        const accountingCount = summary.by_status.find(s => s.status === 'Accounting')?.count || 0;
+        const cashierCount = summary.by_status.find(s => s.status === 'Cashier')?.count || 0;
+
+        document.getElementById('trackingRequesting').textContent = `${requestingCount} requests`;
+        document.getElementById('trackingBudget').textContent = `${budgetCount} requests`;
+        document.getElementById('trackingProcurement').textContent = `${procurementCount} requests`;
+        document.getElementById('trackingAccounting').textContent = `${accountingCount} requests`;
+        document.getElementById('trackingCashier').textContent = `${cashierCount} requests`;
+
+        // Calculate overall progress based on active distribution
+        const totalActive = requestingCount + budgetCount + procurementCount + accountingCount + cashierCount;
+        const progressPercentage = totalActive > 0 ? Math.round((completedCount / Math.max(summary.total, 1)) * 100) : 0;
+        
+        document.getElementById('overallProgress').textContent = `${progressPercentage}%`;
+        document.getElementById('progressBar').style.width = `${progressPercentage}%`;
+
+        // Update workflow progress steps
+        const workflowSteps = ['stepRequesting', 'stepBudget', 'stepProcurement', 'stepAccounting', 'stepCashier'];
+        const stageCounts = [requestingCount, budgetCount, procurementCount, accountingCount, cashierCount];
+        
+        workflowSteps.forEach((stepId, index) => {
+          const stepEl = document.getElementById(stepId);
+          const iconEl = stepEl.querySelector('.progress-step-icon');
+          
+          // Remove existing classes
+          stepEl.classList.remove('completed', 'active');
+          
+          if (stageCounts[index] > 0) {
+            // Mark as active if this stage has requests
+            stepEl.classList.add('active');
+            iconEl.textContent = index + 1;
+          } else if (index > 0 && stageCounts[index - 1] > 0) {
+            // Mark as completed if previous stage had requests but this one doesn't
+            stepEl.classList.add('completed');
+            iconEl.textContent = '✓';
+          } else {
+            iconEl.textContent = index + 1;
+          }
+        });
 
         const focus = summary.focus_statuses || [];
         const sorted = [...summary.by_status].sort((a, b) => {
@@ -134,6 +289,19 @@
               </tr>
             `).join('')
           : '<tr><td colspan="5">No requests</td></tr>';
+
+        const notif = document.getElementById('notificationList');
+        if (notif) {
+          notif.innerHTML = summary.recent.length
+            ? summary.recent.slice(0, 6).map((r) => `
+                <li>
+                  <a href="details.html?tracking=${encodeURIComponent(r.tracking_number)}"><strong>${r.tracking_number}</strong></a>
+                  is ${r.status}
+                  <span class="meta">${formatDate(r.updated_at)}</span>
+                </li>
+              `).join('')
+            : '<li class="text-muted">No recent activity.</li>';
+        }
       }
 
       document.getElementById('searchForm').addEventListener('submit', async (e) => {
