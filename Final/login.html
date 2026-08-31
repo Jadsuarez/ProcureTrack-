@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Batangas State University Lipa Procurement Monitoring">
+  <title>Login — Procurement Monitoring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .login-alert {
+      margin: 0 0 14px;
+      background: rgba(185, 28, 28, 0.08);
+      color: #7f1d1d;
+      border: 1px solid rgba(185, 28, 28, 0.18);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .login-alert.show { display: block; }
+  </style>
+</head>
+<body>
+  <main class="login-page">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="logo-row">
+          <span class="brand-mark" aria-hidden="true">PH</span>
+          <h1>Procurement</h1>
+        </div>
+        <p>Batangas State University Lipa Procurement Monitoring</p>
+      </div>
+
+      <h2>Login</h2>
+      <p class="lead">Authorized personnel only. Please verify your credentials to proceed.</p>
+
+      <div id="alertBox" class="login-alert" role="alert"></div>
+
+      <form class="login-form" id="loginForm">
+        <div class="field">
+          <label class="field-label" for="username">Username</label>
+          <input
+            class="input"
+            type="text"
+            id="username"
+            name="username"
+            placeholder="requesting_user"
+            autocomplete="username"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <label for="password">Password</label>
+            <a href="#">Forgot?</a>
+          </div>
+          <input
+            class="input"
+            type="password"
+            id="password"
+            name="password"
+            placeholder="••••••••••••"
+            autocomplete="current-password"
+            required
+          >
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit">Login</button>
+      </form>
+
+      <div class="login-meta">
+        <span><span class="status-dot" aria-hidden="true"></span>System Status: Operational</span>
+        <span>
+          <a href="#">Support</a>
+          &nbsp;·&nbsp;
+          <a href="#">Documentation</a>
+        </span>
+      </div>
+    </div>
+
+    <footer class="login-footer">
+      <strong>Procurement</strong>
+      Copyright © 2026 Batangas State University, The National Engineering University Lipa
+    </footer>
+  </main>
+
+  <script>
+    const landingPages = {
+      requesting: 'requesting%20office/requestinghome.html',
+      budget: 'Budgetoffice/dashbudget.html',
+      procurement: 'procurement%20office/procurementdash.html',
+      pso: 'pSO%20office/psodash.html',
+      accounting: 'ACCOUNTING%20office/accountingdash.html',
+      cashier: 'Cashier%20office/cashdash.html'
+    };
+
+    function landingPage(role) {
+      const normalizedRole = String(role || '').trim().toLowerCase();
+      return landingPages[normalizedRole] || 'login.html';
+    }
+
+    function showAlert(message) {
+      const box = document.getElementById('alertBox');
+      if (!box) return;
+      box.textContent = message;
+      box.classList.add('show');
+    }
+
+    async function redirectIfLoggedIn() {
+      try {
+        const res = await fetch('../backend/login.php?action=session', { credentials: 'include' });
+        const data = await res.json();
+        if (data && data.logged_in && data.role) {
+          const target = landingPage(data.role);
+          window.location.href = target;
+        }
+      } catch (error) {
+        // ignore and stay on login page
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await redirectIfLoggedIn();
+
+      const form = document.getElementById('loginForm');
+      if (!form) return;
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        if (!username || !password) {
+          showAlert('Please enter your username and password.');
+          return;
+        }
+
+        try {
+          const res = await fetch('../backend/login.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ username, password })
+          });
+
+          const result = await res.json();
+          if (!result.success) {
+            showAlert(result.message || 'Login failed.');
+            return;
+          }
+
+          const target = landingPage(result.role);
+          window.location.href = target;
+        } catch (error) {
+          showAlert('Unable to connect to the server.');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

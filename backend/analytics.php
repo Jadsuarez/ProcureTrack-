@@ -19,6 +19,11 @@ const FLOW_STEPS = [
     'Canvass',
     'Abstract of Canvass',
     'PO',
+    'For Bidding',
+    'Bidding Award',
+    'Delivered',
+    'For Inspection',
+    'Accepted',
     'DV Processing',
     'For Payment',
     'Paid',
@@ -26,8 +31,9 @@ const FLOW_STEPS = [
 ];
 
 const BUDGET_STATUSES = ['Registered', 'Under Budget Review', 'Reviewed'];
-const PROCUREMENT_STATUSES = ['Reviewed', 'Canvass', 'Abstract of Canvass', 'PO'];
-const ACCOUNTING_STATUSES = ['PO', 'DV Processing', 'For Payment'];
+const PROCUREMENT_STATUSES = ['Reviewed', 'Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'];
+const PSO_STATUSES = ['Bidding Award', 'Delivered', 'For Inspection', 'Accepted'];
+const ACCOUNTING_STATUSES = ['Accepted', 'DV Processing', 'For Payment'];
 const CASHIER_STATUSES = ['For Payment', 'Paid', 'Completed'];
 
 function daysBetween(?string $start, ?string $end): float
@@ -58,14 +64,21 @@ function officeScope(string $role): array
         'procurement' => [
             'label' => 'Procurement Office',
             'statuses' => PROCUREMENT_STATUSES,
-            'focus_stages' => ['Reviewed', 'Canvass', 'Abstract of Canvass', 'PO'],
+            'focus_stages' => ['Reviewed', 'Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'],
             'queue_status' => 'Canvass',
-            'handoff_status' => 'PO',
+            'handoff_status' => 'Bidding Award',
+        ],
+        'pso' => [
+            'label' => 'Property and Supply Office',
+            'statuses' => PSO_STATUSES,
+            'focus_stages' => ['Bidding Award', 'Delivered', 'For Inspection', 'Accepted'],
+            'queue_status' => 'Delivered',
+            'handoff_status' => 'Accepted',
         ],
         'accounting' => [
             'label' => 'Accounting Office',
             'statuses' => ACCOUNTING_STATUSES,
-            'focus_stages' => ['PO', 'DV Processing', 'For Payment'],
+            'focus_stages' => ['Accepted', 'DV Processing', 'For Payment'],
             'queue_status' => 'DV Processing',
             'handoff_status' => 'For Payment',
         ],
@@ -157,7 +170,7 @@ try {
 
     $scoped = array_values(array_filter(
         $allRequests,
-        fn($r) => inScope($r['status'], $scope)
+        fn($r) => inScope($r['status'], $scope) && isRequestVisibleToRole($r['status'], $role)
     ));
 
     $completed = array_filter($scoped, fn($r) => $r['status'] === 'Completed');
@@ -222,8 +235,9 @@ try {
     // --- Diagnostic ---
     $stageFilter = match ($role) {
         'budget' => ['Registered', 'Under Budget Review', 'Reviewed'],
-        'procurement' => ['Reviewed', 'Canvass', 'Abstract of Canvass', 'PO'],
-        'accounting' => ['PO', 'DV Processing', 'For Payment'],
+        'procurement' => ['Reviewed', 'Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'],
+        'pso' => ['Bidding Award', 'Delivered', 'For Inspection', 'Accepted'],
+        'accounting' => ['Accepted', 'DV Processing', 'For Payment'],
         'cashier' => ['For Payment', 'Paid', 'Completed'],
         default => FLOW_STEPS,
     };
@@ -272,9 +286,16 @@ try {
         $inReview = $statusCounts['Under Budget Review'] ?? 0;
         $backlogRatio = $inReview > 0 ? round($reviewed / $inReview, 2) : ($reviewed > 0 ? (float) $reviewed : 0);
     } elseif ($role === 'procurement') {
-        $inCanvass = $statusCounts['Canvass'] ?? 0;
-        $po = ($statusCounts['PO'] ?? 0) + ($statusCounts['Abstract of Canvass'] ?? 0);
-        $backlogRatio = $inCanvass > 0 ? round($po / $inCanvass, 2) : ($po > 0 ? (float) $po : 0);
+        $inPipeline = ($statusCounts['Canvass'] ?? 0)
+            + ($statusCounts['Abstract of Canvass'] ?? 0)
+            + ($statusCounts['PO'] ?? 0)
+            + ($statusCounts['For Bidding'] ?? 0);
+        $awarded = $statusCounts['Bidding Award'] ?? 0;
+        $backlogRatio = $inPipeline > 0 ? round($awarded / $inPipeline, 2) : ($awarded > 0 ? (float) $awarded : 0);
+    } elseif ($role === 'pso') {
+        $inQueue = ($statusCounts['Delivered'] ?? 0) + ($statusCounts['For Inspection'] ?? 0);
+        $accepted = $statusCounts['Accepted'] ?? 0;
+        $backlogRatio = $inQueue > 0 ? round($accepted / $inQueue, 2) : ($accepted > 0 ? (float) $accepted : 0);
     } elseif ($role === 'accounting') {
         $dv = $statusCounts['DV Processing'] ?? 0;
         $forPayment = $statusCounts['For Payment'] ?? 0;
@@ -309,7 +330,7 @@ try {
         $key = str_replace(' (current)', '', $row['stage']);
         $globalAvgByStage[$key] = $row['avg_days'];
     }
-    foreach (['Registered', 'Under Budget Review', 'Reviewed', 'Canvass', 'Abstract of Canvass', 'PO', 'DV Processing', 'For Payment', 'Paid'] as $st) {
+    foreach (['Registered', 'Under Budget Review', 'Reviewed', 'Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award', 'Delivered', 'For Inspection', 'Accepted', 'DV Processing', 'For Payment', 'Paid'] as $st) {
         if (!isset($globalAvgByStage[$st])) {
             $globalAvgByStage[$st] = match ($st) {
                 'Registered' => 2.0,
@@ -318,6 +339,11 @@ try {
                 'Canvass' => 7.0,
                 'Abstract of Canvass' => 4.0,
                 'PO' => 5.0,
+                'For Bidding' => 5.0,
+                'Bidding Award' => 4.0,
+                'Delivered' => 3.0,
+                'For Inspection' => 4.0,
+                'Accepted' => 2.0,
                 'DV Processing' => 4.0,
                 'For Payment' => 3.0,
                 'Paid' => 2.0,
@@ -387,12 +413,17 @@ try {
             'predictive' => 'Estimates when active requests may finish budget review and flags items likely to miss typical timelines.',
         ],
         'procurement' => [
-            'descriptive' => 'Shows procurement-stage volumes, completions, and how workload is distributed across canvass through PO.',
+            'descriptive' => 'Shows procurement-stage volumes from canvass through PO, bidding, and award.',
             'diagnostic' => 'Highlights procurement bottlenecks, stage durations, and the slowest-moving active requests.',
             'predictive' => 'Projects completion dates from historical stage times and counts at-risk procurements.',
         ],
+        'pso' => [
+            'descriptive' => 'Summarizes requests in the property and supply pipeline from delivery through inspection to acceptance.',
+            'diagnostic' => 'Identifies average time per PSO stage and requests stuck longest before accounting handoff.',
+            'predictive' => 'Estimates when active requests may reach accepted status based on typical delivery and inspection times.',
+        ],
         'accounting' => [
-            'descriptive' => 'Summarizes requests in the financial pipeline from PO through DV processing to for payment.',
+            'descriptive' => 'Summarizes requests in the financial pipeline from accepted through DV processing to for payment.',
             'diagnostic' => 'Identifies average time in DV and payment-prep stages and requests stuck longest before handoff.',
             'predictive' => 'Estimates when active requests may reach for payment based on typical accounting stage durations.',
         ],

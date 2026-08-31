@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>ProcureTrack Dashboard</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+  >
+
+  <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<!-- =====================================================
+     SIDEBAR
+===================================================== -->
+
+<aside class="sidebar">
+
+  <div>
+
+    <div class="brand">
+
+      <div class="brand-logo">
+        PH
+      </div>
+
+      <div class="brand-name">
+        <h2>BUDGETING<br>OFFICE</h2>
+        <span>BSU Lipa</span>
+      </div>
+
+    </div>
+
+
+    <nav class="sidebar-menu" aria-label="Main navigation">
+
+      <a href="dashbudget.html" class="menu-link active" aria-current="page"><i class="fa-solid fa-border-all"></i><span>Dashboard</span></a>
+      <a href="fund.html" class="menu-link"><i class="fa-regular fa-square-minus"></i><span>FUND ALLOCATION</span></a>
+      <a href="track.html" class="menu-link"><i class="fa-solid fa-route"></i><span>TRACK REQUEST</span></a>
+      <a href="analytics.html" class="menu-link"><i class="fa-regular fa-chart-bar"></i><span>Analytics</span></a>
+
+    </nav>
+
+  </div>
+
+
+  <div class="sidebar-footer">
+
+    <button class="new-request-button" type="button">
+      + New Request
+    </button>
+
+    <div class="sidebar-footer-links">
+
+      <a href="#">
+        <i class="fa-solid fa-terminal"></i>
+        System Logs
+      </a>
+
+      <a href="#">
+        <i class="fa-regular fa-circle-question"></i>
+        Support
+      </a>
+
+    </div>
+
+  </div>
+
+</aside>
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<main class="main">
+
+  <!-- TOP NAV -->
+
+  <header class="topbar">
+
+    <div class="search-box">
+
+      <i class="fa-solid fa-magnifying-glass"></i>
+
+      <input
+        type="text"
+        placeholder="Search CAA records, PR numbers..."
+      >
+
+    </div>
+
+
+    <div class="topbar-links">
+
+      <a href="#">Documents</a>
+
+      <a href="#">Pending Actions</a>
+
+      <a href="#">Archives</a>
+
+      <button class="notification" aria-label="Notifications">
+        <i class="fa-regular fa-bell"></i>
+      </button>
+
+      <div class="profile">
+        <img
+          src="https://i.pravatar.cc/100?img=12"
+          alt="Profile"
+        >
+      </div>
+
+    </div>
+
+  </header>
+
+
+  <!-- =====================================================
+       PAGE CONTENT
+  ===================================================== -->
+
+  <section class="dashboard-content">
+
+
+    <!-- =================================================
+         KPI CARDS
+    ================================================= -->
+
+    <div class="kpi-grid">
+
+
+      <!-- TOTAL BUDGET -->
+
+      <div class="kpi-card">
+
+        <div class="kpi-top">
+
+          <span>TOTAL BUDGET (FY 2024)</span>
+
+          <i class="fa-solid fa-building-columns"></i>
+
+        </div>
+
+        <h2 class="red-number">
+          ₱ 450.25M
+        </h2>
+
+        <p class="growth">
+          <i class="fa-solid fa-arrow-trend-up"></i>
+          +5.2% vs Last FY
+        </p>
+
+      </div>
+
+
+      <!-- ALLOCATED FUNDS -->
+
+      <div class="kpi-card">
+
+        <div class="kpi-top">
+
+          <span>ALLOCATED FUNDS</span>
+
+          <i class="fa-regular fa-money-bill-1"></i>
+
+        </div>
+
+        <h2>
+          ₱ 312.80M
+        </h2>
+
+        <p>
+          69.5% of total budget
+        </p>
+
+      </div>
+
+
+      <!-- REMAINING -->
+
+      <div class="kpi-card">
+
+        <div class="kpi-top">
+
+          <span>REMAINING BALANCE</span>
+
+          <i class="fa-solid fa-piggy-bank"></i>
+
+        </div>
+
+        <h2 class="gold-number">
+          ₱ 137.45M
+        </h2>
+
+        <p>
+          Unobligated funds
+        </p>
+
+      </div>
+
+
+      <!-- UTILIZATION -->
+
+      <div class="kpi-card">
+
+        <div class="kpi-top">
+
+          <span>UTILIZATION RATE</span>
+
+          <i class="fa-solid fa-chart-line"></i>
+
+        </div>
+
+        <h2 class="red-number">
+          82.4%
+        </h2>
+
+        <div class="kpi-progress">
+
+          <div class="kpi-progress-value"></div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- =================================================
+         MAIN DASHBOARD GRID
+    ================================================= -->
+
+    <div class="dashboard-grid">
+
+
+      <!-- =================================================
+           LEFT SECTION
+      ================================================= -->
+
+      <div class="dashboard-left">
+
+
+        <!-- FUND UTILIZATION -->
+
+        <div class="dashboard-card">
+
+          <div class="card-heading">
+
+            <h2>
+              Utilization by Fund Source
+            </h2>
+
+
+            <select aria-label="View period for fund utilization">
+              <option>Monthly View</option>
+              <option>Quarterly View</option>
+              <option>Yearly View</option>
+            </select>
+
+          </div>
+
+
+          <!-- GAA -->
+
+          <div class="fund-row">
+
+            <div class="fund-row-top">
+
+              <strong>
+                GAA (General Appropriations Act)
+              </strong>
+
+              <span>
+                ₱ 250M / ₱ 280M (89%)
+              </span>
+
+            </div>
+
+            <div class="fund-progress">
+
+              <div class="fund-progress-value gaa"></div>
+
+            </div>
+
+          </div>
+
+
+          <!-- IGP -->
+
+          <div class="fund-row">
+
+            <div class="fund-row-top">
+
+              <strong>
+                Institutional Income (IGP)
+              </strong>
+
+              <span>
+                ₱ 45M / ₱ 120M (37%)
+              </span>
+
+            </div>
+
+            <div class="fund-progress">
+
+              <div class="fund-progress-value igp"></div>
+
+            </div>
+
+          </div>
+
+
+          <!-- FIDUCIARY -->
+
+          <div class="fund-row">
+
+            <div class="fund-row-top">
+
+              <strong>
+                Fiduciary Fund
+              </strong>
+
+              <span>
+                ₱ 17.8M / ₱ 50.25M (35%)
+              </span>
+
+            </div>
+
+            <div class="fund-progress">
+
+              <div class="fund-progress-value fiduciary"></div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================================
+             DEPARTMENT BUDGET
+        ================================================= -->
+
+        <div class="dashboard-card department-card">
+
+          <div class="card-heading">
+
+            <h2>
+              Departmental Budget Status
+            </h2>
+
+            <a href="#" class="download-link">
+              Download CSV
+            </a>
+
+          </div>
+
+
+          <div class="table-container">
+
+            <table class="budget-table">
+
+              <thead>
+
+                <tr>
+
+                  <th>DEPARTMENT</th>
+
+                  <th>
+                    APPROVED<br>
+                    BUDGET
+                  </th>
+
+                  <th>
+                    AMT<br>
+                    OBLIGATED
+                  </th>
+
+                  <th>
+                    UTILIZED<br>
+                    %
+                  </th>
+
+                  <th>
+                    STATUS
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody>
+
+
+                <!-- CICS -->
+
+                <tr>
+
+                  <td>
+                    <strong>
+                      CICS<br>
+                      (Computing Sciences)
+                    </strong>
+                  </td>
+
+                  <td>
+                    ₱ 12,450,000
+                  </td>
+
+                  <td>
+                    ₱ 11,205,000
+                  </td>
+
+                  <td>
+
+                    <div class="util-cell">
+
+                      <div class="tiny-progress">
+                        <div style="width:90%"></div>
+                      </div>
+
+                      <strong>90%</strong>
+
+                    </div>
+
+                  </td>
+
+                  <td>
+                    <span class="status critical">
+                      CRITICAL
+                    </span>
+                  </td>
+
+                </tr>
+
+
+                <!-- CEAFA -->
+
+                <tr>
+
+                  <td>
+                    <strong>
+                      CEAFA<br>
+                      (Engineering)
+                    </strong>
+                  </td>
+
+                  <td>
+                    ₱ 28,900,000
+                  </td>
+
+                  <td>
+                    ₱ 15,317,000
+                  </td>
+
+                  <td>
+
+                    <div class="util-cell">
+
+                      <div class="tiny-progress">
+                        <div style="width:53%"></div>
+                      </div>
+
+                      <strong>53%</strong>
+
+                    </div>
+
+                  </td>
+
+                  <td>
+                    <span class="status healthy">
+                      HEALTHY
+                    </span>
+                  </td>
+
+                </tr>
+
+
+                <!-- CAS -->
+
+                <tr>
+
+                  <td>
+                    <strong>
+                      CAS (Arts &<br>
+                      Sciences)
+                    </strong>
+                  </td>
+
+                  <td>
+                    ₱ 8,200,000
+                  </td>
+
+                  <td>
+                    ₱ 6,400,000
+                  </td>
+
+                  <td>
+
+                    <div class="util-cell yellow-util">
+
+                      <div class="tiny-progress">
+                        <div style="width:78%"></div>
+                      </div>
+
+                      <strong>78%</strong>
+
+                    </div>
+
+                  </td>
+
+                  <td>
+                    <span class="status warning">
+                      WARNING
+                    </span>
+                  </td>
+
+                </tr>
+
+
+                <!-- LIBRARY -->
+
+                <tr>
+
+                  <td>
+                    <strong>
+                      Library Services
+                    </strong>
+                  </td>
+
+                  <td>
+                    ₱ 5,500,000
+                  </td>
+
+                  <td>
+                    ₱ 1,200,000
+                  </td>
+
+                  <td>
+
+                    <div class="util-cell">
+
+                      <div class="tiny-progress">
+                        <div style="width:21%"></div>
+                      </div>
+
+                      <strong>21%</strong>
+
+                    </div>
+
+                  </td>
+
+                  <td>
+                    <span class="status healthy">
+                      HEALTHY
+                    </span>
+                  </td>
+
+                </tr>
+
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- =================================================
+           RIGHT SIDEBAR
+      ================================================= -->
+
+      <div class="dashboard-right">
+
+
+        <!-- ALLOCATION TASKS -->
+
+        <div class="dashboard-card">
+
+          <div class="card-heading">
+
+            <h2>
+              Allocation Tasks
+            </h2>
+
+            <span class="new-pill">
+              3 NEW
+            </span>
+
+          </div>
+
+
+          <!-- TASK -->
+
+          <div class="allocation-task">
+
+            <div class="task-top">
+
+              <span>
+                REQ #2024-045
+              </span>
+
+              <strong>
+                ₱ 850,000
+              </strong>
+
+            </div>
+
+            <h3>
+              Lab Equipment Upgrade
+            </h3>
+
+            <p>
+              Source: GAA Capital Outlay (CICS)
+            </p>
+
+
+            <div class="task-buttons">
+
+              <button class="approve-btn">
+                APPROVE
+              </button>
+
+              <button class="details-btn">
+                DETAILS
+              </button>
+
+            </div>
+
+          </div>
+
+
+          <!-- TASK -->
+
+          <div class="allocation-task">
+
+            <div class="task-top">
+
+              <span>
+                REQ #2024-048
+              </span>
+
+              <strong>
+                ₱ 125,000
+              </strong>
+
+            </div>
+
+            <h3>
+              Faculty Development Seminar
+            </h3>
+
+            <p>
+              Source: Institutional Income (CAS)
+            </p>
+
+
+            <div class="task-buttons">
+
+              <button class="approve-btn">
+                APPROVE
+              </button>
+
+              <button class="details-btn">
+                DETAILS
+              </button>
+
+            </div>
+
+          </div>
+
+
+          <a href="#" class="view-pending">
+            View All Pending Tasks
+          </a>
+
+        </div>
+
+
+        <!-- =================================================
+             FISCAL ALERTS
+        ================================================= -->
+
+        <div class="dashboard-card alerts-card">
+
+          <div class="card-heading">
+
+            <h2>
+              Fiscal Alerts
+            </h2>
+
+          </div>
+
+
+          <!-- ALERT -->
+
+          <div class="alert alert-danger">
+
+            <i class="fa-solid fa-triangle-exclamation"></i>
+
+            <div>
+
+              <strong>
+                Budget Threshold Alert
+              </strong>
+
+              <p>
+                CICS has utilized 90.2% of their
+                MOOE allocation. Only ₱1.2M remains.
+              </p>
+
+              <span>
+                2 HOURS AGO
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <!-- ALERT -->
+
+          <div class="alert alert-warning">
+
+            <i class="fa-regular fa-circle-exclamation"></i>
+
+            <div>
+
+              <strong>
+                Significant Variance
+              </strong>
+
+              <p>
+                CABE Office Supplies expenditure is
+                15% higher than projected for Q2.
+              </p>
+
+              <span>
+                YESTERDAY
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <!-- ALERT -->
+
+          <div class="alert alert-info">
+
+            <i class="fa-solid fa-circle-info"></i>
+
+            <div>
+
+              <strong>
+                Unused Allotment
+              </strong>
+
+              <p>
+                ₱5.2M in Capital Outlay for the
+                New Library remains uncommitted.
+              </p>
+
+              <span>
+                3 DAYS AGO
+              </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================================
+             PROCUREMENT HEALTH
+        ================================================= -->
+
+        <div class="health-card">
+
+          <h2>
+            Procurement Health
+          </h2>
+
+          <p>
+            Average processing time for fund allocation:
+          </p>
+
+          <strong>
+            4.2 days
+          </strong>
+
+
+          <div class="health-chart">
+
+            <div style="height:35%"></div>
+            <div style="height:48%"></div>
+            <div style="height:57%"></div>
+            <div style="height:50%"></div>
+            <div class="active-bar" style="height:75%"></div>
+            <div style="height:64%"></div>
+            <div style="height:60%"></div>
+
+          </div>
+
+
+          <div class="chart-labels">
+
+            <span>MON</span>
+
+            <span>SUN</span>
+
+          </div>
+
+        </div>
+
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       FOOTER
+  ===================================================== -->
+
+  <footer class="main-footer">
+
+    <div>
+
+      <span class="online-dot"></span>
+
+      System Online
+
+      <span class="footer-space">
+        Database Sync: 2 mins ago
+      </span>
+
+    </div>
+
+
+    <div>
+      PUBLIC PROCUREMENT TRANSPARENCY STANDARD 2.0
+      &nbsp;&nbsp; | &nbsp;&nbsp;
+      © 2024 PROCURETRACK - BATSTATEU TNEU LIPA
+    </div>
+
+  </footer>
+
+</main>
+
+</body>
+  <script src="../office-app.js" defer></script>
+</html>

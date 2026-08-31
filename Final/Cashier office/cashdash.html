@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Procurement Dashboard</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+  >
+
+  <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+    <aside class="sidebar">
+
+    <div>
+
+      <div class="brand">
+
+        <div class="brand-logo">
+          PH
+        </div>
+
+        <div class="brand-text">
+          <h2>CASHIER<br>OFFICE</h2>
+          <span>BSU Lipa</span>
+        </div>
+
+      </div>
+
+      <nav class="sidebar-menu" aria-label="Main navigation">
+
+        <a href="cashdash.html" class="menu-item active" aria-current="page">
+          <i class="fa-solid fa-border-all"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="funds.html" class="menu-item">
+          <i class="fa-regular fa-square-minus"></i>
+          <span>Fund Allocation</span>
+        </a>
+        <a href="track.html" class="menu-item">
+          <i class="fa-solid fa-route"></i>
+          <span>Track Request</span>
+        </a>
+
+      </nav>
+
+    </div>
+
+
+    <div class="sidebar-bottom">
+
+      <button class="sidebar-new-request" type="button">
+        + New Request
+      </button>
+
+      <div class="sidebar-bottom-links">
+
+        <a href="#">
+          <i class="fa-solid fa-terminal"></i>
+          <span>System Logs</span>
+        </a>
+
+        <a href="#">
+          <i class="fa-regular fa-circle-question"></i>
+          <span>Support</span>
+        </a>
+
+      </div>
+
+    </div>
+
+  </aside>
+
+
+  <main class="main">
+
+    <header class="topbar">
+
+      <div class="search-box">
+
+        <i class="fa-solid fa-magnifying-glass"></i>
+
+        <input
+          type="text"
+          placeholder="Search CAA records, PR numbers..."
+        >
+
+      </div>
+
+
+      <div class="topbar-right">
+
+        <a href="#">Documents</a>
+        <a href="#">Pending Actions</a>
+        <a href="#">Archives</a>
+
+        <button class="notification-btn" aria-label="Notifications">
+          <i class="fa-regular fa-bell"></i>
+        </button>
+
+        <div class="profile">
+          <img src="https://i.pravatar.cc/100?img=12" alt="Profile">
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <section class="dashboard-page">
+
+      <div class="dashboard-header">
+
+        <div>
+
+          <div class="breadcrumb">
+            <span>PROCUREMENT</span>
+            <i class="fa-solid fa-chevron-right"></i>
+            <strong>DASHBOARD</strong>
+          </div>
+
+          <h1>DASHBOARD</h1>
+
+        </div>
+
+
+        <div class="header-actions">
+
+          <button class="export-btn">
+            <i class="fa-solid fa-download"></i>
+            EXPORT DATA
+          </button>
+
+          <button class="new-request-btn">
+            <i class="fa-solid fa-plus"></i>
+            NEW REQUEST
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="stats-grid">
+
+        <div class="stat-card first-stat">
+
+          <div class="stat-top">
+
+            <span>TOTAL REQUESTS</span>
+
+            <i class="fa-solid fa-layer-group"></i>
+
+          </div>
+
+          <h2>1,284</h2>
+
+          <p class="stat-positive">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            +12% VS LAST MONTH
+          </p>
+
+        </div>
+
+
+        <div class="stat-card">
+
+          <div class="stat-top">
+
+            <span>
+              ONGOING<br>
+              TRANSACTIONS
+            </span>
+
+            <i class="fa-solid fa-code-compare"></i>
+
+          </div>
+
+          <h2>452</h2>
+
+          <div class="stat-progress">
+            <div></div>
+          </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+          <div class="stat-top">
+
+            <span>COMPLETED</span>
+
+            <i class="fa-regular fa-circle-check"></i>
+
+          </div>
+
+          <h2>791</h2>
+
+          <p class="archive-ready">
+            ARCHIVE READY
+          </p>
+
+        </div>
+
+
+        <div class="delayed-card">
+
+          <div class="delayed-top">
+
+            <span>DELAYED PROCESSES</span>
+
+            <i class="fa-solid fa-triangle-exclamation"></i>
+
+          </div>
+
+          <h2>41</h2>
+
+          <p>
+            IMMEDIATE ACTION<br>
+            REQUIRED
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="filters-row">
+
+        <div class="filter-tabs">
+
+          <button class="active">
+            ALL ITEMS
+          </button>
+
+          <button>
+            OVER ₱2.0M
+          </button>
+
+          <button>
+            UNDER ₱2.0M
+          </button>
+
+        </div>
+
+
+        <div class="period-filter">
+
+          <button class="active">
+            MONTHLY
+          </button>
+
+          <button>
+            WEEKLY
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="table-card">
+
+        <div class="table-wrapper">
+
+          <table class="request-table">
+
+            <thead>
+
+              <tr>
+
+                <th>
+                  TRACKING<br>
+                  NUMBER
+                </th>
+
+                <th>
+                  REQUEST TITLE
+                </th>
+
+                <th>
+                  AMOUNT
+                </th>
+
+                <th>
+                  ASSIGNED<br>
+                  HANDLER
+                </th>
+
+                <th>
+                  STATUS
+                </th>
+
+                <th>
+                  ACTION
+                </th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+
+              <tr>
+
+                <td class="tracking-number">
+                  #PL-2024-<br>
+                  001
+                </td>
+
+                <td>
+
+                  <strong>
+                    Data Center<br>
+                    Hardware Refresh
+                  </strong>
+
+                  <span>
+                    IT INFRASTRUCTURE<br>
+                    DEPT.
+                  </span>
+
+                </td>
+
+                <td class="amount">
+                  ₱4,500,000.00
+                </td>
+
+                <td>
+                  <span class="handler red">
+                    BAC
+                  </span>
+                </td>
+
+                <td>
+                  <span class="status review">
+                    <i></i>
+                    IN REVIEW
+                  </span>
+                </td>
+
+                <td>
+                  <button class="more-btn" aria-label="More actions">
+                    <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                  </button>
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td class="tracking-number">
+                  #PL-2024-<br>
+                  002
+                </td>
+
+                <td>
+
+                  <strong>
+                    Office Supplies Q3<br>
+                    Refill
+                  </strong>
+
+                  <span>
+                    ADMIN SERVICES
+                  </span>
+
+                </td>
+
+                <td class="amount">
+                  ₱450,200.00
+                </td>
+
+                <td>
+                  <span class="handler gray">
+                    PROCUREMENT
+                  </span>
+                </td>
+
+                <td>
+                  <span class="status pending">
+                    <i></i>
+                    PENDING<br>
+                    APPROVAL
+                  </span>
+                </td>
+
+                <td>
+                  <button class="more-btn" aria-label="More actions" title="More actions">
+                    <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                  </button>
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td class="tracking-number">
+                  #PL-2024-<br>
+                  003
+                </td>
+
+                <td>
+
+                  <strong>
+                    Fleet Maintenance<br>
+                    Services
+                  </strong>
+
+                  <span>
+                    LOGISTICS DIV.
+                  </span>
+
+                </td>
+
+                <td class="amount">
+                  ₱1,200,000.00
+                </td>
+
+                <td>
+                  <span class="handler gray">
+                    PROCUREMENT
+                  </span>
+                </td>
+
+                <td>
+                  <span class="status completed">
+                    <i></i>
+                    COMPLETED
+                  </span>
+                </td>
+
+                <td>
+                  <button class="more-btn" aria-label="More actions" title="More actions">
+                    <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                  </button>
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td class="tracking-number">
+                  #PL-2024-<br>
+                  004
+                </td>
+
+                <td>
+
+                  <strong>
+                    Professional<br>
+                    Consulting: Audit
+                  </strong>
+
+                  <span>
+                    FINANCE DEPT.
+                  </span>
+
+                </td>
+
+                <td class="amount">
+                  ₱5,800,000.00
+                </td>
+
+                <td>
+                  <span class="handler red">
+                    BAC
+                  </span>
+                </td>
+
+                <td>
+                  <span class="status delayed">
+                    <i></i>
+                    DELAYED
+                  </span>
+                </td>
+
+                <td>
+                  <button class="more-btn" aria-label="More options for this entry" title="More options">
+                    <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                  </button>
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td class="tracking-number">
+                  #PL-2024-<br>
+                  005
+                </td>
+
+                <td>
+
+                  <strong>
+                    Annual License<br>
+                    Renewal: ERP
+                  </strong>
+
+                  <span>
+                    MANAGEMENT INFO<br>
+                    SYSTEMS
+                  </span>
+
+                </td>
+
+                <td class="amount">
+                  ₱12,400,000.00
+                </td>
+
+                <td>
+                  <span class="handler red">
+                    BAC
+                  </span>
+                </td>
+
+                <td>
+                  <span class="status archived">
+                    <i></i>
+                    ARCHIVED
+                  </span>
+                </td>
+
+                <td>
+                  <button class="more-btn" aria-label="More options" title="More options">
+                    <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                  </button>
+                </td>
+
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+
+        <div class="table-footer">
+
+          <span>
+            SHOWING 5 OF 1,284 ENTRIES
+          </span>
+
+
+          <div class="pagination">
+
+            <button aria-label="Previous page">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+
+            <button class="active">
+              1
+            </button>
+
+            <button>
+              2
+            </button>
+
+            <button>
+              3
+            </button>
+
+            <button aria-label="Next page">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="school-footer">
+
+        <div></div>
+
+        <span>
+          <i></i>
+          BATANGAS STATE UNIVERSITY TNEU LIPA
+        </span>
+
+        <div></div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</body>
+  <script src="../office-app.js" defer></script>
+</html>
