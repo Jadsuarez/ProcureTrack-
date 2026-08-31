@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('detailTitle').textContent =
     `${req.tracking_number}${req.title ? ' — ' + req.title : ''}`;
 
-  renderFlowDiagram(req.status, 'flowDiagram');
+  renderOfficeStepper(req.status, 'officeStepper');
 
   document.getElementById('detailGrid').innerHTML = `
     <div class="detail-item"><div class="label">Tracking ID</div><div class="value">${req.tracking_number}</div></div>

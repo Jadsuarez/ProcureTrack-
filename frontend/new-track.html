@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Track Request — Procurement Monitoring</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>New Track Request — PROCUREMENT</title>
+  <link rel="stylesheet" href="css/style.css?v=13">
 </head>
 <body>
   <main class="container">
@@ -16,6 +16,7 @@
       <p class="text-muted">Register a new procurement item for monitoring. A <strong>Tracking ID</strong> is assigned so Budget and Procurement offices can update progress.</p>
 
       <form id="createForm" style="margin-top: 1rem;">
+        <p class="form-section-title">General Information</p>
         <div class="form-group">
           <label for="tracking_number">Tracking Number</label>
           <input type="text" id="tracking_number" name="tracking_number" placeholder="Auto-suggested" maxlength="50">
@@ -29,7 +30,11 @@
           <label for="description">Description <span class="text-muted">(optional)</span></label>
           <textarea id="description" name="description" rows="3" placeholder="Additional details…"></textarea>
         </div>
-        <button type="submit" class="btn btn-primary">Create Track Request</button>
+        <div class="amount-box">
+          <div class="label">Monitoring record</div>
+          <div class="value">Tracking ID assigned on submit</div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Create Track Request</button>
       </form>
     </div>
 
@@ -45,27 +50,36 @@
 
     <div class="card">
       <h3>What happens next?</h3>
-      <div class="flow-steps">
-        <span class="flow-step active">Tracking ID</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-step">Budget</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-step">Procurement</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-step">Accounting</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-step">Cashier</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-step">Completed</span>
+      <div id="flowHint" class="multi-step-progress office-stepper">
+        <div class="progress-step active">
+          <div class="progress-step-icon">1</div>
+          <div class="progress-step-label">Office</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">2</div>
+          <div class="progress-step-label">Budget</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">3</div>
+          <div class="progress-step-label">Procurement</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">4</div>
+          <div class="progress-step-label">Accounting</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">5</div>
+          <div class="progress-step-label">Cashier</div>
+        </div>
       </div>
       <p class="text-muted" style="margin-top: 0.75rem;">After creation, use <strong>Track Request</strong> anytime to check status, or upload supporting documents.</p>
     </div>
   </main>
 
-  <footer class="app-footer">Procurement Monitoring System</footer>
+  <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
-  <script src="js/api.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/api.js?v=13"></script>
+  <script src="js/app.js?v=13"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const session = await requireAuth(['requesting']);

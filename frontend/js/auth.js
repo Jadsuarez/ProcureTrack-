@@ -3,15 +3,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!loginForm) return;
 
   const alertBox = document.getElementById('alertBox');
-  const roleOptions = document.querySelectorAll('.role-option');
-
-  roleOptions.forEach((opt) => {
-    opt.addEventListener('click', () => {
-      roleOptions.forEach((o) => o.classList.remove('selected'));
-      opt.classList.add('selected');
-      opt.querySelector('input').checked = true;
-    });
-  });
 
   function landingPage(role) {
     return role === 'requesting' ? 'new-track.html' : 'dashboard.html';
@@ -27,15 +18,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     e.preventDefault();
     clearAlert(alertBox);
 
-    const role = loginForm.querySelector('input[name="role"]:checked')?.value;
-    if (!role) {
-      showAlert(alertBox, 'Please select your office role.');
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!username || !password) {
+      showAlert(alertBox, 'Please enter your username and password.');
       return;
     }
 
-    const result = await Api.login(role);
+    const result = await Api.login(username, password);
     if (result.success) {
-      window.location.href = landingPage(role);
+      window.location.href = landingPage(result.role);
     } else {
       showAlert(alertBox, result.message || 'Login failed.');
     }
