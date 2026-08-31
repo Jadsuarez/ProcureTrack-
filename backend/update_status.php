@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/db.php';
-requireRole(['budget', 'procurement', 'accounting', 'cashier']);
+requireRole(['budget', 'procurement', 'pso', 'accounting', 'cashier']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonResponse(['success' => false, 'message' => 'POST required.'], 405);
@@ -17,7 +17,8 @@ $budgetType = trim($input['budget_type'] ?? '');
 $role = currentRole();
 
 $budgetStatuses = ['Under Budget Review', 'Reviewed'];
-$procurementStatuses = ['Canvass', 'Abstract of Canvass', 'PO'];
+$procurementStatuses = ['Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'];
+$psoStatuses = ['Delivered', 'For Inspection', 'Accepted'];
 $accountingStatuses = ['DV Processing', 'For Payment'];
 $cashierStatuses = ['Paid', 'Completed'];
 
@@ -33,6 +34,10 @@ if ($role === 'procurement' && !in_array($status, $procurementStatuses, true)) {
     jsonResponse(['success' => false, 'message' => 'Invalid status for Procurement Office.'], 400);
 }
 
+if ($role === 'pso' && !in_array($status, $psoStatuses, true)) {
+    jsonResponse(['success' => false, 'message' => 'Invalid status for Property and Supply Office.'], 400);
+}
+
 if ($role === 'accounting' && !in_array($status, $accountingStatuses, true)) {
     jsonResponse(['success' => false, 'message' => 'Invalid status for Accounting Office.'], 400);
 }
@@ -43,12 +48,16 @@ if ($role === 'cashier' && !in_array($status, $cashierStatuses, true)) {
 
 try {
     $pdo = getConnection();
-    $stmt = $pdo->prepare('SELECT id FROM requests WHERE UPPER(tracking_number) = UPPER(?)');
+    $stmt = $pdo->prepare('SELECT id, status FROM requests WHERE UPPER(tracking_number) = UPPER(?)');
     $stmt->execute([$tracking]);
     $row = $stmt->fetch();
 
     if (!$row) {
         jsonResponse(['success' => false, 'message' => 'Request not found.'], 404);
+    }
+
+    if (!isRequestVisibleToRole($row['status'], $role)) {
+        jsonResponse(['success' => false, 'message' => requestVisibilityMessage($role)], 403);
     }
 
     $requestId = (int) $row['id'];

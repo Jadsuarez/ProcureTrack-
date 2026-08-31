@@ -5,7 +5,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   const alertBox = document.getElementById('alertBox');
 
   function landingPage(role) {
-    return role === 'requesting' ? 'new-track.html' : 'dashboard.html';
+    const map = {
+      requesting: '../Final/requesting%20office/requestinghome.html',
+      budget: '../Final/Budgetoffice/dashbudget.html',
+      procurement: '../Final/procurement%20office/procurementdash.html',
+      pso: '../Final/pSO%20office/psodash.html',
+      accounting: '../Final/ACCOUNTING%20office/accountingdash.html',
+      cashier: '../Final/Cashier%20office/cashdash.html',
+    };
+
+    return map[role] || '../Final/login.html';
   }
 
   const session = await Api.session();

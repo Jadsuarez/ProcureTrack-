@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Track Request</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+  >
+
+  <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="track-body">
+
+  <!-- =========================
+       SIDEBAR
+  ========================== -->
+
+    <aside class="sidebar">
+
+    <div>
+
+      <div class="brand">
+        <div class="brand-logo">PH</div>
+
+        <div class="brand-text">
+          <h2>PSO<br>OFFICE</h2>
+          <span>BSU Lipa</span>
+        </div>
+      </div>
+
+
+      <nav class="sidebar-menu" aria-label="Main navigation">
+
+        <a href="psodash.html" class="menu-item">
+          <i class="fa-solid fa-border-all"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="funds.html" class="menu-item">
+          <i class="fa-regular fa-square-minus"></i>
+          <span>Fund Allocation</span>
+        </a>
+        <a href="track.html" class="menu-item active" aria-current="page">
+          <i class="fa-solid fa-route"></i>
+          <span>Track Request</span>
+        </a>
+
+      </nav>
+
+    </div>
+
+
+    <div class="sidebar-bottom">
+
+      <button class="new-request-sidebar" type="button">
+        + New Request
+      </button>
+
+      <div class="sidebar-bottom-links">
+
+        <a href="#">
+          <i class="fa-solid fa-terminal"></i>
+          <span>System Logs</span>
+        </a>
+
+        <a href="#">
+          <i class="fa-regular fa-circle-question"></i>
+          <span>Support</span>
+        </a>
+
+      </div>
+
+    </div>
+
+  </aside>
+
+
+  <!-- =========================
+       MAIN
+  ========================== -->
+
+  <main class="main">
+
+    <!-- TOPBAR -->
+
+    <header class="topbar">
+
+      <div class="search-box">
+
+        <i class="fa-solid fa-magnifying-glass"></i>
+
+        <input
+          type="text"
+          placeholder="Search CAA records, PR numbers..."
+        >
+
+      </div>
+
+
+      <div class="topbar-right">
+
+        <a href="#">Documents</a>
+        <a href="#">Pending Actions</a>
+        <a href="#">Archives</a>
+
+        <button class="top-icon" type="button" aria-label="Notifications">
+          <i class="fa-regular fa-bell"></i>
+        </button>
+
+        <div class="profile">
+          <img
+            src="https://i.pravatar.cc/100?img=12"
+            alt="Profile"
+          >
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <!-- =========================
+         TRACK PAGE
+    ========================== -->
+
+    <section class="track-page">
+
+
+      <!-- HEADER -->
+
+      <div class="track-header">
+
+        <div>
+
+          <h1>Track Request</h1>
+
+          <p>
+            Real-time status monitoring for all procurement active files.
+          </p>
+
+        </div>
+
+
+        <div class="track-actions">
+
+          <button type="button">
+            <i class="fa-solid fa-filter"></i>
+            Advanced Filter
+          </button>
+
+          <button type="button">
+            <i class="fa-solid fa-download"></i>
+            Export Data
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           STATISTIC CARDS
+      ========================== -->
+
+      <div class="statistics-grid">
+
+
+        <!-- ACTIVE -->
+
+        <div class="stat-card active-card">
+
+          <div class="large-stat-icon">
+            <i class="fa-solid fa-link"></i>
+          </div>
+
+          <div class="stat-label">
+            TOTAL ACTIVE REQUESTS
+          </div>
+
+          <div class="stat-bottom">
+
+            <h2>24</h2>
+
+            <div class="stat-small-icon">
+              <i class="fa-regular fa-clipboard"></i>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- NEEDS ATTENTION -->
+
+        <div class="stat-card">
+
+          <div class="stat-card-top">
+
+            <span>
+              NEEDS ATTENTION
+            </span>
+
+            <div class="stat-small-icon danger-icon">
+              <i class="fa-solid fa-circle-exclamation"></i>
+            </div>
+
+          </div>
+
+          <h2 class="red-value">
+            06
+          </h2>
+
+          <p class="red-description">
+            <i class="fa-regular fa-clock"></i>
+            Avg. delay: 2.5 days
+          </p>
+
+        </div>
+
+
+        <!-- COMPLETED -->
+
+        <div class="stat-card">
+
+          <div class="stat-card-top">
+
+            <span>
+              RECENTLY COMPLETED
+            </span>
+
+            <div class="stat-small-icon gray-icon">
+              <i class="fa-regular fa-circle-check"></i>
+            </div>
+
+          </div>
+
+          <h2>
+            182
+          </h2>
+
+          <p class="quarter-text">
+            <i class="fa-regular fa-calendar"></i>
+            Current Fiscal Quarter
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           CURRENT REQUEST
+      ========================== -->
+
+      <div class="current-request-card">
+
+        <div class="current-request-header">
+
+
+          <div class="request-info">
+
+            <div class="file-icon">
+              <i class="fa-regular fa-clipboard"></i>
+            </div>
+
+            <div>
+
+              <div class="request-title">
+
+                <h2>
+                  PR-2023-0892
+                </h2>
+
+                <span>
+                  IN REVIEW
+                </span>
+
+              </div>
+
+              <p>
+                Departmental Upgrade: High-Density Server Racks
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div class="submission-date">
+
+            <span>
+              SUBMISSION DATE
+            </span>
+
+            <strong>
+              Oct 24, 2023
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <!-- =========================
+             PROGRESS
+        ========================== -->
+
+        <div class="workflow">
+
+          <div class="workflow-bg-line"></div>
+
+          <div class="workflow-red-line"></div>
+
+
+          <!-- DRAFT -->
+
+          <div class="workflow-step done">
+
+            <div class="workflow-circle">
+              <i class="fa-solid fa-check"></i>
+            </div>
+
+            <strong>
+              DRAFT
+            </strong>
+
+            <span>
+              Oct 20
+            </span>
+
+          </div>
+
+
+          <!-- SUBMITTED -->
+
+          <div class="workflow-step done">
+
+            <div class="workflow-circle">
+              <i class="fa-solid fa-check"></i>
+            </div>
+
+            <strong>
+              SUBMITTED
+            </strong>
+
+            <span>
+              Oct 24
+            </span>
+
+          </div>
+
+
+          <!-- DEPT APPROVAL -->
+
+          <div class="workflow-step current">
+
+            <div class="workflow-circle">
+              <i class="fa-solid fa-ellipsis"></i>
+            </div>
+
+            <strong>
+              DEPT<br>APPROVAL
+            </strong>
+
+            <span>
+              In Progress
+            </span>
+
+          </div>
+
+
+          <!-- BUDGET REVIEW -->
+
+          <div class="workflow-step">
+
+            <div class="workflow-circle">
+              <i class="fa-regular fa-square"></i>
+            </div>
+
+            <strong>
+              BUDGET<br>REVIEW
+            </strong>
+
+          </div>
+
+
+          <!-- FINALIZATION -->
+
+          <div class="workflow-step">
+
+            <div class="workflow-circle">
+              <i class="fa-solid fa-gavel"></i>
+            </div>
+
+            <strong>
+              FINALIZATION
+            </strong>
+
+          </div>
+
+
+          <!-- COMPLETE -->
+
+          <div class="workflow-step">
+
+            <div class="workflow-circle">
+              <i class="fa-regular fa-circle-check"></i>
+            </div>
+
+            <strong>
+              COMPLETED
+            </strong>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           RECENT REQUESTS
+      ========================== -->
+
+      <div class="recent-card">
+
+        <div class="recent-header">
+
+          <h2>
+            Recent Requests
+          </h2>
+
+
+          <button class="sort-button" type="button">
+            Sort by:
+            <strong>Last Activity</strong>
+          </button>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+          <table class="recent-table">
+
+            <thead>
+
+              <tr>
+
+                <th>TRACKING ID</th>
+
+                <th>PROJECT NAME</th>
+
+                <th>CURRENT STAGE</th>
+
+                <th>
+                  LAST<br>
+                  ACTIVITY
+                </th>
+
+                <th>STATUS</th>
+
+                <th scope="col" aria-label="Actions">ACTIONS</th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+
+
+              <!-- ROW 1 -->
+
+              <tr>
+
+                <td class="tracking-id">
+                  PR-2023-<br>0892
+                </td>
+
+                <td>
+                  High-Density Server Racks
+                </td>
+
+                <td class="muted-text">
+                  Department Approval
+                </td>
+
+                <td class="muted-text">
+                  2 hours<br>
+                  ago
+                </td>
+
+                <td>
+                  <span class="status-badge in-progress">
+                    IN<br>PROGRESS
+                  </span>
+                </td>
+
+                <td>
+                  <button class="more-button" type="button" aria-label="More actions">
+                    <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                  </button>
+                </td>
+
+              </tr>
+
+
+              <!-- ROW 2 -->
+
+              <tr>
+
+                <td class="tracking-id">
+                  PR-2023-<br>0885
+                </td>
+
+                <td>
+                  Annual Office Supply<br>
+                  Subscription
+                </td>
+
+                <td class="muted-text">
+                  Procurement<br>
+                  Finalization
+                </td>
+
+                <td class="muted-text">
+                  1 day ago
+                </td>
+
+                <td>
+                  <span class="status-badge on-hold">
+                    ON HOLD
+                  </span>
+                </td>
+
+                <td>
+                  <button class="more-button" type="button" aria-label="More actions">
+                    <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                  </button>
+                </td>
+
+              </tr>
+
+
+              <!-- ROW 3 -->
+
+              <tr>
+
+                <td class="tracking-id">
+                  PR-2023-<br>0870
+                </td>
+
+                <td>
+                  Security Infrastructure<br>
+                  Licensing
+                </td>
+
+                <td class="muted-text">
+                  Completed
+                </td>
+
+                <td class="muted-text">
+                  Oct 21,<br>
+                  2023
+                </td>
+
+                <td>
+                  <span class="status-badge completed">
+                    COMPLETED
+                  </span>
+                </td>
+
+                <td>
+                  <button class="more-button" type="button" aria-label="More options for this record" title="More options">
+                    <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                  </button>
+                </td>
+
+              </tr>
+
+
+              <!-- ROW 4 -->
+
+              <tr>
+
+                <td class="tracking-id">
+                  PR-2023-<br>0864
+                </td>
+
+                <td>
+                  Vehicle Fleet Maintenance -<br>
+                  Q4
+                </td>
+
+                <td class="muted-text">
+                  Budgeting Office<br>
+                  Review
+                </td>
+
+                <td class="muted-text">
+                  3 days ago
+                </td>
+
+                <td>
+                  <span class="status-badge in-progress">
+                    IN<br>PROGRESS
+                  </span>
+                </td>
+
+                <td>
+                  <button class="more-button" aria-label="More actions" type="button">
+                    <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                  </button>
+                </td>
+
+              </tr>
+
+
+              <!-- ROW 5 -->
+
+              <tr>
+
+                <td class="tracking-id">
+                  PR-2023-<br>0855
+                </td>
+
+                <td>
+                  Janitorial Services Renewal
+                </td>
+
+                <td class="muted-text">
+                  Draft
+                </td>
+
+                <td class="muted-text">
+                  Oct 19,<br>
+                  2023
+                </td>
+
+                <td>
+                  <span class="status-badge draft">
+                    DRAFT
+                  </span>
+                </td>
+
+                <td>
+                  <button class="more-button" type="button" aria-label="More options">
+                    <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                  </button>
+                </td>
+
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+
+        <!-- =========================
+             TABLE FOOTER
+        ========================== -->
+
+        <div class="table-footer">
+
+          <span>
+            Showing 5 of 24 active requests
+          </span>
+
+
+          <div class="pagination">
+
+            <button type="button" aria-label="Previous page">
+              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+            </button>
+
+            <button class="active" type="button" aria-label="Page 1">
+              1
+            </button>
+
+            <button type="button" aria-label="Page 2">
+              2
+            </button>
+
+            <button type="button" aria-label="Page 3">
+              3
+            </button>
+
+            <button type="button" aria-label="Next page">
+              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</body>
+  <script src="../office-app.js" defer></script>
+</html>

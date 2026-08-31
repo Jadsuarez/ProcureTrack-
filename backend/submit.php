@@ -28,6 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'lookup'
         if (!$row) {
             jsonResponse(['success' => false, 'message' => 'Tracking number not found.'], 404);
         }
+        if (!isRequestVisibleToRole($row['status'], $_SESSION['role'])) {
+            jsonResponse(['success' => false, 'message' => requestVisibilityMessage($_SESSION['role'])], 403);
+        }
         jsonResponse(['success' => true, 'request' => $row]);
     } catch (PDOException $e) {
         jsonResponse(['success' => false, 'message' => 'Database error.'], 500);
@@ -59,11 +62,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         $pdo = getConnection();
-        $stmt = $pdo->prepare('SELECT id, tracking_number FROM requests WHERE UPPER(tracking_number) = UPPER(?)');
+        $stmt = $pdo->prepare('SELECT id, tracking_number, status FROM requests WHERE UPPER(tracking_number) = UPPER(?)');
         $stmt->execute([$tracking]);
         $row = $stmt->fetch();
         if (!$row) {
             jsonResponse(['success' => false, 'message' => 'Tracking number not found.'], 404);
+        }
+        if (!isRequestVisibleToRole($row['status'], $_SESSION['role'])) {
+            jsonResponse(['success' => false, 'message' => requestVisibilityMessage($_SESSION['role'])], 403);
         }
 
         $requestId = (int) $row['id'];

@@ -8,30 +8,41 @@ if (empty($_SESSION['role'])) {
 
 $pdo = getConnection();
 $action = $_GET['action'] ?? '';
+$role = $_SESSION['role'];
 
 try {
     switch ($action) {
         case 'summary':
-            $total = (int) $pdo->query('SELECT COUNT(*) FROM requests')->fetchColumn();
-            $byStatus = $pdo->query(
-                'SELECT status, COUNT(*) AS count FROM requests GROUP BY status ORDER BY count DESC'
+            $allRequests = $pdo->query(
+                'SELECT tracking_number, title, status, updated_at, created_at FROM requests'
             )->fetchAll();
-            $recent = $pdo->query(
-                'SELECT tracking_number, title, status, updated_at
-                 FROM requests ORDER BY updated_at DESC LIMIT 8'
-            )->fetchAll();
-            $role = $_SESSION['role'];
+            $visible = filterRequestsForRole($allRequests, $role);
+
+            $byStatusMap = [];
+            foreach ($visible as $r) {
+                $byStatusMap[$r['status']] = ($byStatusMap[$r['status']] ?? 0) + 1;
+            }
+            $byStatus = [];
+            foreach ($byStatusMap as $status => $count) {
+                $byStatus[] = ['status' => $status, 'count' => $count];
+            }
+            usort($byStatus, fn($a, $b) => $b['count'] <=> $a['count']);
+
+            usort($visible, fn($a, $b) => strcmp($b['updated_at'], $a['updated_at']));
+            $recent = array_slice($visible, 0, 8);
+
             $focusStatuses = match ($role) {
-                'accounting' => ['PO', 'DV Processing', 'For Payment'],
+                'accounting' => ['Accepted', 'DV Processing', 'For Payment'],
                 'cashier' => ['For Payment', 'Paid', 'Completed'],
                 'budget' => ['Registered', 'Under Budget Review', 'Reviewed'],
-                'procurement' => ['Reviewed', 'Canvass', 'Abstract of Canvass', 'PO'],
+                'procurement' => ['Reviewed', 'Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'],
+                'pso' => ['Bidding Award', 'Delivered', 'For Inspection', 'Accepted'],
                 default => [],
             };
 
             jsonResponse([
                 'success' => true,
-                'total' => $total,
+                'total' => count($visible),
                 'by_status' => $byStatus,
                 'recent' => $recent,
                 'role' => $role,
@@ -44,11 +55,20 @@ try {
             if ($tracking === '') {
                 jsonResponse(['success' => false, 'message' => 'Enter a tracking number.'], 400);
             }
+
+            $exactStmt = $pdo->prepare('SELECT * FROM requests WHERE UPPER(tracking_number) = UPPER(?)');
+            $exactStmt->execute([$tracking]);
+            $exact = $exactStmt->fetch();
+            if ($exact && !isRequestVisibleToRole($exact['status'], $role)) {
+                jsonResponse(['success' => false, 'message' => requestVisibilityMessage($role)], 403);
+            }
+
             $stmt = $pdo->prepare(
                 'SELECT * FROM requests WHERE tracking_number LIKE ? ORDER BY tracking_number'
             );
             $stmt->execute(['%' . $tracking . '%']);
-            jsonResponse(['success' => true, 'requests' => $stmt->fetchAll()]);
+            $requests = filterRequestsForRole($stmt->fetchAll(), $role);
+            jsonResponse(['success' => true, 'requests' => $requests]);
             break;
 
         case 'detail':
@@ -61,6 +81,10 @@ try {
             $request = $stmt->fetch();
             if (!$request) {
                 jsonResponse(['success' => false, 'message' => 'Request not found.'], 404);
+            }
+
+            if (!isRequestVisibleToRole($request['status'], $role)) {
+                jsonResponse(['success' => false, 'message' => requestVisibilityMessage($role)], 403);
             }
 
             $logStmt = $pdo->prepare(
@@ -86,10 +110,10 @@ try {
             break;
 
         case 'status_options':
-            $role = $_SESSION['role'];
             $options = match ($role) {
                 'budget' => ['Under Budget Review', 'Reviewed'],
-                'procurement' => ['Canvass', 'Abstract of Canvass', 'PO'],
+                'procurement' => ['Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'],
+                'pso' => ['Delivered', 'For Inspection', 'Accepted'],
                 'accounting' => ['DV Processing', 'For Payment'],
                 'cashier' => ['Paid', 'Completed'],
                 default => [],
