@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Procurement Analytics - Budgeting Office</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<aside class="sidebar">
+
+  <div>
+
+    <div class="brand">
+
+      <div class="brand-logo">
+        PH
+      </div>
+
+      <div class="brand-name">
+        <h2>BUDGETING<br>OFFICE</h2>
+        <span>BSU Lipa</span>
+      </div>
+
+    </div>
+
+
+    <nav class="sidebar-menu" aria-label="Main navigation">
+
+      <a href="dashbudget.html" class="menu-link"><i class="fa-solid fa-border-all"></i><span>Dashboard</span></a>
+      <a href="fund.html" class="menu-link"><i class="fa-regular fa-square-minus"></i><span>FUND ALLOCATION</span></a>
+      <a href="track.html" class="menu-link"><i class="fa-solid fa-route"></i><span>TRACK REQUEST</span></a>
+      <a href="analytics.html" class="menu-link active" aria-current="page"><i class="fa-regular fa-chart-bar"></i><span>Analytics</span></a>
+
+    </nav>
+
+  </div>
+
+
+  <div class="sidebar-footer">
+
+    <button class="new-request-button" type="button">
+      + New Request
+    </button>
+
+    <div class="sidebar-footer-links">
+
+      <a href="#">
+        <i class="fa-solid fa-terminal"></i>
+        System Logs
+      </a>
+
+      <a href="#">
+        <i class="fa-regular fa-circle-question"></i>
+        Support
+      </a>
+
+    </div>
+
+  </div>
+
+</aside>
+<main class="main">
+  <header class="topbar">
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <input type="search" placeholder="Search CAA records, PR numbers..." aria-label="Search records">
+    </div>
+    <nav class="topbar-links" aria-label="Utility navigation">
+      <a href="#">Documents</a><a href="#">Pending Actions</a><a href="#">Archives</a>
+      <button class="notification" type="button" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button>
+      <div class="profile"><img src="https://i.pravatar.cc/100?img=12" alt="User profile"></div>
+    </nav>
+  </header>
+<section class="analytics-page">
+
+  <!-- =========================
+       PAGE HEADER
+  ========================== -->
+  <div class="analytics-page-header">
+
+    <div>
+      <h1>Procurement Analytics</h1>
+      <p>
+        Monitor budget utilization, procurement performance, and institutional
+        spending trends.
+      </p>
+    </div>
+
+    <div class="analytics-header-actions">
+
+      <select aria-label="Select Fiscal Year">
+        <option>Fiscal Year 2026</option>
+        <option>Fiscal Year 2025</option>
+        <option>Fiscal Year 2024</option>
+      </select>
+
+      <button class="analytics-export-btn" type="button">
+        <i class="fa-solid fa-download"></i>
+        Export Report
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       KPI CARDS
+  ========================== -->
+
+  <div class="analytics-kpi-grid">
+
+    <div class="analytics-kpi-card">
+
+      <div class="analytics-kpi-top">
+        <span>TOTAL PROCUREMENT VALUE</span>
+
+        <div class="analytics-kpi-icon">
+          <i class="fa-solid fa-peso-sign"></i>
+        </div>
+      </div>
+
+      <h2>₱4,250,000.00</h2>
+
+      <p class="analytics-positive">
+        <i class="fa-solid fa-arrow-trend-up"></i>
+        +12.4% from last year
+      </p>
+
+    </div>
+
+
+    <div class="analytics-kpi-card">
+
+      <div class="analytics-kpi-top">
+        <span>TOTAL OBLIGATIONS</span>
+
+        <div class="analytics-kpi-icon">
+          <i class="fa-solid fa-file-invoice-dollar"></i>
+        </div>
+      </div>
+
+      <h2>₱2,845,210.45</h2>
+
+      <p>67% of total allotment</p>
+
+    </div>
+
+
+    <div class="analytics-kpi-card">
+
+      <div class="analytics-kpi-top">
+        <span>COMPLETION RATE</span>
+
+        <div class="analytics-kpi-icon">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+      </div>
+
+      <h2>82%</h2>
+
+      <p class="analytics-positive">
+        <i class="fa-solid fa-arrow-up"></i>
+        5.2% improvement
+      </p>
+
+    </div>
+
+
+    <div class="analytics-kpi-card">
+
+      <div class="analytics-kpi-top">
+        <span>AVG. PROCESSING TIME</span>
+
+        <div class="analytics-kpi-icon">
+          <i class="fa-regular fa-clock"></i>
+        </div>
+      </div>
+
+      <h2>8.4 Days</h2>
+
+      <p>
+        Target: 10 Days
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       ANALYTICS ROW 1
+  ========================== -->
+
+  <div class="analytics-main-grid">
+
+    <!-- MONTHLY PROCUREMENT -->
+    <div class="analytics-panel analytics-wide">
+
+      <div class="analytics-panel-header">
+
+        <div>
+          <h2>Monthly Procurement Spending</h2>
+          <p>Procurement expenditure trend for the current fiscal year.</p>
+        </div>
+
+        <select aria-label="Procurement spending period">
+          <option>Monthly</option>
+          <option>Quarterly</option>
+        </select>
+
+      </div>
+
+
+      <div class="bar-chart">
+
+        <div class="bar-column">
+          <div class="bar-value">₱190k</div>
+          <div class="chart-bar" style="height: 38%;"></div>
+          <span>Jan</span>
+        </div>
+
+        <div class="bar-column">
+          <div class="bar-value">₱280k</div>
+          <div class="chart-bar" style="height: 56%;"></div>
+          <span>Feb</span>
+        </div>
+
+        <div class="bar-column">
+          <div class="bar-value">₱340k</div>
+          <div class="chart-bar" style="height: 68%;"></div>
+          <span>Mar</span>
+        </div>
+
+        <div class="bar-column">
+          <div class="bar-value">₱250k</div>
+          <div class="chart-bar" style="height: 50%;"></div>
+          <span>Apr</span>
+        </div>
+
+        <div class="bar-column">
+          <div class="bar-value">₱420k</div>
+          <div class="chart-bar" style="height: 84%;"></div>
+          <span>May</span>
+        </div>
+
+        <div class="bar-column">
+          <div class="bar-value">₱365k</div>
+          <div class="chart-bar" style="height: 73%;"></div>
+          <span>Jun</span>
+        </div>
+
+        <div class="bar-column">
+          <div class="bar-value">₱480k</div>
+          <div class="chart-bar active-chart-bar" style="height: 96%;"></div>
+          <span>Jul</span>
+        </div>
+
+        <div class="bar-column">
+          <div class="bar-value">₱390k</div>
+          <div class="chart-bar" style="height: 78%;"></div>
+          <span>Aug</span>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- REQUEST STATUS -->
+    <div class="analytics-panel">
+
+      <div class="analytics-panel-header">
+
+        <div>
+          <h2>Request Status</h2>
+          <p>Distribution of procurement requests.</p>
+        </div>
+
+      </div>
+
+
+      <div class="analytics-donut">
+
+        <div class="analytics-donut-center">
+          <strong>148</strong>
+          <span>Total Requests</span>
+        </div>
+
+      </div>
+
+
+      <div class="analytics-status-list">
+
+        <div>
+          <span class="analytics-dot dot-completed"></span>
+          <span>Completed</span>
+          <strong>62</strong>
+        </div>
+
+        <div>
+          <span class="analytics-dot dot-progress"></span>
+          <span>In Progress</span>
+          <strong>41</strong>
+        </div>
+
+        <div>
+          <span class="analytics-dot dot-pending"></span>
+          <span>Pending</span>
+          <strong>31</strong>
+        </div>
+
+        <div>
+          <span class="analytics-dot dot-delayed"></span>
+          <span>Delayed</span>
+          <strong>14</strong>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       ANALYTICS ROW 2
+  ========================== -->
+
+  <div class="analytics-second-grid">
+
+    <!-- DEPARTMENT UTILIZATION -->
+    <div class="analytics-panel">
+
+      <div class="analytics-panel-header">
+
+        <div>
+          <h2>Department Budget Utilization</h2>
+          <p>Current utilization by department.</p>
+        </div>
+
+        <a href="#">View Details</a>
+
+      </div>
+
+
+      <div class="department-analytics-row">
+
+        <div class="department-analytics-info">
+          <strong>Budget Office</strong>
+          <span>₱450k / ₱600k</span>
+        </div>
+
+        <div class="department-analytics-progress">
+          <div style="width: 75%;"></div>
+        </div>
+
+        <strong class="department-percent">75%</strong>
+
+      </div>
+
+
+      <div class="department-analytics-row">
+
+        <div class="department-analytics-info">
+          <strong>Procurement Office</strong>
+          <span>₱320k / ₱500k</span>
+        </div>
+
+        <div class="department-analytics-progress">
+          <div style="width: 64%;"></div>
+        </div>
+
+        <strong class="department-percent">64%</strong>
+
+      </div>
+
+
+      <div class="department-analytics-row">
+
+        <div class="department-analytics-info">
+          <strong>BAC</strong>
+          <span>₱180k / ₱250k</span>
+        </div>
+
+        <div class="department-analytics-progress">
+          <div style="width: 72%;"></div>
+        </div>
+
+        <strong class="department-percent">72%</strong>
+
+      </div>
+
+
+      <div class="department-analytics-row">
+
+        <div class="department-analytics-info">
+          <strong>Accounting Office</strong>
+          <span>₱290k / ₱400k</span>
+        </div>
+
+        <div class="department-analytics-progress">
+          <div style="width: 73%;"></div>
+        </div>
+
+        <strong class="department-percent">73%</strong>
+
+      </div>
+
+
+      <div class="department-analytics-row">
+
+        <div class="department-analytics-info">
+          <strong>Cashier Office</strong>
+          <span>₱150k / ₱200k</span>
+        </div>
+
+        <div class="department-analytics-progress">
+          <div style="width: 75%;"></div>
+        </div>
+
+        <strong class="department-percent">75%</strong>
+
+      </div>
+
+    </div>
+
+
+    <!-- PROCESSING PERFORMANCE -->
+    <div class="analytics-panel">
+
+      <div class="analytics-panel-header">
+
+        <div>
+          <h2>Processing Performance</h2>
+          <p>Average processing time by workflow stage.</p>
+        </div>
+
+      </div>
+
+
+      <div class="processing-list">
+
+        <div class="processing-item">
+
+          <div class="processing-info">
+            <span>Request Submission</span>
+            <strong>1.2 Days</strong>
+          </div>
+
+          <div class="processing-progress">
+            <div style="width: 25%;"></div>
+          </div>
+
+        </div>
+
+
+        <div class="processing-item">
+
+          <div class="processing-info">
+            <span>Budget Validation</span>
+            <strong>2.8 Days</strong>
+          </div>
+
+          <div class="processing-progress">
+            <div style="width: 56%;"></div>
+          </div>
+
+        </div>
+
+
+        <div class="processing-item">
+
+          <div class="processing-info">
+            <span>Procurement Processing</span>
+            <strong>4.1 Days</strong>
+          </div>
+
+          <div class="processing-progress">
+            <div class="processing-warning" style="width: 82%;"></div>
+          </div>
+
+        </div>
+
+
+        <div class="processing-item">
+
+          <div class="processing-info">
+            <span>Accounting</span>
+            <strong>2.3 Days</strong>
+          </div>
+
+          <div class="processing-progress">
+            <div style="width: 46%;"></div>
+          </div>
+
+        </div>
+
+
+        <div class="processing-item">
+
+          <div class="processing-info">
+            <span>Payment</span>
+            <strong>1.7 Days</strong>
+          </div>
+
+          <div class="processing-progress">
+            <div style="width: 34%;"></div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       ANALYTICS INSIGHTS
+  ========================== -->
+
+  <div class="analytics-panel analytics-insights-panel">
+
+    <div class="analytics-panel-header">
+
+      <div>
+        <h2>Analytics Insights</h2>
+        <p>Key observations generated from procurement activity.</p>
+      </div>
+
+      <span class="analytics-insight-badge">
+        LIVE INSIGHTS
+      </span>
+
+    </div>
+
+
+    <div class="analytics-insights-grid">
+
+      <div class="analytics-insight">
+
+        <div class="insight-icon danger-insight">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+
+        <div>
+          <strong>High Budget Utilization</strong>
+
+          <p>
+            Budget Office has utilized 75% of its current annual allocation.
+          </p>
+
+          <a href="#">View Department</a>
+        </div>
+
+      </div>
+
+
+      <div class="analytics-insight">
+
+        <div class="insight-icon warning-insight">
+          <i class="fa-regular fa-clock"></i>
+        </div>
+
+        <div>
+          <strong>Procurement Bottleneck</strong>
+
+          <p>
+            Procurement processing currently has the highest average duration.
+          </p>
+
+          <a href="#">View Performance</a>
+        </div>
+
+      </div>
+
+
+      <div class="analytics-insight">
+
+        <div class="insight-icon success-insight">
+          <i class="fa-solid fa-arrow-trend-up"></i>
+        </div>
+
+        <div>
+          <strong>Improved Completion Rate</strong>
+
+          <p>
+            Completion performance increased by 5.2% compared with the previous period.
+          </p>
+
+          <a href="#">View Report</a>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+</section>
+</main>
+</body>
+  <script src="../office-app.js" defer></script>
+</html>

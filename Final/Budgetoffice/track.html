@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track Request - Budgeting Office</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<aside class="sidebar">
+
+  <div>
+
+    <div class="brand">
+
+      <div class="brand-logo">
+        PH
+      </div>
+
+      <div class="brand-name">
+        <h2>BUDGETING<br>OFFICE</h2>
+        <span>BSU Lipa</span>
+      </div>
+
+    </div>
+
+
+    <nav class="sidebar-menu" aria-label="Main navigation">
+
+      <a href="dashbudget.html" class="menu-link"><i class="fa-solid fa-border-all"></i><span>Dashboard</span></a>
+      <a href="fund.html" class="menu-link"><i class="fa-regular fa-square-minus"></i><span>FUND ALLOCATION</span></a>
+      <a href="track.html" class="menu-link active" aria-current="page"><i class="fa-solid fa-route"></i><span>TRACK REQUEST</span></a>
+      <a href="analytics.html" class="menu-link"><i class="fa-regular fa-chart-bar"></i><span>Analytics</span></a>
+
+    </nav>
+
+  </div>
+
+
+  <div class="sidebar-footer">
+
+    <button class="new-request-button" type="button">
+      + New Request
+    </button>
+
+    <div class="sidebar-footer-links">
+
+      <a href="#">
+        <i class="fa-solid fa-terminal"></i>
+        System Logs
+      </a>
+
+      <a href="#">
+        <i class="fa-regular fa-circle-question"></i>
+        Support
+      </a>
+
+    </div>
+
+  </div>
+
+</aside>
+<main class="main">
+  <header class="topbar">
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <input type="search" placeholder="Search CAA records, PR numbers..." aria-label="Search records">
+    </div>
+    <nav class="topbar-links" aria-label="Utility navigation">
+      <a href="#">Documents</a><a href="#">Pending Actions</a><a href="#">Archives</a>
+      <button class="notification" type="button" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button>
+      <div class="profile"><img src="https://i.pravatar.cc/100?img=12" alt="User profile"></div>
+    </nav>
+  </header>
+<section class="track-page">
+
+  <!-- PAGE TITLE -->
+  <div class="track-page-header">
+    <h1>Track Your Request</h1>
+    <p>
+      Real-time oversight of institutional fund allocations and approval workflows.
+    </p>
+  </div>
+
+
+  <!-- TOP GRID -->
+  <div class="track-top-grid">
+
+    <!-- LEFT -->
+    <div class="track-main">
+
+      <!-- SEARCH TRACKING ID -->
+      <div class="track-search-card">
+
+        <label>
+          TRACKING ID / DOCUMENT NUMBER
+        </label>
+
+        <div class="tracking-search-row">
+
+          <div class="tracking-input">
+            <i class="fa-solid fa-qrcode"></i>
+
+            <input
+              type="text"
+              value="CAA-2024-0482"
+              placeholder="Enter tracking ID"
+            >
+          </div>
+
+          <button class="view-status-btn" type="button">
+            View Status
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- ACTIVE TRACKING -->
+      <div class="active-tracking-card">
+
+        <div class="active-track-header">
+
+          <div>
+
+            <span class="active-label">
+              ACTIVE TRACKING
+            </span>
+
+            <h2>
+              Institutional Equipment Upgrade (Phase 2)
+            </h2>
+
+            <p>
+              Submitted by IT Services Dept. on Oct 24, 2024
+            </p>
+
+          </div>
+
+
+          <span class="review-status">
+            <i class="fa-solid fa-circle"></i>
+            IN REVIEW
+          </span>
+
+        </div>
+
+
+        <!-- PROGRESS TRACKER -->
+        <div class="approval-progress">
+
+          <div class="progress-background"></div>
+
+          <div class="progress-active"></div>
+
+
+          <!-- STEP 1 -->
+          <div class="approval-step completed">
+
+            <div class="approval-circle">
+              <i class="fa-solid fa-check"></i>
+            </div>
+
+            <strong>SUBMITTED</strong>
+
+            <span>
+              Oct 24, 09:15 AM
+            </span>
+
+          </div>
+
+
+          <!-- STEP 2 -->
+          <div class="approval-step completed">
+
+            <div class="approval-circle">
+              <i class="fa-solid fa-check"></i>
+            </div>
+
+            <strong>DEPT. APPROVAL</strong>
+
+            <span>
+              Oct 25, 02:30 PM
+            </span>
+
+          </div>
+
+
+          <!-- STEP 3 -->
+          <div class="approval-step current">
+
+            <div class="approval-circle">
+              <i class="fa-solid fa-file-circle-check"></i>
+            </div>
+
+            <strong>BUDGET REVIEW</strong>
+
+            <span>
+              Expected: Oct 28
+            </span>
+
+          </div>
+
+
+          <!-- STEP 4 -->
+          <div class="approval-step">
+
+            <div class="approval-circle">
+              <i class="fa-solid fa-certificate"></i>
+            </div>
+
+            <strong>FINAL APPROVAL</strong>
+
+            <span>
+              Pending
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <!-- CURRENT STATUS -->
+        <div class="stage-details">
+
+          <div class="stage-icon">
+            <i class="fa-solid fa-circle-info"></i>
+          </div>
+
+          <div>
+
+            <strong>
+              Current Stage Details: Budget Office Review
+            </strong>
+
+            <p>
+              The request is currently being validated against the Q4
+              Institutional Budget. Auditor J. Reyes has requested additional
+              documentation regarding supplier quotes.
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- RIGHT SIDE RECENT REQUESTS -->
+    <div class="recent-requests-card">
+
+      <div class="recent-title">
+
+        <span>YOUR RECENT REQUESTS</span>
+
+        <i class="fa-solid fa-filter"></i>
+
+      </div>
+
+
+      <div class="recent-table-head">
+
+        <span>TRACKING ID</span>
+        <span>STATUS</span>
+
+      </div>
+
+
+      <!-- REQUEST -->
+      <div class="recent-request">
+
+        <div>
+
+          <strong>CAA-2024-0482</strong>
+
+          <span>
+            IT Upgrade Phase 2
+          </span>
+
+        </div>
+
+        <span class="status-badge review">
+          IN REVIEW
+        </span>
+
+      </div>
+
+
+      <!-- REQUEST -->
+      <div class="recent-request">
+
+        <div>
+
+          <strong>PR-2024-1109</strong>
+
+          <span>
+            Office Supplies Q4
+          </span>
+
+        </div>
+
+        <span class="status-badge approved">
+          APPROVED
+        </span>
+
+      </div>
+
+
+      <!-- REQUEST -->
+      <div class="recent-request">
+
+        <div>
+
+          <strong>CAA-2024-0391</strong>
+
+          <span>
+            Library Expansion
+          </span>
+
+        </div>
+
+        <span class="status-badge required">
+          ACTION REQUIRED
+        </span>
+
+      </div>
+
+
+      <!-- REQUEST -->
+      <div class="recent-request">
+
+        <div>
+
+          <strong>PR-2024-0988</strong>
+
+          <span>
+            Conference Grant
+          </span>
+
+        </div>
+
+        <span class="status-badge archived">
+          ARCHIVED
+        </span>
+
+      </div>
+
+
+      <a href="#" class="full-history-link">
+        VIEW FULL HISTORY
+      </a>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       COMPREHENSIVE HISTORY
+  ====================================================== -->
+
+  <div class="history-section">
+
+    <div class="history-section-header">
+
+      <h2>
+        Comprehensive History
+      </h2>
+
+      <button class="export-btn" type="button">
+        <i class="fa-solid fa-download"></i>
+        Export CSV
+      </button>
+
+    </div>
+
+
+    <div class="history-table-card">
+
+      <div class="history-table-wrapper">
+
+        <table class="track-history-table">
+
+          <thead>
+
+            <tr>
+
+              <th>TRACKING ID</th>
+
+              <th>DEPARTMENT</th>
+
+              <th>PROJECT NAME</th>
+
+              <th>
+                SUBMISSION<br>
+                DATE
+              </th>
+
+              <th>
+                CURRENT<br>
+                STATUS
+              </th>
+
+              <th>ACTION</th>
+
+            </tr>
+
+          </thead>
+
+
+          <tbody>
+
+            <tr>
+
+              <td>
+                <strong>
+                  CAA-2024-<br>0482
+                </strong>
+              </td>
+
+              <td>
+                Information<br>
+                Technology
+              </td>
+
+              <td>
+                <strong>
+                  IT Infrastructure Upgrade<br>
+                  Phase 2
+                </strong>
+              </td>
+
+              <td>
+                Oct 24, 2024
+              </td>
+
+              <td>
+                <span class="status-badge review">
+                  IN REVIEW
+                </span>
+              </td>
+
+              <td>
+                <button type="button" class="view-icon-btn" aria-label="View project details">
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+              </td>
+
+            </tr>
+
+
+            <tr>
+
+              <td>
+                <strong>
+                  PR-2024-1109
+                </strong>
+              </td>
+
+              <td>
+                Procurement Office
+              </td>
+
+              <td>
+                <strong>
+                  General Office Supplies Q4<br>
+                  Bundle
+                </strong>
+              </td>
+
+              <td>
+                Oct 20, 2024
+              </td>
+
+              <td>
+                <span class="status-badge approved">
+                  APPROVED
+                </span>
+              </td>
+
+              <td>
+                <button type="button" class="view-icon-btn" aria-label="View details">
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+              </td>
+
+            </tr>
+
+
+            <tr>
+
+              <td>
+                <strong>
+                  CAA-2024-<br>0391
+                </strong>
+              </td>
+
+              <td>
+                Library Services
+              </td>
+
+              <td>
+                <strong>
+                  Digital Archives Expansion<br>
+                  Project
+                </strong>
+              </td>
+
+              <td>
+                Oct 18, 2024
+              </td>
+
+              <td>
+                <span class="status-badge required">
+                  ACTION REQ.
+                </span>
+              </td>
+
+              <td>
+                <button type="button" class="view-icon-btn" aria-label="View details">
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+</main>
+</body>
+  <script src="../office-app.js" defer></script>
+</html>
