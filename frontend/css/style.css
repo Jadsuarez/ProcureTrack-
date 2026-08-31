@@ -90,19 +90,18 @@ a:hover {
 }
 
 .sidebar-logo {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
-  background: var(--primary);
-  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.sidebar-logo svg {
-  width: 70%;
-  height: 70%;
+.sidebar-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   display: block;
 }
 
@@ -602,12 +601,15 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--light-bg);
+  background:
+    linear-gradient(rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.42)),
+    url('../../batstate.jpg') center / cover no-repeat fixed;
   padding: 1rem;
 }
 
 .login-card {
-  background: var(--card);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(4px);
   border-radius: var(--radius);
   padding: 2.5rem 2rem;
   width: 100%;
@@ -620,6 +622,13 @@ a:hover {
   display: flex;
   justify-content: center;
   margin-bottom: 1.5rem;
+}
+
+.login-logo img {
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+  display: block;
 }
 
 .login-card h1 {
@@ -1434,6 +1443,48 @@ footer.app-footer {
 }
 
 /* Analytics */
+.analytics-date-filter {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.analytics-date-filter .form-group {
+  flex: 0 1 230px;
+  margin: 0;
+}
+
+.analytics-date-filter input[type="date"] {
+  min-height: 48px;
+  font-size: 1rem;
+}
+
+.analytics-filter-btn {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 1.25rem;
+}
+
+.analytics-filter-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+@media (max-width: 640px) {
+  .analytics-date-filter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .analytics-date-filter .form-group {
+    flex-basis: auto;
+  }
+}
+
 .analytics-section {
   margin-bottom: 2rem;
 }

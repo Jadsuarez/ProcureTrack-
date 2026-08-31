@@ -1,6 +1,4 @@
-const SIDEBAR_LOGO = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M10 20L16 26L30 12" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`;
+const SIDEBAR_LOGO = '<img src="../Batangas_State_Logo.png" alt="Batangas State University logo">';
 
 const ICONS = {
   dashboard: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
@@ -50,6 +48,10 @@ const NAV_BY_ROLE = {
   ],
 };
 
+function displayUsername(username) {
+  return String(username || '').replace(/_user$/i, '');
+}
+
 function initAppLayout(session) {
   document.body.classList.add('app-layout');
 
@@ -59,7 +61,7 @@ function initAppLayout(session) {
     sidebar.className = 'app-sidebar';
     sidebar.innerHTML = `
       <div class="sidebar-brand">
-        <div class="sidebar-logo" aria-hidden="true">${SIDEBAR_LOGO}</div>
+        <div class="sidebar-logo">${SIDEBAR_LOGO}</div>
         <div class="sidebar-brand-text">
           <span class="sidebar-app-name">PROCUREMENT</span>
           <span class="sidebar-app-full">Monitoring System</span>
@@ -98,7 +100,7 @@ function initAppLayout(session) {
     );
   }
 
-  renderHeader(session.role_label, session.username);
+  renderHeader(session.role_label, displayUsername(session.username));
   buildNav(session);
   initTopNavbar(session);
 }
@@ -121,7 +123,8 @@ function initTopNavbar(session) {
 
   let navbar = mainWrap.querySelector('.top-navbar');
   if (!navbar) {
-    const initial = (session?.username || 'U').slice(0, 1).toUpperCase();
+    const username = displayUsername(session?.username);
+    const initial = (username || 'U').slice(0, 1).toUpperCase();
     navbar = document.createElement('header');
     navbar.className = 'top-navbar';
     navbar.innerHTML = `
@@ -148,7 +151,7 @@ function initTopNavbar(session) {
           <button type="button" class="user-chip" id="userMenuBtn" aria-haspopup="true" aria-expanded="false">
             <span class="user-avatar">${initial}</span>
             <span class="user-chip-meta">
-              <span class="user-chip-name">${session?.username || ''}</span>
+              <span class="user-chip-name">${username}</span>
               <span class="user-chip-office">${session?.role_label || ''}</span>
             </span>
           </button>

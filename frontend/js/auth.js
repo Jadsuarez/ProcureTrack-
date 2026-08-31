@@ -4,22 +4,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const alertBox = document.getElementById('alertBox');
 
-  function landingPage(role) {
-    const map = {
-      requesting: '../Final/requesting%20office/requestinghome.html',
-      budget: '../Final/Budgetoffice/dashbudget.html',
-      procurement: '../Final/procurement%20office/procurementdash.html',
-      pso: '../Final/pSO%20office/psodash.html',
-      accounting: '../Final/ACCOUNTING%20office/accountingdash.html',
-      cashier: '../Final/Cashier%20office/cashdash.html',
-    };
-
-    return map[role] || '../Final/login.html';
+  function landingPage() {
+    // The current UI uses one role-aware dashboard for every office.
+    return 'dashboard.html';
   }
 
   const session = await Api.session();
   if (session.logged_in) {
-    window.location.href = landingPage(session.role);
+    window.location.href = landingPage();
     return;
   }
 
@@ -37,7 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const result = await Api.login(username, password);
     if (result.success) {
-      window.location.href = landingPage(result.role);
+      window.location.href = landingPage();
     } else {
       showAlert(alertBox, result.message || 'Login failed.');
     }

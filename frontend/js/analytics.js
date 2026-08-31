@@ -252,7 +252,10 @@ function setBottleneckText(id, bottleneck) {
 }
 
 async function loadAnalytics() {
-  const data = await Api.analytics();
+  const params = new URLSearchParams(window.location.search);
+  const from = params.get('from') || document.getElementById('analyticsFrom')?.value || '';
+  const to = params.get('to') || document.getElementById('analyticsTo')?.value || '';
+  const data = await Api.analytics(from, to);
   if (!data.success) {
     showAlert(document.getElementById('alertBox'), data.message || 'Failed to load analytics.');
     return null;

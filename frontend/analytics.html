@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>System Analytics — Procurement Monitoring</title>
-  <link rel="stylesheet" href="css/style.css?v=13">
+  <link rel="stylesheet" href="css/style.css?v=16">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -15,6 +15,21 @@
       <h2>System Analytics</h2>
       <p class="text-muted" id="officeSubtitle">Loading analytics for your office…</p>
     </div>
+
+    <form class="card analytics-date-filter" id="analyticsDateFilter">
+      <div class="form-group">
+        <label for="analyticsFrom">From</label>
+        <input type="date" id="analyticsFrom" name="from" required>
+      </div>
+      <div class="form-group">
+        <label for="analyticsTo">To</label>
+        <input type="date" id="analyticsTo" name="to" required>
+      </div>
+      <button type="submit" class="btn btn-primary analytics-filter-btn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.5 7.2V18l-3 1.5v-7.3L4 5z"/></svg>
+        Apply
+      </button>
+    </form>
 
     <!-- Main KPIs -->
     <div class="stats-grid" id="mainKpis">
@@ -185,9 +200,9 @@
 
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
-  <script src="js/api.js?v=13"></script>
-  <script src="js/app.js?v=13"></script>
-  <script src="js/analytics.js?v=13"></script>
+  <script src="js/api.js?v=14"></script>
+  <script src="js/app.js?v=15"></script>
+  <script src="js/analytics.js?v=14"></script>
   <script>
     let charts = [];
 
@@ -196,6 +211,26 @@
       if (!session) return;
 
       initAppLayout(session);
+
+      const dateParams = new URLSearchParams(window.location.search);
+      const today = new Date();
+      const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000)
+        .toISOString().slice(0, 10);
+      const defaultFrom = `${today.getFullYear()}-01-01`;
+      const fromInput = document.getElementById('analyticsFrom');
+      const toInput = document.getElementById('analyticsTo');
+      fromInput.value = dateParams.get('from') || defaultFrom;
+      toInput.value = dateParams.get('to') || localToday;
+
+      document.getElementById('analyticsDateFilter').addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (fromInput.value > toInput.value) {
+          showAlert(document.getElementById('alertBox'), 'The From date cannot be after the To date.');
+          return;
+        }
+        const next = new URLSearchParams({ from: fromInput.value, to: toInput.value });
+        window.location.search = next.toString();
+      });
 
       const data = await loadAnalytics();
       if (!data) return;

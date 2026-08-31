@@ -24,9 +24,9 @@ PREREQUISITES
 STEP 1 — PLACE THE PROJECT IN HTDOCS
 --------------------------------------------------------------------------------
 
-Copy or move this entire Web1 folder into your XAMPP web root, for example:
+Copy or move this entire ProcureTrack- folder into your XAMPP web root, for example:
 
-  C:\xampp\htdocs\Web1\
+  C:\xampp\htdocs\ProcureTrack-\
 
 Your folder should contain index.html, frontend/, backend/, importdb.sql, etc.
 
@@ -60,7 +60,7 @@ Choose ONE of these methods:
      1. Open a terminal.
      2. Run (adjust path if XAMPP is not on C:):
 
-        cd C:\xampp\htdocs\Web1
+        cd C:\xampp\htdocs\ProcureTrack-
         C:\xampp\mysql\bin\mysql -u root < importdb.sql
 
 This creates the database procurement_monitoring, tables, and sample tracking
@@ -72,9 +72,9 @@ STEP 4 — OPEN THE APPLICATION
 
 In your browser, go to:
 
-  http://localhost/Web1/
+  http://localhost/ProcureTrack-/
 
-(or http://localhost/Web1/frontend/login.html)
+(or http://localhost/ProcureTrack-/frontend/login.html)
 
 You will be redirected to the login page. Sign in with a username and password.
 Your account's assigned office determines which dashboard and features you see.

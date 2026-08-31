@@ -188,8 +188,12 @@ const Api = {
     return res.json();
   },
 
-  async analytics() {
-    const res = await fetch(`${API_BASE}/analytics.php`, {
+  async analytics(from = '', to = '') {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString();
+    const res = await fetch(`${API_BASE}/analytics.php${query ? `?${query}` : ''}`, {
       credentials: 'include',
     });
     return res.json();

@@ -3,6 +3,7 @@
  * Office-scoped analytics: descriptive, diagnostic, predictive
  */
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/workflow.php';
 session_start();
 
 if (empty($_SESSION['role'])) {
@@ -10,6 +11,16 @@ if (empty($_SESSION['role'])) {
 }
 
 $role = $_SESSION['role'];
+$from = trim($_GET['from'] ?? '');
+$to = trim($_GET['to'] ?? '');
+
+if (($from !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $from))
+    || ($to !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $to))) {
+    jsonResponse(['success' => false, 'message' => 'Invalid analytics date format.'], 400);
+}
+if ($from !== '' && $to !== '' && $from > $to) {
+    jsonResponse(['success' => false, 'message' => 'The From date cannot be after the To date.'], 400);
+}
 $pdo = getConnection();
 
 const FLOW_STEPS = [
@@ -170,7 +181,10 @@ try {
 
     $scoped = array_values(array_filter(
         $allRequests,
-        fn($r) => inScope($r['status'], $scope) && isRequestVisibleToRole($r['status'], $role)
+        fn($r) => inScope($r['status'], $scope)
+            && isRequestVisibleToRole($r['status'], $role)
+            && ($from === '' || $r['updated_at'] >= $from . ' 00:00:00')
+            && ($to === '' || $r['updated_at'] <= $to . ' 23:59:59')
     ));
 
     $completed = array_filter($scoped, fn($r) => $r['status'] === 'Completed');
@@ -443,6 +457,7 @@ try {
         'success' => true,
         'role' => $role,
         'office_label' => $scope['label'],
+        'date_range' => ['from' => $from, 'to' => $to],
         'insights' => $insights,
         'descriptive' => [
             'total_in_scope' => $totalScoped,

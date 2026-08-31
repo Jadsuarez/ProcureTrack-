@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/workflow.php';
 requireRole(['budget', 'procurement', 'pso', 'accounting', 'cashier']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
