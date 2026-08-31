@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analytics — Procurement Monitoring</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>System Analytics — Procurement Monitoring</title>
+  <link rel="stylesheet" href="css/style.css?v=13">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -12,8 +12,28 @@
     <div id="alertBox" class="hidden"></div>
 
     <div class="card">
-      <h2>Office Analytics</h2>
+      <h2>System Analytics</h2>
       <p class="text-muted" id="officeSubtitle">Loading analytics for your office…</p>
+    </div>
+
+    <!-- Main KPIs -->
+    <div class="stats-grid" id="mainKpis">
+      <div class="stat-box stat-box-large">
+        <div class="number" id="kpiTotalBudget">—</div>
+        <div class="label">Active</div>
+      </div>
+      <div class="stat-box stat-box-large">
+        <div class="number" id="kpiTotalRequests">—</div>
+        <div class="label">Total Requests</div>
+      </div>
+      <div class="stat-box stat-box-large">
+        <div class="number" id="kpiCompletionRate">—</div>
+        <div class="label">Completion Rate</div>
+      </div>
+      <div class="stat-box stat-box-large">
+        <div class="number" id="kpiAvgTime">—</div>
+        <div class="label">Avg. Processing Time</div>
+      </div>
     </div>
 
     <!-- Descriptive -->
@@ -37,6 +57,17 @@
         </div>
       </div>
     </section>
+
+    <!-- Fund Utilization Trend -->
+    <div class="card">
+      <h2>Fund Utilization Trend</h2>
+      <div class="analytics-charts-row">
+        <div class="card chart-card chart-card-wide">
+          <h3>Fund utilization over time</h3>
+          <canvas id="fundUtilizationChart" height="250"></canvas>
+        </div>
+      </div>
+    </div>
 
     <!-- Diagnostic -->
     <section class="analytics-section" id="sectionDiagnostic">
@@ -119,13 +150,44 @@
         </div>
       </div>
     </section>
+
+    <!-- Recent Report -->
+    <div class="card">
+      <h2>Recent Report</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Report Type</th>
+              <th>Generated</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Monthly Summary</td>
+              <td>2026-08-01</td>
+              <td><span class="status-badge completed">Completed</span></td>
+              <td><a href="#" class="btn btn-sm btn-secondary">Download</a></td>
+            </tr>
+            <tr>
+              <td>Department Analysis</td>
+              <td>2026-07-15</td>
+              <td><span class="status-badge completed">Completed</span></td>
+              <td><a href="#" class="btn btn-sm btn-secondary">Download</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </main>
 
-  <footer class="app-footer">Procurement Monitoring System — Analytics</footer>
+  <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
-  <script src="js/api.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/analytics.js"></script>
+  <script src="js/api.js?v=13"></script>
+  <script src="js/app.js?v=13"></script>
+  <script src="js/analytics.js?v=13"></script>
   <script>
     let charts = [];
 
@@ -141,13 +203,18 @@
       document.getElementById('officeSubtitle').textContent =
         `${data.office_label} — descriptive, diagnostic, and predictive views based on current tracking data.`;
 
-      setInsightText('insightDescriptive', data.insights.descriptive);
-      setInsightText('insightDiagnostic', data.insights.diagnostic);
-      setInsightText('insightPredictive', data.insights.predictive);
-
       const d = data.descriptive;
       const diag = data.diagnostic;
       const pred = data.predictive;
+
+      document.getElementById('kpiTotalBudget').textContent = d.active;
+      document.getElementById('kpiTotalRequests').textContent = d.total_in_scope;
+      document.getElementById('kpiCompletionRate').textContent = d.completion_rate_pct + '%';
+      document.getElementById('kpiAvgTime').textContent = diag.avg_days_in_queue + ' days';
+
+      setInsightText('insightDescriptive', data.insights.descriptive);
+      setInsightText('insightDiagnostic', data.insights.diagnostic);
+      setInsightText('insightPredictive', data.insights.predictive);
 
       const descKpis = session.role === 'requesting'
         ? [
@@ -200,6 +267,7 @@
 
       charts.push(buildStatusChart('statusChart', d.by_status));
       charts.push(buildTrendChart('trendChart', d.monthly_trend));
+      charts.push(buildFundUtilizationChart('fundUtilizationChart'));
       charts.push(buildStageDurationChart('stageDurationChart', diag.avg_days_per_stage));
       charts.push(buildForecastChart('forecastChart', pred.forecasts));
     });

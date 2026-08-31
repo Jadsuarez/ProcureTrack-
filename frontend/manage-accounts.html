@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Management — PROCUREMENT</title>
+  <link rel="stylesheet" href="css/style.css?v=13">
+</head>
+<body>
+  <main class="container-wide">
+    <div id="alertBox" class="hidden"></div>
+
+    <div class="card">
+      <div class="panel-header">
+        <div>
+          <h2>Account Management</h2>
+          <p class="text-muted" style="margin: 0.35rem 0 0;">Manage offices and user accounts.</p>
+        </div>
+        <div class="header-actions">
+          <button type="button" class="btn btn-secondary" id="openAddOfficeBtn">Add Office</button>
+          <button type="button" class="btn btn-primary" id="openCreateAccountBtn">Create Account</button>
+        </div>
+      </div>
+
+      <form id="searchAccountsForm" class="search-bar" style="margin-top: 1rem;">
+        <input type="text" id="searchAccountsInput" placeholder="Search by username…">
+        <button type="submit" class="btn btn-primary">Search</button>
+      </form>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="number" id="statTotalUsers">—</div>
+        <div class="label">Total Users</div>
+      </div>
+      <div class="stat-box">
+        <div class="number" id="statOffices">—</div>
+        <div class="label">Registered Offices</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Registered Offices</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Office Name</th>
+              <th>Code</th>
+              <th>Fund Allocation</th>
+              <th>Users</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+            <tr><td colspan="6" class="text-muted">Loading…</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>All Accounts</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Office</th>
+              <th>Created By</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="accountsTableBody">
+            <tr><td colspan="5" class="text-muted">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card hidden" id="searchResultsCard">
+      <h2>Search Results</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Office</th>
+              <th>Created By</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="searchResultsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">Procurement Monitoring System — Tracking only</footer>
+
+  <!-- Popup dialogs -->
+  <dialog class="popup-dialog" id="addOfficeModal">
+    <div class="card popup-window">
+      <div class="panel-header">
+        <h2 id="addOfficeModalTitle">Add Office</h2>
+        <button type="button" class="popup-close" data-close-modal="addOfficeModal" data-reset-form="addOfficeForm" aria-label="Close">&times;</button>
+      </div>
+      <form id="addOfficeForm">
+          <div class="form-group">
+            <label for="officeLabel">Office Name</label>
+            <input type="text" id="officeLabel" name="label" placeholder="e.g. Internal Audit Office" required maxlength="100">
+          </div>
+          <div class="form-group">
+            <label for="officeSlug">Office Code <small class="text-muted">(login role key)</small></label>
+            <input type="text" id="officeSlug" name="slug" placeholder="e.g. internal_audit" required pattern="[a-z][a-z0-9_]{2,29}" title="Lowercase letters, numbers, underscore; start with a letter">
+          </div>
+          <div class="form-group">
+            <label for="officeAllocation">Fund Allocation (₱) <small class="text-muted">(optional)</small></label>
+            <input type="number" id="officeAllocation" name="fund_allocation" min="0" step="0.01" value="0" placeholder="0.00">
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="cancelAddOfficeBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Office</button>
+          </div>
+        </form>
+    </div>
+  </dialog>
+
+  <dialog class="popup-dialog" id="createAccountModal">
+    <div class="card popup-window">
+      <div class="panel-header">
+        <h2 id="createAccountModalTitle">Create Account</h2>
+        <button type="button" class="popup-close" data-close-modal="createAccountModal" data-reset-form="createAccountForm" aria-label="Close">&times;</button>
+      </div>
+      <form id="createAccountForm">
+          <div class="form-group">
+            <label for="newUsername">Username</label>
+            <input type="text" id="newUsername" name="username" placeholder="e.g. jsmith" required pattern="[a-zA-Z0-9_]{3,50}">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="newPassword">Password</label>
+              <input type="password" id="newPassword" name="password" placeholder="At least 6 characters" required minlength="6">
+            </div>
+            <div class="form-group">
+              <label for="confirmPassword">Confirm Password</label>
+              <input type="password" id="confirmPassword" name="confirm_password" placeholder="Re-enter password" required minlength="6">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="createOffice">Assigned Office</label>
+            <select id="createOffice" name="office" required></select>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="cancelCreateAccountBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Account</button>
+          </div>
+        </form>
+    </div>
+  </dialog>
+
+  <dialog class="popup-dialog" id="editOfficeModal">
+    <div class="card popup-window">
+      <div class="panel-header">
+        <h2 id="editOfficeModalTitle">Edit Office</h2>
+        <button type="button" class="popup-close" data-close-modal="editOfficeModal" data-reset-form="editOfficeForm" aria-label="Close">&times;</button>
+      </div>
+      <form id="editOfficeForm">
+          <input type="hidden" id="editOfficeId">
+          <div class="form-group">
+            <label for="editOfficeLabel">Office Name</label>
+            <input type="text" id="editOfficeLabel" required maxlength="100">
+          </div>
+          <div class="form-group">
+            <label for="editOfficeSlugDisplay">Office Code</label>
+            <input type="text" id="editOfficeSlugDisplay" readonly disabled>
+            <small class="text-muted">Office code cannot be changed after creation.</small>
+          </div>
+          <div class="form-group">
+            <label for="editOfficeAllocation">Fund Allocation (₱)</label>
+            <input type="number" id="editOfficeAllocation" min="0" step="0.01" value="0">
+            <small class="text-muted">Budget Office can also update this on Fund Allocation.</small>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="cancelEditOfficeBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Office</button>
+          </div>
+        </form>
+    </div>
+  </dialog>
+
+  <dialog class="popup-dialog" id="editModal">
+    <div class="card popup-window">
+      <div class="panel-header">
+        <h2 id="editModalTitle">Edit Account</h2>
+        <button type="button" class="popup-close" data-close-modal="editModal" data-reset-form="editAccountForm" aria-label="Close">&times;</button>
+      </div>
+      <form id="editAccountForm">
+          <input type="hidden" id="editUserId">
+          <div class="form-group">
+            <label for="editUsername">Username</label>
+            <input type="text" id="editUsername" required pattern="[a-zA-Z0-9_]{3,50}">
+          </div>
+          <div class="form-group">
+            <label for="editOffice">Assigned Office</label>
+            <select id="editOffice" required></select>
+          </div>
+          <div class="form-group">
+            <label for="editPassword">New Password <small class="text-muted">(leave blank to keep current)</small></label>
+            <input type="password" id="editPassword" placeholder="Optional — min. 6 characters" minlength="6">
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+    </div>
+  </dialog>
+
+  <script src="js/api.js?v=13"></script>
+  <script src="js/app.js?v=13"></script>
+  <script src="js/manage-accounts.js?v=13"></script>
+</body>
+</html>

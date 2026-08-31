@@ -33,8 +33,8 @@ function buildStatusChart(canvasId, byStatus) {
     'Abstract of Canvass': '#6d28d9',
     PO: '#4f46e5',
     'DV Processing': '#0891b2',
-    'For Payment': '#0d9488',
-    Paid: '#db2777',
+    'For Payment': '#a51c30',
+    Paid: '#8a1728',
     Completed: '#059669',
   };
 
@@ -68,12 +68,12 @@ function buildTrendChart(canvasId, monthlyTrend) {
         {
           label: 'Updated in month',
           data: monthlyTrend.map((m) => m.active_updates),
-          backgroundColor: 'rgba(45, 90, 135, 0.7)',
+          backgroundColor: 'rgba(165, 28, 48, 0.75)',
         },
         {
           label: 'Completed in month',
           data: monthlyTrend.map((m) => m.completed),
-          backgroundColor: 'rgba(13, 148, 136, 0.8)',
+          backgroundColor: 'rgba(5, 150, 105, 0.8)',
         },
       ],
     },
@@ -125,7 +125,7 @@ function buildForecastChart(canvasId, forecasts) {
           label: 'Est. days to complete',
           data: forecasts.map((f) => f.eta_days),
           backgroundColor: forecasts.map((f) =>
-            f.at_risk ? 'rgba(220, 38, 38, 0.75)' : 'rgba(13, 148, 136, 0.75)'
+            f.at_risk ? 'rgba(165, 28, 48, 0.75)' : 'rgba(5, 150, 105, 0.75)'
           ),
         },
       ],
@@ -134,6 +134,43 @@ function buildForecastChart(canvasId, forecasts) {
       responsive: true,
       plugins: { legend: { display: false } },
       scales: { y: { beginAtZero: true } },
+    },
+  });
+}
+
+function buildFundUtilizationChart(canvasId, utilizationData) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return null;
+
+  // Generate sample data if not provided
+  const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+  const data = utilizationData || [65, 72, 78, 85, 82, 90, 88, 92];
+
+  return new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Fund Utilization %',
+          data: data,
+          borderColor: '#a51c30',
+          backgroundColor: 'rgba(165, 28, 48, 0.1)',
+          fill: true,
+          tension: 0.4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { 
+        y: { 
+          beginAtZero: true, 
+          max: 100,
+          ticks: { callback: (value) => value + '%' }
+        } 
+      },
     },
   });
 }

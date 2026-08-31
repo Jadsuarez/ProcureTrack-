@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fund Allocation — Procurement Monitoring</title>
+  <link rel="stylesheet" href="css/style.css?v=13">
+</head>
+<body>
+  <main class="container-wide">
+    <div id="alertBox" class="hidden"></div>
+
+    <div class="card">
+      <div class="panel-header">
+        <div>
+          <h2>Fund Allocation</h2>
+          <p class="text-muted" id="allocationSubtitle" style="margin: 0.35rem 0 0;">
+            Annual fund assigned to each registered office.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="number" id="statTotalAllocated">—</div>
+        <div class="label">Total Allocated Funds</div>
+      </div>
+      <div class="stat-box">
+        <div class="number" id="statOfficesWithFunds">—</div>
+        <div class="label">Offices With Funds</div>
+      </div>
+      <div class="stat-box">
+        <div class="number" id="statOfficeCount">—</div>
+        <div class="label">Registered Offices</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Allocation by Office</h2>
+      <p class="text-muted" id="allocationHint" style="margin-bottom: 1rem;"></p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Office</th>
+              <th>Code</th>
+              <th>Allocated Funds</th>
+              <th>Share of Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="allocationTableBody">
+            <tr><td colspan="5" class="text-muted">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
+
+  <dialog class="popup-dialog" id="editAllocationModal">
+    <div class="card popup-window">
+      <div class="panel-header">
+        <h2 id="editAllocationTitle">Set Fund Allocation</h2>
+        <button type="button" class="popup-close" data-close-modal="editAllocationModal" data-reset-form="editAllocationForm" aria-label="Close">&times;</button>
+      </div>
+      <form id="editAllocationForm">
+        <input type="hidden" id="allocOfficeId">
+        <div class="form-group">
+          <label for="allocOfficeName">Office</label>
+          <input type="text" id="allocOfficeName" readonly disabled>
+        </div>
+        <div class="form-group">
+          <label for="allocAmount">Allocated Amount (₱)</label>
+          <input type="number" id="allocAmount" min="0" step="0.01" required placeholder="0.00">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="cancelAllocBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Allocation</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <script src="js/api.js?v=13"></script>
+  <script src="js/app.js?v=13"></script>
+  <script src="js/fund-allocation.js?v=13"></script>
+</body>
+</html>

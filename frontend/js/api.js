@@ -2,14 +2,15 @@
  * API helpers — paths relative to frontend pages
  */
 const API_BASE = '../backend';
+const APP_ASSET_VERSION = '13';
 
 const Api = {
-  async login(role) {
+  async login(username, password) {
     const res = await fetch(`${API_BASE}/login.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ role }),
+      body: JSON.stringify({ username, password }),
     });
     return res.json();
   },
@@ -24,6 +25,91 @@ const Api = {
   async logout() {
     const res = await fetch(`${API_BASE}/login.php?action=logout`, {
       credentials: 'include',
+    });
+    return res.json();
+  },
+
+  async createAccount(data) {
+    const res = await fetch(`${API_BASE}/users.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'create', ...data }),
+    });
+    return res.json();
+  },
+
+  async listUsers() {
+    const res = await fetch(`${API_BASE}/users.php`, { credentials: 'include' });
+    return res.json();
+  },
+
+  async updateUser(data) {
+    const res = await fetch(`${API_BASE}/users.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'update', ...data }),
+    });
+    return res.json();
+  },
+
+  async deleteUser(id) {
+    const res = await fetch(`${API_BASE}/users.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'delete', id }),
+    });
+    return res.json();
+  },
+
+  async listOffices() {
+    const res = await fetch(`${API_BASE}/offices.php`, { credentials: 'include' });
+    return res.json();
+  },
+
+  async createOffice(data) {
+    const res = await fetch(`${API_BASE}/offices.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'create', ...data }),
+    });
+    return res.json();
+  },
+
+  async updateOffice(data) {
+    const res = await fetch(`${API_BASE}/offices.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'update', ...data }),
+    });
+    return res.json();
+  },
+
+  async deleteOffice(id) {
+    const res = await fetch(`${API_BASE}/offices.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'delete', id }),
+    });
+    return res.json();
+  },
+
+  async listAllocations() {
+    const res = await fetch(`${API_BASE}/allocations.php`, { credentials: 'include' });
+    return res.json();
+  },
+
+  async updateAllocation(id, fund_allocation) {
+    const res = await fetch(`${API_BASE}/allocations.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ id, fund_allocation }),
     });
     return res.json();
   },
@@ -119,6 +205,18 @@ function statusBadgeClass(status) {
   return '';
 }
 
+function formatPeso(amount) {
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return '₱0.00';
+  return (
+    '₱' +
+    n.toLocaleString('en-PH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '—';
   const d = new Date(dateStr);
@@ -154,9 +252,12 @@ async function requireAuth(allowedRoles = null) {
   return data;
 }
 
-function renderHeader(roleLabel) {
-  const el = document.getElementById('roleBadge');
-  if (el) el.textContent = roleLabel;
+function renderHeader(roleLabel, username) {
+  const officeEl = document.getElementById('roleBadge');
+  if (officeEl) officeEl.textContent = roleLabel;
+
+  const userEl = document.getElementById('userBadge');
+  if (userEl && username) userEl.textContent = username;
 }
 
 const FLOW_STEPS = [
@@ -172,14 +273,50 @@ const FLOW_STEPS = [
   'Completed',
 ];
 
+const OFFICE_STEPS = [
+  { label: 'Office', statuses: ['Registered'] },
+  { label: 'Budget', statuses: ['Under Budget Review', 'Reviewed'] },
+  { label: 'Procurement', statuses: ['Canvass', 'Abstract of Canvass', 'PO'] },
+  { label: 'Accounting', statuses: ['DV Processing', 'For Payment'] },
+  { label: 'Cashier', statuses: ['Paid', 'Completed'] },
+];
+
+function officeIndexForStatus(status) {
+  return OFFICE_STEPS.findIndex((s) => s.statuses.includes(status));
+}
+
+function renderOfficeStepper(currentStatus, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const idx = officeIndexForStatus(currentStatus);
+  container.classList.add('multi-step-progress', 'office-stepper');
+  container.innerHTML = OFFICE_STEPS.map((step, i) => {
+    let state = '';
+    if (idx >= 0 && i < idx) state = 'completed';
+    else if (i === idx) state = 'active';
+    const icon = state === 'completed' ? '✓' : String(i + 1);
+    return `<div class="progress-step ${state}">
+      <div class="progress-step-icon">${icon}</div>
+      <div class="progress-step-label">${step.label}</div>
+    </div>`;
+  }).join('');
+}
+
 function renderFlowDiagram(currentStatus, containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
   const idx = FLOW_STEPS.indexOf(currentStatus);
+  container.classList.add('multi-step-progress');
+  container.classList.remove('flow-steps');
   container.innerHTML = FLOW_STEPS.map((step, i) => {
-    const active = i <= idx && idx >= 0 ? 'active' : '';
-    const arrow = i < FLOW_STEPS.length - 1 ? '<span class="flow-arrow">→</span>' : '';
-    return `<span class="flow-step ${active}">${step}</span>${arrow}`;
+    let state = '';
+    if (idx >= 0 && i < idx) state = 'completed';
+    else if (i === idx) state = 'active';
+    const icon = state === 'completed' ? '✓' : String(i + 1);
+    return `<div class="progress-step ${state}">
+      <div class="progress-step-icon">${icon}</div>
+      <div class="progress-step-label">${step}</div>
+    </div>`;
   }).join('');
 }
