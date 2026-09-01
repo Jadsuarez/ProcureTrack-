@@ -144,9 +144,21 @@ function initTopNavbar(session) {
         </button>
       </form>
       <div class="top-navbar-actions">
-        <button type="button" class="icon-btn" id="notifBtn" aria-label="Notifications" title="Notifications">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
-        </button>
+        <div class="notif-wrap">
+          <button type="button" class="icon-btn" id="notifBtn" aria-label="Notifications" title="Notifications" aria-haspopup="true" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+            <span class="notif-badge hidden" id="notifBadge">0</span>
+          </button>
+          <div class="notif-menu hidden" id="notifMenu">
+            <div class="notif-menu-header">
+              <span>Notifications</span>
+              <button type="button" class="notif-clear-btn" id="clearNotifBtn">Clear</button>
+            </div>
+            <ul class="notif-menu-list" id="notifMenuList">
+              <li class="text-muted">Loading…</li>
+            </ul>
+          </div>
+        </div>
         <div class="user-menu-wrap">
           <button type="button" class="user-chip" id="userMenuBtn" aria-haspopup="true" aria-expanded="false">
             <span class="user-avatar">${initial}</span>
@@ -164,6 +176,9 @@ function initTopNavbar(session) {
     mainWrap.insertBefore(navbar, mainWrap.firstChild);
     bindGlobalSearch();
     bindUserMenu();
+    bindNotifMenu(session);
+  } else {
+    bindNotifMenu(session);
   }
 
   setTopNavbarTitle();
@@ -177,6 +192,7 @@ function bindUserMenu() {
 
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
+    closeNotifMenu();
     const open = menu.classList.toggle('hidden');
     btn.setAttribute('aria-expanded', open ? 'false' : 'true');
   });
@@ -184,6 +200,7 @@ function bindUserMenu() {
   document.addEventListener('click', () => {
     menu.classList.add('hidden');
     btn.setAttribute('aria-expanded', 'false');
+    closeNotifMenu();
   });
 
   menu.querySelector('[data-logout]')?.addEventListener('click', async (e) => {
@@ -191,6 +208,160 @@ function bindUserMenu() {
     await Api.logout();
     window.location.href = 'login.html';
   });
+}
+
+function notifStorageKey(kind = 'seen') {
+  const user = window.__notifUserKey || 'anon';
+  return kind === 'cleared' ? `notifClearedId:${user}` : `notifSeenId:${user}`;
+}
+
+function getStoredNotifId(kind) {
+  const n = Number(localStorage.getItem(notifStorageKey(kind)) || '0');
+  return Number.isFinite(n) ? n : 0;
+}
+
+function setStoredNotifId(kind, id) {
+  const current = getStoredNotifId(kind);
+  if (id > current) {
+    localStorage.setItem(notifStorageKey(kind), String(id));
+  }
+}
+
+function getSeenNotifId() {
+  return getStoredNotifId('seen');
+}
+
+function setSeenNotifId(id) {
+  setStoredNotifId('seen', id);
+}
+
+function getClearedNotifId() {
+  return getStoredNotifId('cleared');
+}
+
+function setClearedNotifId(id) {
+  setStoredNotifId('cleared', id);
+  setSeenNotifId(id);
+}
+
+function closeNotifMenu() {
+  const menu = document.getElementById('notifMenu');
+  const btn = document.getElementById('notifBtn');
+  menu?.classList.add('hidden');
+  btn?.setAttribute('aria-expanded', 'false');
+}
+
+function renderNotifBadge(count) {
+  const badge = document.getElementById('notifBadge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count > 9 ? '9+' : String(count);
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+async function loadNavbarNotifications() {
+  const list = document.getElementById('notifMenuList');
+  const menu = document.getElementById('notifMenu');
+  if (!list || typeof Api.notifications !== 'function') return [];
+
+  try {
+    const data = await Api.notifications();
+    if (!data.success) {
+      list.innerHTML = '<li class="text-muted">Unable to load notifications.</li>';
+      return [];
+    }
+
+    const allItems = data.notifications || [];
+    const clearedId = getClearedNotifId();
+    const items = allItems.filter((n) => Number(n.id) > clearedId);
+    const seenId = Math.max(getSeenNotifId(), clearedId);
+    const unread = items.filter((n) => Number(n.id) > seenId).length;
+    renderNotifBadge(unread);
+
+    const latestSource = allItems.length ? allItems : items;
+    if (menu && latestSource.length) {
+      menu.dataset.latestId = String(Math.max(...latestSource.map((n) => Number(n.id) || 0)));
+    }
+
+    const clearBtn = document.getElementById('clearNotifBtn');
+    if (clearBtn) clearBtn.disabled = items.length === 0;
+
+    if (!items.length) {
+      list.innerHTML = '<li class="text-muted">No notifications.</li>';
+      return items;
+    }
+
+    list.innerHTML = items
+      .map((n) => {
+        const unreadClass = Number(n.id) > seenId ? ' unread' : '';
+        return `<li class="notif-item${unreadClass}">
+          <a href="details.html?tracking=${encodeURIComponent(n.tracking_number)}">
+            <strong>${n.tracking_number}</strong>
+            <span>${n.message}</span>
+            <span class="meta">${formatDate(n.created_at)}</span>
+          </a>
+        </li>`;
+      })
+      .join('');
+    return items;
+  } catch (err) {
+    list.innerHTML = '<li class="text-muted">Unable to load notifications.</li>';
+    return [];
+  }
+}
+
+function bindNotifMenu(session) {
+  const btn = document.getElementById('notifBtn');
+  const menu = document.getElementById('notifMenu');
+  if (!btn || !menu) return;
+
+  if (session?.username) {
+    window.__notifUserKey = session.username;
+  }
+
+  loadNavbarNotifications();
+
+  if (btn.dataset.bound === '1') return;
+  btn.dataset.bound = '1';
+
+  document.getElementById('clearNotifBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const latest = Number(menu.dataset.latestId || '0');
+    if (latest) setClearedNotifId(latest);
+    const list = document.getElementById('notifMenuList');
+    if (list) list.innerHTML = '<li class="text-muted">No notifications.</li>';
+    document.getElementById('clearNotifBtn').disabled = true;
+    renderNotifBadge(0);
+  });
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('userMenu')?.classList.add('hidden');
+    document.getElementById('userMenuBtn')?.setAttribute('aria-expanded', 'false');
+
+    const opening = menu.classList.contains('hidden');
+    menu.classList.toggle('hidden');
+    btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+
+    if (opening) {
+      loadNavbarNotifications().then(() => {
+        const latest = Number(menu.dataset.latestId || '0');
+        if (latest) setSeenNotifId(latest);
+        renderNotifBadge(0);
+        menu.querySelectorAll('.notif-item').forEach((li) => li.classList.remove('unread'));
+      });
+    }
+  });
+
+  menu.addEventListener('click', (e) => e.stopPropagation());
+
+  if (!window.__notifPoll) {
+    window.__notifPoll = setInterval(loadNavbarNotifications, 45000);
+  }
 }
 
 function setTopNavbarTitle() {

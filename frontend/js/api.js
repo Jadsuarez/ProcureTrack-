@@ -144,6 +144,13 @@ const Api = {
     return res.json();
   },
 
+  async notifications() {
+    const res = await fetch(`${API_BASE}/fetch.php?action=notifications`, {
+      credentials: 'include',
+    });
+    return res.json();
+  },
+
   async updateStatus(data) {
     const res = await fetch(`${API_BASE}/update_status.php`, {
       method: 'POST',

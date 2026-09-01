@@ -297,6 +297,124 @@ a:hover {
   height: 18px;
 }
 
+.notif-wrap {
+  position: relative;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notif-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  width: 340px;
+  max-width: min(340px, calc(100vw - 2rem));
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  z-index: 80;
+  overflow: hidden;
+}
+
+.notif-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.notif-clear-btn {
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.15rem 0.2rem;
+}
+
+.notif-clear-btn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.notif-clear-btn:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.notif-menu-list {
+  list-style: none;
+  margin: 0;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.notif-menu-list > li.text-muted {
+  padding: 0.85rem;
+  font-size: 0.85rem;
+}
+
+.notif-item a {
+  display: block;
+  padding: 0.7rem 0.85rem;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.notif-item:last-child a {
+  border-bottom: none;
+}
+
+.notif-item a:hover {
+  background: var(--light-bg);
+  text-decoration: none;
+}
+
+.notif-item.unread a {
+  background: #fdf2f4;
+}
+
+.notif-item a strong {
+  display: block;
+  font-size: 0.82rem;
+}
+
+.notif-item a span {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text);
+  margin-top: 0.15rem;
+}
+
+.notif-item a .meta {
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin-top: 0.25rem;
+}
+
 .user-chip {
   display: flex;
   align-items: center;

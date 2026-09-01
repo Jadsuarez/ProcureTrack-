@@ -110,6 +110,58 @@ try {
             ]);
             break;
 
+        case 'notifications':
+            $logStmt = $pdo->query(
+                'SELECT sl.id, sl.status, sl.notes, sl.updated_by, sl.created_at,
+                        r.tracking_number, r.title
+                 FROM status_logs sl
+                 INNER JOIN requests r ON r.id = sl.request_id
+                 ORDER BY sl.created_at DESC, sl.id DESC
+                 LIMIT 120'
+            );
+
+            $notifications = [];
+            foreach ($logStmt as $row) {
+                $adj = adjacentOfficesForStatus($row['status']);
+                $targets = [$adj['previous'], $adj['next']];
+                if (!in_array($role, $targets, true)) {
+                    continue;
+                }
+
+                $tracking = $row['tracking_number'];
+                $status = $row['status'];
+                $isNew = $status === 'Registered';
+                $isNext = $role === $adj['next'];
+                $isPrev = $role === $adj['previous'];
+
+                if ($isNew && $isNext && !$isPrev) {
+                    $message = "New request {$tracking} is ready for your office.";
+                } elseif ($isNew && $isPrev) {
+                    $message = "Request {$tracking} was submitted.";
+                } elseif ($isNext && !$isPrev) {
+                    $message = "{$tracking} is now \"{$status}\" and ready for your office.";
+                } else {
+                    $message = "{$tracking} moved to \"{$status}\".";
+                }
+
+                $notifications[] = [
+                    'id' => (int) $row['id'],
+                    'tracking_number' => $tracking,
+                    'title' => $row['title'],
+                    'status' => $status,
+                    'message' => $message,
+                    'kind' => $isNext && !$isPrev ? 'incoming' : 'update',
+                    'created_at' => $row['created_at'],
+                ];
+
+                if (count($notifications) >= 20) {
+                    break;
+                }
+            }
+
+            jsonResponse(['success' => true, 'notifications' => $notifications]);
+            break;
+
         case 'status_options':
             $options = match ($role) {
                 'budget' => ['Under Budget Review', 'Reviewed'],

@@ -76,3 +76,42 @@ function filterRequestsForRole(array $requests, string $role): array
         fn($r) => isRequestVisibleToRole($r['status'] ?? '', $role)
     ));
 }
+
+/** Office that currently owns a workflow status. */
+function officeForStatus(string $status): string
+{
+    return match ($status) {
+        'Registered' => 'requesting',
+        'Under Budget Review', 'Reviewed' => 'budget',
+        'Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award' => 'procurement',
+        'Delivered', 'For Inspection', 'Accepted' => 'pso',
+        'DV Processing', 'For Payment' => 'accounting',
+        'Paid', 'Completed' => 'cashier',
+        default => 'requesting',
+    };
+}
+
+/**
+ * Offices that should be pinged when a request is created or moves to $status:
+ * the previous office and the next office in the pipeline.
+ */
+function adjacentOfficesForStatus(string $status): array
+{
+    $steps = getFlowSteps();
+    $idx = workflowStageIndex($status);
+
+    if ($idx < 0) {
+        return ['previous' => 'requesting', 'next' => 'budget'];
+    }
+
+    $previous = $idx > 0 ? officeForStatus($steps[$idx - 1]) : 'requesting';
+    $next = $idx < count($steps) - 1 ? officeForStatus($steps[$idx + 1]) : 'requesting';
+
+    return ['previous' => $previous, 'next' => $next];
+}
+
+function officesNotifiedForStatus(string $status): array
+{
+    $adj = adjacentOfficesForStatus($status);
+    return array_values(array_unique([$adj['previous'], $adj['next']]));
+}
