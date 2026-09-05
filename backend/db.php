@@ -17,8 +17,26 @@ function getConnection(): PDO
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
         ensureOfficeFundAllocationColumn($pdo);
+        ensureRequestFundingColumns($pdo);
     }
     return $pdo;
+}
+
+function ensureRequestFundingColumns(PDO $pdo): void
+{
+    $columns = $pdo->query('SHOW COLUMNS FROM requests')->fetchAll(PDO::FETCH_COLUMN);
+    foreach ([
+        'request_amount' => 'DECIMAL(15, 2) NOT NULL DEFAULT 0',
+        'funding_office' => 'VARCHAR(30) DEFAULT NULL',
+    ] as $name => $definition) {
+        if (!in_array($name, $columns, true)) {
+            try {
+                $pdo->exec("ALTER TABLE requests ADD COLUMN $name $definition");
+            } catch (PDOException $e) {
+                if (($e->errorInfo[1] ?? null) !== 1060) throw $e;
+            }
+        }
+    }
 }
 
 function ensureOfficeFundAllocationColumn(PDO $pdo): void

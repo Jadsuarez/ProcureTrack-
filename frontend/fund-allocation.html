@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fund Allocation — Procurement Monitoring</title>
-  <link rel="stylesheet" href="css/style.css?v=18">
+  <link rel="stylesheet" href="css/style.css?v=19">
 </head>
 <body>
   <main class="container-wide">
@@ -15,7 +15,7 @@
         <div>
           <h2>Fund Allocation</h2>
           <p class="text-muted" id="allocationSubtitle" style="margin: 0.35rem 0 0;">
-            Annual fund assigned to each registered office.
+            Available office funds after request deductions.
           </p>
         </div>
       </div>
@@ -24,7 +24,7 @@
     <div class="stats-grid">
       <div class="stat-box">
         <div class="number" id="statTotalAllocated">—</div>
-        <div class="label">Total Allocated Funds</div>
+        <div class="label">Total Available Funds</div>
       </div>
       <div class="stat-box">
         <div class="number" id="statOfficesWithFunds">—</div>
@@ -45,7 +45,7 @@
             <tr>
               <th>Office</th>
               <th>Code</th>
-              <th>Allocated Funds</th>
+              <th>Available Funds</th>
               <th>Share of Total</th>
               <th></th>
             </tr>
@@ -73,7 +73,7 @@
           <input type="text" id="allocOfficeName" readonly disabled>
         </div>
         <div class="form-group">
-          <label for="allocAmount">Allocated Amount (₱)</label>
+          <label for="allocAmount">Available Amount (₱)</label>
           <input type="number" id="allocAmount" min="0" step="0.01" required placeholder="0.00">
         </div>
         <div class="modal-actions">
@@ -85,7 +85,7 @@
   </dialog>
 
   <script src="js/api.js?v=16"></script>
-  <script src="js/app.js?v=17"></script>
-  <script src="js/fund-allocation.js?v=13"></script>
+  <script src="js/app.js?v=19"></script>
+  <script src="js/fund-allocation.js?v=14"></script>
 </body>
 </html>

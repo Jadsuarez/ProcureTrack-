@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Faculty Dashboard — Procurement Monitoring</title>
-  <link rel="stylesheet" href="css/style.css?v=18">
+  <link rel="stylesheet" href="css/style.css?v=19">
 </head>
 <body>
   <main class="container-wide">
@@ -14,9 +14,9 @@
       <h2 id="dashboardHeading">Dashboard</h2>
       <p class="text-muted" id="dashboardSubtitle">Search by Tracking ID to view or update monitoring status.</p>
 
-      <form id="searchForm" class="search-bar" style="margin-top: 1rem;">
-        <input type="text" id="searchInput" placeholder="e.g. PR-0001" required>
-        <button type="submit" class="btn btn-primary">Search</button>
+      <form id="searchForm" class="search-bar" style="margin-top: 1rem;" role="search">
+        <input type="search" id="searchInput" placeholder="e.g. PR-0001" autocomplete="off" aria-label="Search by tracking ID" required>
+        <button type="submit" class="btn btn-primary" id="searchButton">Search</button>
       </form>
     </div>
 
@@ -158,8 +158,8 @@
       </div>
     </div>
 
-    <div class="card hidden" id="searchResultsCard">
-      <h2>Search Results</h2>
+    <div class="card hidden" id="searchResultsCard" aria-live="polite">
+      <h2 id="searchResultsHeading">Search Results</h2>
       <div class="table-wrap">
         <table>
           <thead>
@@ -179,7 +179,7 @@
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
   <script src="js/api.js?v=16"></script>
-  <script src="js/app.js?v=17"></script>
+  <script src="js/app.js?v=19"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const session = await requireAuth();
@@ -320,19 +320,46 @@
           '<li class="text-muted">Unable to load notifications.</li>';
       }
 
-      document.getElementById('searchForm').addEventListener('submit', async (e) => {
+      const searchForm = document.getElementById('searchForm');
+      const searchInput = document.getElementById('searchInput');
+      const searchButton = document.getElementById('searchButton');
+
+      searchForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const q = document.getElementById('searchInput').value.trim();
-        const data = await Api.search(q);
+        const q = searchInput.value.trim();
+        if (!q) return;
+
         const card = document.getElementById('searchResultsCard');
         const body = document.getElementById('searchResultsBody');
+        const heading = document.getElementById('searchResultsHeading');
+        card.classList.remove('hidden');
+        heading.textContent = `Search Results for "${q}"`;
+        body.innerHTML = '<tr><td colspan="4" class="text-muted">Searching...</td></tr>';
+        searchButton.disabled = true;
+        searchButton.textContent = 'Searching...';
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('search', q);
+        window.history.replaceState({}, '', url);
+
+        let data;
+        try {
+          data = await Api.search(q);
+        } catch (error) {
+          showAlert(document.getElementById('alertBox'), 'Search could not be completed. Please try again.');
+          body.innerHTML = '<tr><td colspan="4" class="text-muted">Unable to load search results.</td></tr>';
+          return;
+        } finally {
+          searchButton.disabled = false;
+          searchButton.textContent = 'Search';
+        }
 
         if (!data.success) {
           showAlert(document.getElementById('alertBox'), data.message);
+          body.innerHTML = '<tr><td colspan="4" class="text-muted">Unable to load search results.</td></tr>';
           return;
         }
 
-        card.classList.remove('hidden');
         if (!data.requests.length) {
           body.innerHTML = '<tr><td colspan="4">No matching requests.</td></tr>';
           return;
@@ -347,6 +374,12 @@
           </tr>
         `).join('');
       });
+
+      const initialSearch = new URLSearchParams(window.location.search).get('search');
+      if (initialSearch) {
+        searchInput.value = initialSearch;
+        searchForm.requestSubmit();
+      }
     });
   </script>
 </body>

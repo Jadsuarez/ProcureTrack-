@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Track Request — PROCUREMENT</title>
-  <link rel="stylesheet" href="css/style.css?v=18">
+  <link rel="stylesheet" href="css/style.css?v=19">
 </head>
 <body>
   <main class="container">
@@ -18,11 +18,6 @@
       <form id="createForm" style="margin-top: 1rem;">
         <p class="form-section-title">General Information</p>
         <div class="form-group">
-          <label for="tracking_number">Tracking Number</label>
-          <input type="text" id="tracking_number" name="tracking_number" placeholder="Auto-suggested" maxlength="50">
-          <small class="text-muted">Leave blank to auto-generate (e.g. PR-0006), or enter your own ID.</small>
-        </div>
-        <div class="form-group">
           <label for="title">Title <span class="text-muted">(optional)</span></label>
           <input type="text" id="title" name="title" placeholder="Brief description of the request">
         </div>
@@ -30,9 +25,14 @@
           <label for="description">Description <span class="text-muted">(optional)</span></label>
           <textarea id="description" name="description" rows="3" placeholder="Additional details…"></textarea>
         </div>
+        <div class="form-group">
+          <label for="request_amount">Request Amount (PHP)</label>
+          <input type="number" id="request_amount" name="request_amount" min="0.01" max="999999999999.99" step="0.01" required placeholder="0.00">
+          <small class="text-muted">This amount will be deducted from your office's available funds when the request is created.</small>
+        </div>
         <div class="amount-box">
           <div class="label">Monitoring record</div>
-          <div class="value">Tracking ID assigned on submit</div>
+          <div class="value">Tracking number generated automatically on submit</div>
         </div>
         <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Create Track Request</button>
       </form>
@@ -79,19 +79,12 @@
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
   <script src="js/api.js?v=16"></script>
-  <script src="js/app.js?v=17"></script>
+  <script src="js/app.js?v=19"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const session = await requireAuth(['requesting']);
       if (!session) return;
       initAppLayout(session);
-
-      const trackingInput = document.getElementById('tracking_number');
-      const next = await Api.nextTrackingId();
-      if (next.success) {
-        trackingInput.placeholder = next.tracking_number + ' (suggested)';
-        trackingInput.dataset.suggested = next.tracking_number;
-      }
 
       document.getElementById('createForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -100,12 +93,20 @@
         document.getElementById('createdCard').classList.add('hidden');
 
         const payload = {
-          tracking_number: trackingInput.value.trim(),
           title: document.getElementById('title').value.trim(),
           description: document.getElementById('description').value.trim(),
+          request_amount: document.getElementById('request_amount').value,
         };
 
-        const result = await Api.createRequest(payload);
+        const submitButton = e.target.querySelector('[type="submit"]');
+        if (submitButton.disabled) return;
+        submitButton.disabled = true;
+        let result;
+        try {
+          result = await Api.createRequest(payload);
+        } finally {
+          submitButton.disabled = false;
+        }
         if (!result.success) {
           showAlert(document.getElementById('alertBox'), result.message);
           return;
@@ -113,6 +114,8 @@
 
         const r = result.request;
         document.getElementById('createdDetails').innerHTML = `
+          <div class="detail-item"><div class="label">Amount Deducted</div><div class="value">${formatPeso(r.request_amount)}</div></div>
+          <div class="detail-item"><div class="label">Remaining Office Funds</div><div class="value">${formatPeso(r.remaining_funds)}</div></div>
           <div class="detail-item"><div class="label">Tracking ID</div><div class="value"><strong>${r.tracking_number}</strong></div></div>
           <div class="detail-item"><div class="label">Title</div><div class="value">${r.title || '—'}</div></div>
           <div class="detail-item"><div class="label">Status</div><div class="value"><span class="status-badge">${r.status}</span></div></div>
@@ -125,17 +128,12 @@
         showAlert(document.getElementById('successBox'), result.message, 'success');
         e.target.reset();
 
-        const refreshed = await Api.nextTrackingId();
-        if (refreshed.success) {
-          trackingInput.placeholder = refreshed.tracking_number + ' (suggested)';
-          trackingInput.dataset.suggested = refreshed.tracking_number;
-        }
       });
 
       document.getElementById('createAnotherBtn').addEventListener('click', () => {
         document.getElementById('createdCard').classList.add('hidden');
         clearAlert(document.getElementById('successBox'));
-        trackingInput.focus();
+        document.getElementById('title').focus();
       });
     });
   </script>

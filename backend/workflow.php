@@ -113,5 +113,9 @@ function adjacentOfficesForStatus(string $status): array
 function officesNotifiedForStatus(string $status): array
 {
     $adj = adjacentOfficesForStatus($status);
-    return array_values(array_unique([$adj['previous'], $adj['next']]));
+    $targets = [$adj['previous'], $adj['next']];
+    if ($status === 'Registered') {
+        $targets[] = 'procurement';
+    }
+    return array_values(array_unique($targets));
 }

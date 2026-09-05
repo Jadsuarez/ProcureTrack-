@@ -31,7 +31,7 @@ function renderAllocationTable(data) {
           <td><code>${office.slug}</code></td>
           <td>
             <div class="alloc-amount">${formatPeso(amount)}</div>
-            ${amount === 0 ? '<small class="text-muted">Not allocated</small>' : ''}
+            ${amount === 0 ? '<small class="text-muted">No available funds</small>' : ''}
           </td>
           <td>
             <div class="alloc-share-meta">${share}%</div>
@@ -140,14 +140,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   await loadAllocations();
+  window.addEventListener('focus', loadAllocations);
 
   const hint = document.getElementById('allocationHint');
   const subtitle = document.getElementById('allocationSubtitle');
   if (allocationState.canEdit) {
-    subtitle.textContent = 'Set the annual fund assigned to each registered office.';
-    hint.textContent = 'Use Set amount to assign or update an office budget. Amounts are in Philippine pesos.';
+    subtitle.textContent = 'Manage available office funds after request deductions.';
+    hint.textContent = 'Set amount replaces the current available balance. New requests automatically deduct their amount. Amounts are in Philippine pesos.';
   } else {
-    subtitle.textContent = 'View the annual fund assigned to each registered office.';
+    subtitle.textContent = 'View available office funds after request deductions.';
     hint.textContent = 'Only Budget Office can change allocations.';
   }
 });

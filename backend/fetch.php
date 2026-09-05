@@ -65,7 +65,7 @@ try {
             }
 
             $stmt = $pdo->prepare(
-                'SELECT * FROM requests WHERE tracking_number LIKE ? ORDER BY tracking_number'
+                'SELECT * FROM requests WHERE UPPER(tracking_number) LIKE UPPER(?) ORDER BY tracking_number'
             );
             $stmt->execute(['%' . $tracking . '%']);
             $requests = filterRequestsForRole($stmt->fetchAll(), $role);
@@ -113,7 +113,7 @@ try {
         case 'notifications':
             $logStmt = $pdo->query(
                 'SELECT sl.id, sl.status, sl.notes, sl.updated_by, sl.created_at,
-                        r.tracking_number, r.title
+                        r.tracking_number, r.title, r.status AS current_status
                  FROM status_logs sl
                  INNER JOIN requests r ON r.id = sl.request_id
                  ORDER BY sl.created_at DESC, sl.id DESC
@@ -123,7 +123,7 @@ try {
             $notifications = [];
             foreach ($logStmt as $row) {
                 $adj = adjacentOfficesForStatus($row['status']);
-                $targets = [$adj['previous'], $adj['next']];
+                $targets = officesNotifiedForStatus($row['status']);
                 if (!in_array($role, $targets, true)) {
                     continue;
                 }
@@ -134,7 +134,12 @@ try {
                 $isNext = $role === $adj['next'];
                 $isPrev = $role === $adj['previous'];
 
-                if ($isNew && $isNext && !$isPrev) {
+                if ($isNew && $role === 'procurement') {
+                    $message = "New request {$tracking} was submitted by Requesting Office.";
+                    if (!isRequestVisibleToRole($row['current_status'], $role)) {
+                        $message .= ' Awaiting Budget review.';
+                    }
+                } elseif ($isNew && $isNext && !$isPrev) {
                     $message = "New request {$tracking} is ready for your office.";
                 } elseif ($isNew && $isPrev) {
                     $message = "Request {$tracking} was submitted.";
@@ -150,6 +155,7 @@ try {
                     'title' => $row['title'],
                     'status' => $status,
                     'message' => $message,
+                    'can_view' => isRequestVisibleToRole($row['current_status'], $role),
                     'kind' => $isNext && !$isPrev ? 'incoming' : 'update',
                     'created_at' => $row['created_at'],
                 ];

@@ -298,7 +298,7 @@ async function loadNavbarNotifications() {
       .map((n) => {
         const unreadClass = Number(n.id) > seenId ? ' unread' : '';
         return `<li class="notif-item${unreadClass}">
-          <a href="details.html?tracking=${encodeURIComponent(n.tracking_number)}">
+          <a ${n.can_view === false ? 'aria-disabled="true"' : `href="details.html?tracking=${encodeURIComponent(n.tracking_number)}"`}>
             <strong>${n.tracking_number}</strong>
             <span>${n.message}</span>
             <span class="meta">${formatDate(n.created_at)}</span>
@@ -360,7 +360,8 @@ function bindNotifMenu(session) {
   menu.addEventListener('click', (e) => e.stopPropagation());
 
   if (!window.__notifPoll) {
-    window.__notifPoll = setInterval(loadNavbarNotifications, 45000);
+    window.__notifPoll = setInterval(loadNavbarNotifications, 10000);
+    window.addEventListener('focus', loadNavbarNotifications);
   }
 }
 
@@ -389,11 +390,23 @@ function bindGlobalSearch() {
     e.preventDefault();
     const q = document.getElementById('globalSearchInput')?.value.trim();
     if (!q) return;
-    window.location.href = `details.html?tracking=${encodeURIComponent(q)}`;
+
+    const page = window.location.pathname.split('/').pop() || 'dashboard.html';
+    if (page === 'dashboard.html') {
+      const dashboardInput = document.getElementById('searchInput');
+      const dashboardForm = document.getElementById('searchForm');
+      if (dashboardInput && dashboardForm) {
+        dashboardInput.value = q;
+        dashboardForm.requestSubmit();
+        return;
+      }
+    }
+
+    window.location.href = `dashboard.html?search=${encodeURIComponent(q)}`;
   });
 
   const params = new URLSearchParams(window.location.search);
-  const tracking = params.get('tracking');
+  const tracking = params.get('tracking') || params.get('search');
   const input = document.getElementById('globalSearchInput');
   if (input && tracking) {
     input.value = tracking;

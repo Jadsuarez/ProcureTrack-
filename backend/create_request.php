@@ -32,29 +32,38 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-$tracking = strtoupper(trim($input['tracking_number'] ?? ''));
 $title = trim($input['title'] ?? '');
 $description = trim($input['description'] ?? '');
-
-if ($tracking === '') {
-    $tracking = suggestNextTracking($pdo);
+$amount = $input['request_amount'] ?? '';
+if (!is_scalar($amount) || !preg_match('/^\d{1,13}(\.\d{1,2})?$/', (string) $amount)
+    || (float) $amount <= 0 || (float) $amount > 999999999999.99) {
+    jsonResponse(['success' => false, 'message' => 'Enter a positive request amount with at most two decimal places.'], 400);
 }
-
-if (!preg_match('/^[A-Z0-9][A-Z0-9-]{2,49}$/', $tracking)) {
-    jsonResponse(['success' => false, 'message' => 'Invalid tracking number format (e.g. PR-0006).'], 400);
-}
+$fundingOffice = currentRole();
 
 try {
-    $check = $pdo->prepare('SELECT id FROM requests WHERE UPPER(tracking_number) = UPPER(?)');
-    $check->execute([$tracking]);
-    if ($check->fetch()) {
-        jsonResponse(['success' => false, 'message' => 'Tracking number already exists.'], 409);
+    $pdo->beginTransaction();
+    // Lock the office balance so concurrent requests cannot spend the same funds.
+    $fund = $pdo->prepare('SELECT fund_allocation FROM offices WHERE slug = ? FOR UPDATE');
+    $fund->execute([$fundingOffice]);
+    if (!$fund->fetch()) {
+        $pdo->rollBack();
+        jsonResponse(['success' => false, 'message' => 'Funding office not found.'], 400);
+    }
+    // All creators use the requesting office lock above; assign only after acquiring it.
+    $tracking = suggestNextTracking($pdo);
+
+    $deduct = $pdo->prepare('UPDATE offices SET fund_allocation = fund_allocation - ? WHERE slug = ? AND fund_allocation >= ?');
+    $deduct->execute([$amount, $fundingOffice, $amount]);
+    if ($deduct->rowCount() !== 1) {
+        $pdo->rollBack();
+        jsonResponse(['success' => false, 'message' => 'Insufficient available funds for this request.'], 400);
     }
 
     $updatedBy = roleLabel('requesting');
     $insert = $pdo->prepare(
-        'INSERT INTO requests (tracking_number, title, description, status, updated_by)
-         VALUES (?, ?, ?, ?, ?)'
+        'INSERT INTO requests (tracking_number, title, description, status, updated_by, request_amount, funding_office)
+         VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
     $insert->execute([
         $tracking,
@@ -62,6 +71,8 @@ try {
         $description !== '' ? $description : null,
         'Registered',
         $updatedBy,
+        $amount,
+        $fundingOffice,
     ]);
 
     $requestId = (int) $pdo->lastInsertId();
@@ -76,16 +87,23 @@ try {
         $updatedBy,
     ]);
 
+    $fund->execute([$fundingOffice]);
+    $remaining = $fund->fetchColumn();
+    $pdo->commit();
+
     jsonResponse([
         'success' => true,
-        'message' => 'New track request created.',
+        'message' => 'Request created and amount deducted from available funds.',
         'request' => [
             'id' => $requestId,
             'tracking_number' => $tracking,
             'title' => $title,
             'status' => 'Registered',
+            'request_amount' => $amount,
+            'remaining_funds' => $remaining,
         ],
     ]);
 } catch (PDOException $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
     jsonResponse(['success' => false, 'message' => 'Database error.'], 500);
 }
