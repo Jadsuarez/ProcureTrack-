@@ -129,11 +129,36 @@ const Api = {
     return res.json();
   },
 
+  async statusRequests(status) {
+    const res = await fetch(
+      `${API_BASE}/fetch.php?action=status_requests&status=${encodeURIComponent(status)}`,
+      { credentials: 'include' }
+    );
+    return res.json();
+  },
+
+  async requestingRequests() {
+    const res = await fetch(`${API_BASE}/fetch.php?action=requesting_requests`, {
+      credentials: 'include',
+    });
+    return res.json();
+  },
+
   async detail(tracking) {
     const res = await fetch(
       `${API_BASE}/fetch.php?action=detail&tracking=${encodeURIComponent(tracking)}`,
       { credentials: 'include' }
     );
+    return res.json();
+  },
+
+  async updateSignatories(data) {
+    const res = await fetch(`${API_BASE}/signatories.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
     return res.json();
   },
 
@@ -210,7 +235,7 @@ const Api = {
 function statusBadgeClass(status) {
   if (status === 'Completed') return 'completed';
   if (['Under Budget Review', 'Reviewed'].includes(status)) return 'budget';
-  if (['Canvass', 'Abstract of Canvass', 'PO'].includes(status)) return 'procurement';
+  if (['Canvass', 'PO'].includes(status)) return 'procurement';
   if (['DV Processing', 'For Payment'].includes(status)) return 'accounting';
   if (status === 'Paid') return 'cashier';
   return '';
@@ -276,7 +301,6 @@ const FLOW_STEPS = [
   'Under Budget Review',
   'Reviewed',
   'Canvass',
-  'Abstract of Canvass',
   'PO',
   'DV Processing',
   'For Payment',
@@ -287,7 +311,7 @@ const FLOW_STEPS = [
 const OFFICE_STEPS = [
   { label: 'Office', statuses: ['Registered'] },
   { label: 'Budget', statuses: ['Under Budget Review', 'Reviewed'] },
-  { label: 'Procurement', statuses: ['Canvass', 'Abstract of Canvass', 'PO'] },
+  { label: 'Procurement', statuses: ['Canvass', 'PO'] },
   { label: 'Accounting', statuses: ['DV Processing', 'For Payment'] },
   { label: 'Cashier', statuses: ['Paid', 'Completed'] },
 ];

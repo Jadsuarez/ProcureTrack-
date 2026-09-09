@@ -1,3 +1,69 @@
+function renderSignatoryWorkflow(data, session, tracking) {
+  const officeLabels = {
+    requesting: 'Requesting Office',
+    budget: 'Budget Office',
+    accounting: 'Accounting Office',
+    procurement: 'Procurement Office',
+    pso: 'Property and Supply Office',
+    cashier: 'Cashier',
+  };
+  const rows = data.signatories || [];
+  const summary = data.signatory_summary || {};
+  const list = document.getElementById('signatoryList');
+  const summaryEl = document.getElementById('signatorySummary');
+  const overallEl = document.getElementById('signatoryOverallStatus');
+  const form = document.getElementById('signatoryForm');
+  const accessMessage = document.getElementById('signatoryAccessMessage');
+  const canManage = ['requesting', 'procurement'].includes(session.role);
+
+  overallEl.textContent = summary.overall_status || 'No Signatories Configured';
+  overallEl.className = `status-badge ${summary.overall_status === 'Signatures Complete' ? 'completed' : ''}`;
+  summaryEl.innerHTML = `
+    <div><span class="label">Current signatory</span><strong>${summary.current ? `${summary.current.signatory_name}${summary.current.designation ? ` (${summary.current.designation})` : ''}` : 'None'}</strong></div>
+    <div><span class="label">Completed</span><strong>${summary.completed || 0}</strong></div>
+    <div><span class="label">Remaining</span><strong>${summary.remaining || 0}</strong></div>
+    <div><span class="label">Request status</span><strong>${data.request.status}</strong></div>
+  `;
+
+  const groupedRows = rows.reduce((groups, row) => {
+    const office = row.assigned_office || 'unassigned';
+    (groups[office] ||= []).push(row);
+    return groups;
+  }, {});
+  list.innerHTML = rows.length ? Object.entries(groupedRows).map(([office, officeRows]) => `
+    <li class="signatory-office-group">
+      <h3>${officeLabels[office] || 'Unassigned Office'}</h3>
+      <ol>${officeRows.map((row, index) => `
+        <li class="signatory-row">
+          <span class="signatory-order">${index + 1}</span>
+          <div class="signatory-info">
+            <strong>${row.signatory_name}</strong>
+            <span>${row.designation || 'Signatory'}</span>
+            <span>Document: ${row.document_location || 'Not specified'}</span>
+          </div>
+          <span class="status-badge ${row.status === 'Signed' ? 'completed' : ''}">${row.status}</span>
+          ${canManage || row.assigned_office === session.role ? `<div class="signatory-actions">
+            ${row.status === 'Pending Signature' && summary.current && Number(summary.current.id) === Number(row.id) ? '<button type="button" class="btn btn-sm btn-primary" data-signatory-action="Signed">Mark Signed</button><button type="button" class="btn btn-sm btn-secondary" data-signatory-action="Skipped">Skip</button>' : ''}
+            ${canManage ? `<button type="button" class="btn btn-sm btn-secondary" data-signatory-move="up" data-signatory-id="${row.id}" ${index === 0 ? 'disabled' : ''}>Up</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-signatory-move="down" data-signatory-id="${row.id}" ${index === officeRows.length - 1 ? 'disabled' : ''}>Down</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-signatory-delete="${row.id}">Remove</button>` : ''}
+          </div>` : ''}
+        </li>
+      `).join('')}</ol>
+    </li>
+  `).join('') : '<li class="text-muted">No signatories configured.</li>';
+
+  form.classList.toggle('hidden', !canManage);
+  accessMessage.classList.toggle('hidden', canManage || rows.length > 0);
+  form.dataset.tracking = tracking;
+}
+
+async function refreshSignatoryWorkflow(tracking, session) {
+  const data = await Api.detail(tracking);
+  if (data.success) renderSignatoryWorkflow(data, session, tracking);
+  return data;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const session = await requireAuth();
   if (!session) return;
@@ -76,6 +142,53 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('uploadLink').href =
     `upload.html?tracking=${encodeURIComponent(req.tracking_number)}`;
 
+  renderSignatoryWorkflow(data, session, tracking);
+  const signatoryForm = document.getElementById('signatoryForm');
+  signatoryForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const result = await Api.updateSignatories({
+      action: 'add',
+      tracking_number: tracking,
+      signatory_name: document.getElementById('signatoryName').value,
+      designation: document.getElementById('signatoryDesignation').value,
+      document_location: document.getElementById('signatoryDocumentLocation').value,
+      assigned_office: document.getElementById('signatoryOffice').value,
+    });
+    if (result.success) {
+      signatoryForm.reset();
+      await refreshSignatoryWorkflow(tracking, session);
+    } else {
+      showAlert(document.getElementById('alertBox'), result.message);
+    }
+  });
+
+  document.getElementById('signatoryList')?.addEventListener('click', async (e) => {
+    const button = e.target.closest('button');
+    if (!button || button.disabled) return;
+    let payload = null;
+    const id = Number(button.dataset.signatoryId || button.dataset.signatoryDelete);
+    if (button.dataset.signatoryAction) {
+      payload = { action: 'set_status', id, status: button.dataset.signatoryAction };
+    } else if (button.dataset.signatoryDelete) {
+      payload = { action: 'delete', id };
+    } else if (button.dataset.signatoryMove) {
+      const current = [...button.closest('.signatory-office-group').querySelectorAll('.signatory-row')]
+        .map((row) => Number(row.querySelector('[data-signatory-id]')?.dataset.signatoryId));
+      const position = current.indexOf(id);
+      const swapWith = button.dataset.signatoryMove === 'up' ? position - 1 : position + 1;
+      if (position < 0 || swapWith < 0 || swapWith >= current.length) return;
+      [current[position], current[swapWith]] = [current[swapWith], current[position]];
+      payload = { action: 'reorder', order: current };
+    }
+    if (!payload) return;
+    const result = await Api.updateSignatories({ ...payload, tracking_number: tracking });
+    if (result.success) {
+      await refreshSignatoryWorkflow(tracking, session);
+    } else {
+      showAlert(document.getElementById('alertBox'), result.message);
+    }
+  });
+
   const canUpdate = ['budget', 'procurement', 'pso', 'accounting', 'cashier'].includes(session.role);
   if (canUpdate) {
     const opts = await Api.statusOptions();
@@ -102,7 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else if (session.role === 'procurement') {
         if (hint) {
           hint.textContent =
-            'Update procurement monitoring status (Canvass → Abstract of Canvass → PO → For Bidding → Bidding Award).';
+            'Update procurement monitoring status (Canvass → PO).';
         }
       } else if (session.role === 'pso') {
         if (hint) {

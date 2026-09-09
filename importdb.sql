@@ -93,6 +93,24 @@ CREATE TABLE IF NOT EXISTS documents (
   FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Request-specific signatory workflow (monitoring only; no digital signatures)
+CREATE TABLE IF NOT EXISTS request_signatories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  request_id INT NOT NULL,
+  signatory_name VARCHAR(150) NOT NULL,
+  designation VARCHAR(150) DEFAULT NULL,
+  document_location VARCHAR(255) DEFAULT NULL,
+  assigned_office VARCHAR(30) DEFAULT NULL,
+  approval_order INT NOT NULL DEFAULT 1,
+  status VARCHAR(30) NOT NULL DEFAULT 'Pending Signature',
+  signed_at TIMESTAMP NULL DEFAULT NULL,
+  updated_by VARCHAR(50) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE,
+  INDEX idx_request_signatories_order (request_id, approval_order, id)
+) ENGINE=InnoDB;
+
 -- Sample pre-existing requests (monitoring only — created in DB, not via UI)
 INSERT INTO requests (tracking_number, title, description, status, updated_by) VALUES
 ('PR-0001', 'Office Supplies Q1', 'Paper, pens, and folders for admin office', 'Registered', 'system'),
@@ -117,7 +135,6 @@ INSERT INTO status_logs (request_id, status, updated_by, notes) VALUES
 (5, 'Under Budget Review', 'budget', NULL),
 (5, 'Reviewed', 'budget', NULL),
 (5, 'Canvass', 'procurement', NULL),
-(5, 'Abstract of Canvass', 'procurement', NULL),
 (5, 'PO', 'Procurement Office', 'Purchase order issued'),
 (5, 'DV Processing', 'Accounting Office', 'Disbursement voucher in process'),
 (5, 'For Payment', 'Accounting Office', 'Ready for payment monitoring'),
@@ -127,7 +144,6 @@ INSERT INTO status_logs (request_id, status, updated_by, notes) VALUES
 (6, 'Under Budget Review', 'Budget Office', NULL),
 (6, 'Reviewed', 'Budget Office', NULL),
 (6, 'Canvass', 'Procurement Office', NULL),
-(6, 'Abstract of Canvass', 'Procurement Office', NULL),
 (6, 'PO', 'Procurement Office', 'Purchase order issued'),
 (6, 'DV Processing', 'Accounting Office', NULL),
 (6, 'For Payment', 'Accounting Office', 'Awaiting cashier handoff');

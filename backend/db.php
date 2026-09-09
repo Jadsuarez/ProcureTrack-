@@ -18,8 +18,59 @@ function getConnection(): PDO
         ]);
         ensureOfficeFundAllocationColumn($pdo);
         ensureRequestFundingColumns($pdo);
+        ensureSignatoryTables($pdo);
+        ensureLegacyStatusMigration($pdo);
     }
     return $pdo;
+}
+
+function ensureLegacyStatusMigration(PDO $pdo): void
+{
+    static $migrated = false;
+    if ($migrated) {
+        return;
+    }
+    $migrated = true;
+
+    $statusMap = [
+        'Abstract of Canvass' => 'PO',
+        'For Bidding' => 'PO',
+        'Bidding Award' => 'Delivered',
+    ];
+    foreach ($statusMap as $legacy => $replacement) {
+        $stmt = $pdo->prepare('UPDATE requests SET status = ? WHERE status = ?');
+        $stmt->execute([$replacement, $legacy]);
+        $stmt = $pdo->prepare('UPDATE status_logs SET status = ? WHERE status = ?');
+        $stmt->execute([$replacement, $legacy]);
+    }
+}
+
+function ensureSignatoryTables(PDO $pdo): void
+{
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS request_signatories (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            request_id INT NOT NULL,
+            signatory_name VARCHAR(150) NOT NULL,
+            designation VARCHAR(150) DEFAULT NULL,
+            assigned_office VARCHAR(30) DEFAULT NULL,
+            approval_order INT NOT NULL DEFAULT 1,
+            status VARCHAR(30) NOT NULL DEFAULT "Pending Signature",
+            signed_at TIMESTAMP NULL DEFAULT NULL,
+            updated_by VARCHAR(50) DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE,
+            INDEX idx_request_signatories_order (request_id, approval_order, id)
+        ) ENGINE=InnoDB'
+    );
+    $columns = $pdo->query('SHOW COLUMNS FROM request_signatories')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('document_location', $columns, true)) {
+        $pdo->exec('ALTER TABLE request_signatories ADD COLUMN document_location VARCHAR(255) DEFAULT NULL AFTER designation');
+    }
+    if (!in_array('assigned_office', $columns, true)) {
+        $pdo->exec('ALTER TABLE request_signatories ADD COLUMN assigned_office VARCHAR(30) DEFAULT NULL AFTER document_location');
+    }
 }
 
 function ensureRequestFundingColumns(PDO $pdo): void

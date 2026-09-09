@@ -36,8 +36,8 @@ try {
                 'accounting' => ['Accepted', 'DV Processing', 'For Payment'],
                 'cashier' => ['For Payment', 'Paid', 'Completed'],
                 'budget' => ['Registered', 'Under Budget Review', 'Reviewed'],
-                'procurement' => ['Reviewed', 'Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'],
-                'pso' => ['Bidding Award', 'Delivered', 'For Inspection', 'Accepted'],
+                'procurement' => ['Reviewed', 'Canvass', 'PO'],
+                'pso' => ['Delivered', 'For Inspection', 'Accepted'],
                 default => [],
             };
 
@@ -72,6 +72,43 @@ try {
             jsonResponse(['success' => true, 'requests' => $requests]);
             break;
 
+        case 'status_requests':
+            $status = trim($_GET['status'] ?? '');
+            if (!in_array($status, statusesForOffice($role), true)) {
+                jsonResponse(['success' => false, 'message' => 'Invalid status for this office.'], 400);
+            }
+            $statusStmt = $pdo->prepare(
+                'SELECT tracking_number, title, status, updated_at, created_at
+                 FROM requests WHERE status = ? ORDER BY updated_at DESC, tracking_number ASC'
+            );
+            $statusStmt->execute([$status]);
+            $requests = filterRequestsForRole($statusStmt->fetchAll(), $role);
+            jsonResponse([
+                'success' => true,
+                'status' => $status,
+                'requests' => $requests,
+                'total' => count($requests),
+            ]);
+            break;
+
+        case 'requesting_requests':
+            if ($role !== 'requesting') {
+                jsonResponse(['success' => false, 'message' => 'Requesting Office access required.'], 403);
+            }
+            $requestingStmt = $pdo->query(
+                "SELECT tracking_number, title, status, request_amount, created_at, updated_at
+                 FROM requests
+                 WHERE funding_office = 'requesting' OR funding_office IS NULL
+                 ORDER BY updated_at DESC, tracking_number ASC"
+            );
+            $requestingRequests = $requestingStmt->fetchAll();
+            jsonResponse([
+                'success' => true,
+                'requests' => $requestingRequests,
+                'total' => count($requestingRequests),
+            ]);
+            break;
+
         case 'detail':
             $tracking = trim($_GET['tracking'] ?? '');
             if ($tracking === '') {
@@ -102,11 +139,55 @@ try {
             $docStmt->execute([$request['id']]);
             $documents = $docStmt->fetchAll();
 
+            $signatoryStmt = $pdo->prepare(
+                'SELECT id, signatory_name, designation, document_location, assigned_office, approval_order, status, signed_at, updated_by
+                 FROM request_signatories
+                 WHERE request_id = ? ORDER BY approval_order ASC, id ASC'
+            );
+            $signatoryStmt->execute([$request['id']]);
+            $signatories = $signatoryStmt->fetchAll();
+            $signedCount = count(array_filter($signatories, fn($s) => $s['status'] === 'Signed'));
+            $remainingCount = count(array_filter($signatories, fn($s) => $s['status'] === 'Pending Signature'));
+            $currentOffice = officeForStatus($request['status']);
+            $currentSignatory = null;
+            foreach ($signatories as $signatory) {
+                if ($signatory['assigned_office'] === $currentOffice
+                    && $signatory['status'] === 'Pending Signature') {
+                    $currentSignatory = $signatory;
+                    break;
+                }
+            }
+            $officeSummary = [];
+            foreach ($signatories as $signatory) {
+                $office = $signatory['assigned_office'] ?: 'unassigned';
+                if (!isset($officeSummary[$office])) {
+                    $officeSummary[$office] = ['office' => $office, 'total' => 0, 'completed' => 0, 'remaining' => 0];
+                }
+                $officeSummary[$office]['total']++;
+                if ($signatory['status'] === 'Signed' || $signatory['status'] === 'Skipped') {
+                    $officeSummary[$office]['completed']++;
+                }
+                if ($signatory['status'] === 'Pending Signature') {
+                    $officeSummary[$office]['remaining']++;
+                }
+            }
+
             jsonResponse([
                 'success' => true,
                 'request' => $request,
                 'timeline' => $timeline,
                 'documents' => $documents,
+                'signatories' => $signatories,
+                'signatory_summary' => [
+                    'current' => $currentSignatory,
+                    'completed' => $signedCount,
+                    'remaining' => $remainingCount,
+                    'overall_status' => $signatories && $remainingCount === 0
+                        ? 'Signatures Complete'
+                        : ($signatories ? 'Awaiting Signatures' : 'No Signatories Configured'),
+                    'current_office' => $currentOffice,
+                    'by_office' => array_values($officeSummary),
+                ],
             ]);
             break;
 
@@ -171,7 +252,7 @@ try {
         case 'status_options':
             $options = match ($role) {
                 'budget' => ['Under Budget Review', 'Reviewed'],
-                'procurement' => ['Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'],
+                'procurement' => ['Canvass', 'PO'],
                 'pso' => ['Delivered', 'For Inspection', 'Accepted'],
                 'accounting' => ['DV Processing', 'For Payment'],
                 'cashier' => ['Paid', 'Completed'],

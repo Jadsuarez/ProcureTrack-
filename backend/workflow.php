@@ -11,10 +11,7 @@ function getFlowSteps(): array
         'Under Budget Review',
         'Reviewed',
         'Canvass',
-        'Abstract of Canvass',
         'PO',
-        'For Bidding',
-        'Bidding Award',
         'Delivered',
         'For Inspection',
         'Accepted',
@@ -31,13 +28,25 @@ function workflowStageIndex(string $status): int
     return $idx === false ? -1 : $idx;
 }
 
+function statusesForOffice(string $role): array
+{
+    return match ($role) {
+        'budget' => ['Registered', 'Under Budget Review', 'Reviewed'],
+        'procurement' => ['Reviewed', 'Canvass', 'PO'],
+        'pso' => ['Delivered', 'For Inspection', 'Accepted'],
+        'accounting' => ['Accepted', 'DV Processing', 'For Payment'],
+        'cashier' => ['For Payment', 'Paid', 'Completed'],
+        default => getFlowSteps(),
+    };
+}
+
 /** First status at which an office may view a request (previous office handoff). */
 function officeVisibilityEntryStatus(string $role): string
 {
     return match ($role) {
         'requesting', 'budget' => 'Registered',
         'procurement' => 'Reviewed',
-        'pso' => 'Bidding Award',
+        'pso' => 'Delivered',
         'accounting' => 'Accepted',
         'cashier' => 'For Payment',
         default => 'Registered',
@@ -83,7 +92,7 @@ function officeForStatus(string $status): string
     return match ($status) {
         'Registered' => 'requesting',
         'Under Budget Review', 'Reviewed' => 'budget',
-        'Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award' => 'procurement',
+        'Canvass', 'PO' => 'procurement',
         'Delivered', 'For Inspection', 'Accepted' => 'pso',
         'DV Processing', 'For Payment' => 'accounting',
         'Paid', 'Completed' => 'cashier',

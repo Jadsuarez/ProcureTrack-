@@ -5,11 +5,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const alertBox = document.getElementById('alertBox');
 
   function landingPage() {
-    // The current UI uses one role-aware dashboard for every office.
-    return 'dashboard.html';
+    return sessionRole === 'requesting' ? 'requesting-dashboard.html' : 'dashboard.html';
   }
 
   const session = await Api.session();
+  const sessionRole = session.role;
   if (session.logged_in) {
     window.location.href = landingPage();
     return;

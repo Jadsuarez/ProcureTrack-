@@ -28,10 +28,7 @@ const FLOW_STEPS = [
     'Under Budget Review',
     'Reviewed',
     'Canvass',
-    'Abstract of Canvass',
     'PO',
-    'For Bidding',
-    'Bidding Award',
     'Delivered',
     'For Inspection',
     'Accepted',
@@ -42,8 +39,8 @@ const FLOW_STEPS = [
 ];
 
 const BUDGET_STATUSES = ['Registered', 'Under Budget Review', 'Reviewed'];
-const PROCUREMENT_STATUSES = ['Reviewed', 'Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'];
-const PSO_STATUSES = ['Bidding Award', 'Delivered', 'For Inspection', 'Accepted'];
+const PROCUREMENT_STATUSES = ['Reviewed', 'Canvass', 'PO'];
+const PSO_STATUSES = ['Delivered', 'For Inspection', 'Accepted'];
 const ACCOUNTING_STATUSES = ['Accepted', 'DV Processing', 'For Payment'];
 const CASHIER_STATUSES = ['For Payment', 'Paid', 'Completed'];
 
@@ -75,14 +72,14 @@ function officeScope(string $role): array
         'procurement' => [
             'label' => 'Procurement Office',
             'statuses' => PROCUREMENT_STATUSES,
-            'focus_stages' => ['Reviewed', 'Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'],
+            'focus_stages' => ['Reviewed', 'Canvass', 'PO'],
             'queue_status' => 'Canvass',
-            'handoff_status' => 'Bidding Award',
+            'handoff_status' => 'PO',
         ],
         'pso' => [
             'label' => 'Property and Supply Office',
             'statuses' => PSO_STATUSES,
-            'focus_stages' => ['Bidding Award', 'Delivered', 'For Inspection', 'Accepted'],
+            'focus_stages' => ['Delivered', 'For Inspection', 'Accepted'],
             'queue_status' => 'Delivered',
             'handoff_status' => 'Accepted',
         ],
@@ -249,8 +246,8 @@ try {
     // --- Diagnostic ---
     $stageFilter = match ($role) {
         'budget' => ['Registered', 'Under Budget Review', 'Reviewed'],
-        'procurement' => ['Reviewed', 'Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'],
-        'pso' => ['Bidding Award', 'Delivered', 'For Inspection', 'Accepted'],
+        'procurement' => ['Reviewed', 'Canvass', 'PO'],
+        'pso' => ['Delivered', 'For Inspection', 'Accepted'],
         'accounting' => ['Accepted', 'DV Processing', 'For Payment'],
         'cashier' => ['For Payment', 'Paid', 'Completed'],
         default => FLOW_STEPS,
@@ -300,11 +297,8 @@ try {
         $inReview = $statusCounts['Under Budget Review'] ?? 0;
         $backlogRatio = $inReview > 0 ? round($reviewed / $inReview, 2) : ($reviewed > 0 ? (float) $reviewed : 0);
     } elseif ($role === 'procurement') {
-        $inPipeline = ($statusCounts['Canvass'] ?? 0)
-            + ($statusCounts['Abstract of Canvass'] ?? 0)
-            + ($statusCounts['PO'] ?? 0)
-            + ($statusCounts['For Bidding'] ?? 0);
-        $awarded = $statusCounts['Bidding Award'] ?? 0;
+        $inPipeline = ($statusCounts['Canvass'] ?? 0) + ($statusCounts['PO'] ?? 0);
+        $awarded = $statusCounts['PO'] ?? 0;
         $backlogRatio = $inPipeline > 0 ? round($awarded / $inPipeline, 2) : ($awarded > 0 ? (float) $awarded : 0);
     } elseif ($role === 'pso') {
         $inQueue = ($statusCounts['Delivered'] ?? 0) + ($statusCounts['For Inspection'] ?? 0);
@@ -344,17 +338,14 @@ try {
         $key = str_replace(' (current)', '', $row['stage']);
         $globalAvgByStage[$key] = $row['avg_days'];
     }
-    foreach (['Registered', 'Under Budget Review', 'Reviewed', 'Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award', 'Delivered', 'For Inspection', 'Accepted', 'DV Processing', 'For Payment', 'Paid'] as $st) {
+    foreach (['Registered', 'Under Budget Review', 'Reviewed', 'Canvass', 'PO', 'Delivered', 'For Inspection', 'Accepted', 'DV Processing', 'For Payment', 'Paid'] as $st) {
         if (!isset($globalAvgByStage[$st])) {
             $globalAvgByStage[$st] = match ($st) {
                 'Registered' => 2.0,
                 'Under Budget Review' => 5.0,
                 'Reviewed' => 3.0,
                 'Canvass' => 7.0,
-                'Abstract of Canvass' => 4.0,
                 'PO' => 5.0,
-                'For Bidding' => 5.0,
-                'Bidding Award' => 4.0,
                 'Delivered' => 3.0,
                 'For Inspection' => 4.0,
                 'Accepted' => 2.0,

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Requests - Procurement Monitoring</title>
+  <link rel="stylesheet" href="css/style.css?v=20">
+</head>
+<body>
+  <main class="container-wide">
+    <div id="alertBox" class="hidden"></div>
+    <div class="card">
+      <h2>My Requests</h2>
+      <p class="text-muted">All requests submitted by the Requesting Office.</p>
+    </div>
+    <div class="card">
+      <div class="request-list-toolbar">
+        <strong id="requestTotal">0 requests</strong>
+        <label for="requestSort">Sort by</label>
+        <select id="requestSort" aria-label="Sort requests">
+          <option value="updated_desc">Last updated (newest)</option>
+          <option value="updated_asc">Last updated (oldest)</option>
+          <option value="created_desc">Created (newest)</option>
+          <option value="created_asc">Created (oldest)</option>
+          <option value="tracking_asc">Tracking ID (A-Z)</option>
+          <option value="tracking_desc">Tracking ID (Z-A)</option>
+          <option value="title_asc">Title (A-Z)</option>
+          <option value="status_asc">Status (A-Z)</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Tracking ID</th><th>Title</th><th>Amount</th><th>Status</th><th>Created</th><th>Updated</th><th></th></tr>
+          </thead>
+          <tbody id="requestTableBody">
+            <tr><td colspan="7" class="text-muted">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <footer class="app-footer">PROCUREMENT - Monitoring System</footer>
+  <script src="js/api.js?v=18"></script>
+  <script src="js/app.js?v=23"></script>
+  <script src="js/requesting-dashboard.js?v=1"></script>
+</body>
+</html>

@@ -14,6 +14,7 @@ const ICONS = {
 const NAV_BY_ROLE = {
   requesting: [
     { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+    { href: 'requesting-dashboard.html', label: 'My Requests', icon: 'track' },
     { href: 'fund-allocation.html', label: 'Fund Allocation', icon: 'funds' },
     { href: 'analytics.html', label: 'Analytics', icon: 'analytics' },
     { href: 'new-track.html', label: 'New Track', icon: 'newTrack' },
@@ -34,6 +35,13 @@ const NAV_BY_ROLE = {
     { href: 'manage-accounts.html', label: 'Account Management', icon: 'accounts' },
   ],
   accounting: [
+    { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+    { href: 'fund-allocation.html', label: 'Fund Allocation', icon: 'funds' },
+    { href: 'analytics.html', label: 'Analytics', icon: 'analytics' },
+    { href: 'track.html', label: 'Track Request', icon: 'track' },
+    { href: 'upload.html', label: 'Upload Documents', icon: 'upload' },
+  ],
+  pso: [
     { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
     { href: 'fund-allocation.html', label: 'Fund Allocation', icon: 'funds' },
     { href: 'analytics.html', label: 'Analytics', icon: 'analytics' },
@@ -107,6 +115,7 @@ function initAppLayout(session) {
 
 const PAGE_TITLES = {
   'dashboard.html': 'Dashboard',
+  'requesting-dashboard.html': 'My Requests',
   'fund-allocation.html': 'Fund Allocation',
   'analytics.html': 'System Analytics',
   'new-track.html': 'New Track',
@@ -459,7 +468,24 @@ function normalizeRole(role) {
 
 function getNavLinksForRole(role) {
   const office = normalizeRole(role);
-  return NAV_BY_ROLE[office] || NAV_BY_ROLE.budget;
+  const links = NAV_BY_ROLE[office] || NAV_BY_ROLE.budget;
+  const statuses = {
+    requesting: [],
+    budget: ['Registered', 'Under Budget Review', 'Reviewed'],
+    procurement: ['Reviewed', 'Canvass', 'PO'],
+    pso: ['Delivered', 'For Inspection', 'Accepted'],
+    accounting: ['Accepted', 'DV Processing', 'For Payment'],
+    cashier: ['For Payment', 'Paid', 'Completed'],
+  }[office] || [];
+  return [
+    ...links,
+    ...statuses.map((status) => ({
+      href: `status.html?status=${encodeURIComponent(status)}`,
+      label: status,
+      icon: 'track',
+      status,
+    })),
+  ];
 }
 
 function buildNav(session) {
@@ -468,6 +494,7 @@ function buildNav(session) {
 
   const role = typeof session === 'string' ? session : session?.role;
   const current = window.location.pathname.split('/').pop() || 'dashboard.html';
+  const currentStatus = new URLSearchParams(window.location.search).get('status');
   const links = getNavLinksForRole(role);
 
   nav.innerHTML =
@@ -475,7 +502,8 @@ function buildNav(session) {
       .map((l) => {
         const active =
           l.href === current ||
-          (l.href === 'manage-accounts.html' && current === 'create-account.html')
+          (l.href === 'manage-accounts.html' && current === 'create-account.html') ||
+          (l.href.startsWith('status.html?status=') && current === 'status.html' && l.status === currentStatus)
             ? ' active'
             : '';
         const icon = ICONS[l.icon] || '';

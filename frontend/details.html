@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Request Details — PROCUREMENT</title>
-  <link rel="stylesheet" href="css/style.css?v=19">
+  <link rel="stylesheet" href="css/style.css?v=20">
 </head>
 <body>
   <main class="container">
@@ -35,6 +35,50 @@
         <p style="margin-top: 0.75rem;">
           <a href="#" id="uploadLink" class="btn btn-sm btn-secondary">Upload Document</a>
         </p>
+      </div>
+
+      <div class="card" id="signatoryCard">
+        <div class="section-heading-row">
+          <div>
+            <h2>Signatory Workflow</h2>
+            <p class="text-muted">Requesting Office or Procurement assigns the signatory and office. The assigned office marks its current step Signed or Skipped. Monitoring only; no digital signatures are collected.</p>
+          </div>
+          <span class="status-badge" id="signatoryOverallStatus">No Signatories Configured</span>
+        </div>
+        <div class="signatory-summary" id="signatorySummary"></div>
+        <ol class="signatory-list" id="signatoryList">
+          <li class="text-muted">No signatories configured.</li>
+        </ol>
+        <p class="text-muted hidden" id="signatoryAccessMessage">Only Requesting Office or Procurement administrators can add and arrange signatories.</p>
+        <form id="signatoryForm" class="signatory-form hidden">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="signatoryName">Signatory name</label>
+              <input type="text" id="signatoryName" maxlength="150" required placeholder="e.g. Dr. Juan Dela Cruz">
+            </div>
+            <div class="form-group">
+              <label for="signatoryDesignation">Designation</label>
+              <input type="text" id="signatoryDesignation" maxlength="150" placeholder="e.g. Chancellor">
+            </div>
+            <div class="form-group">
+              <label for="signatoryDocumentLocation">Document location</label>
+              <input type="text" id="signatoryDocumentLocation" maxlength="255" placeholder="e.g. Chancellor's Office">
+            </div>
+            <div class="form-group">
+              <label for="signatoryOffice">Assigned office</label>
+              <select id="signatoryOffice" required>
+                <option value="">Select office</option>
+                <option value="requesting">Requesting Office</option>
+                <option value="budget">Budget Office</option>
+                <option value="accounting">Accounting Office</option>
+                <option value="procurement">Procurement Office</option>
+                <option value="pso">Property and Supply Office</option>
+                <option value="cashier">Cashier</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-secondary">Add Signatory</button>
+        </form>
       </div>
 
       <div class="card hidden" id="budgetInfoCard">
@@ -83,8 +127,8 @@
 
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
-  <script src="js/api.js?v=16"></script>
-  <script src="js/app.js?v=19"></script>
-  <script src="js/details.js?v=13"></script>
+  <script src="js/api.js?v=17"></script>
+  <script src="js/app.js?v=23"></script>
+  <script src="js/details.js?v=14"></script>
 </body>
 </html>

@@ -18,7 +18,7 @@ $budgetType = trim($input['budget_type'] ?? '');
 $role = currentRole();
 
 $budgetStatuses = ['Under Budget Review', 'Reviewed'];
-$procurementStatuses = ['Canvass', 'Abstract of Canvass', 'PO', 'For Bidding', 'Bidding Award'];
+$procurementStatuses = ['Canvass', 'PO'];
 $psoStatuses = ['Delivered', 'For Inspection', 'Accepted'];
 $accountingStatuses = ['DV Processing', 'For Payment'];
 $cashierStatuses = ['Paid', 'Completed'];
@@ -59,6 +59,30 @@ try {
 
     if (!isRequestVisibleToRole($row['status'], $role)) {
         jsonResponse(['success' => false, 'message' => requestVisibilityMessage($role)], 403);
+    }
+
+    $currentOffice = officeForStatus($row['status']);
+    if (in_array($role, ['budget', 'procurement', 'pso', 'accounting', 'cashier'], true)) {
+        $signatureCheck = $pdo->prepare(
+            'SELECT COUNT(*) AS assigned_count,
+                    SUM(status = "Pending Signature") AS pending_count
+             FROM request_signatories
+             WHERE request_id = ? AND assigned_office = ?'
+        );
+        $signatureCheck->execute([(int) $row['id'], $currentOffice]);
+        $signatureState = $signatureCheck->fetch();
+        if ((int) $signatureState['assigned_count'] === 0) {
+            jsonResponse([
+                'success' => false,
+                'message' => 'This handoff is blocked because no signatory is assigned to ' . roleLabel($currentOffice) . '.',
+            ], 409);
+        }
+        if ((int) $signatureState['pending_count'] > 0) {
+            jsonResponse([
+                'success' => false,
+                'message' => roleLabel($currentOffice) . ' cannot advance this request until its required signatories are marked Signed or Skipped.',
+            ], 409);
+        }
     }
 
     $requestId = (int) $row['id'];
