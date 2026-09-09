@@ -35,7 +35,7 @@ function findRequestForSignatories(PDO $pdo, string $tracking): array
 function signatoryRows(PDO $pdo, int $requestId): array
 {
     $stmt = $pdo->prepare(
-        'SELECT id, signatory_name, designation, document_location, assigned_office, approval_order, status, signed_at, updated_by
+        'SELECT id, signatory_name, designation, document_location, assigned_office, approval_order, status, signed_at, updated_by, updated_at
          FROM request_signatories WHERE request_id = ? ORDER BY approval_order ASC, id ASC'
     );
     $stmt->execute([$requestId]);
@@ -45,6 +45,16 @@ function signatoryRows(PDO $pdo, int $requestId): array
 function validAssignedOffice(string $office): bool
 {
     return in_array($office, ['requesting', 'budget', 'accounting', 'procurement', 'pso', 'cashier'], true);
+}
+
+function logSignatoryChange(PDO $pdo, int $requestId, ?int $signatoryId, ?string $office, string $action, ?string $status, string $actor): void
+{
+    $stmt = $pdo->prepare(
+        'INSERT INTO request_signatory_logs
+         (request_id, signatory_id, assigned_office, action, status, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    $stmt->execute([$requestId, $signatoryId, $office, $action, $status, $actor]);
 }
 
 $pdo = getConnection();
@@ -60,9 +70,7 @@ if (!in_array($action, ['add', 'update', 'delete', 'reorder', 'set_status'], tru
     jsonResponse(['success' => false, 'message' => 'Invalid signatory action.'], 400);
 }
 
-if ($action !== 'set_status' && !in_array($role, ['requesting', 'procurement'], true)) {
-    jsonResponse(['success' => false, 'message' => 'Only Requesting Office or Procurement administrators can configure signatories.'], 403);
-}
+$isAdmin = in_array($role, ['requesting', 'procurement'], true);
 
 try {
     $pdo->beginTransaction();
@@ -83,6 +91,7 @@ try {
         );
         $officeCount = count(array_filter($rows, fn($row) => $row['assigned_office'] === $assignedOffice));
         $insert->execute([$requestId, $name, $designation ?: null, $documentLocation ?: null, $assignedOffice, $officeCount + 1, $actor]);
+        logSignatoryChange($pdo, $requestId, (int) $pdo->lastInsertId(), $assignedOffice, 'Added', 'Pending Signature', $actor);
     } elseif ($action === 'update') {
         $id = (int) ($input['id'] ?? 0);
         $name = trim($input['signatory_name'] ?? '');
@@ -97,13 +106,17 @@ try {
              WHERE id = ? AND request_id = ?'
         );
         $update->execute([$name, $designation ?: null, $documentLocation ?: null, $assignedOffice, $actor, $id, $requestId]);
+        logSignatoryChange($pdo, $requestId, $id, $assignedOffice, 'Updated', null, $actor);
     } elseif ($action === 'delete') {
         $id = (int) ($input['id'] ?? 0);
-        $delete = $pdo->prepare('DELETE FROM request_signatories WHERE id = ? AND request_id = ?');
+        $deleteSql = 'DELETE FROM request_signatories WHERE id = ? AND request_id = ?';
+        $delete = $pdo->prepare($deleteSql);
+        $deletedRow = array_values(array_filter($rows, fn($row) => (int) $row['id'] === $id))[0] ?? null;
         $delete->execute([$id, $requestId]);
         if ($delete->rowCount() !== 1) {
             jsonResponse(['success' => false, 'message' => 'Signatory not found.'], 404);
         }
+        logSignatoryChange($pdo, $requestId, $id, $deletedRow['assigned_office'] ?? null, 'Removed', $deletedRow['status'] ?? null, $actor);
     } elseif ($action === 'reorder') {
         $order = $input['order'] ?? [];
         $orderIds = array_map('intval', $order);
@@ -126,31 +139,50 @@ try {
         foreach ($submittedIds as $position => $id) {
             $update->execute([$position + 1, $actor, $id, $requestId]);
         }
+        logSignatoryChange($pdo, $requestId, null, $offices[0], 'Reordered', null, $actor);
     } elseif ($action === 'set_status') {
         $id = (int) ($input['id'] ?? 0);
         $status = trim($input['status'] ?? '');
-        if (!in_array($status, ['Signed', 'Skipped'], true)) {
+        if (!in_array($status, ['Pending Signature', 'Signed', 'Skipped'], true)) {
             jsonResponse(['success' => false, 'message' => 'Invalid signatory status.'], 400);
         }
-        $current = null;
+        $target = null;
         foreach ($rows as $row) {
-            if ($row['status'] === 'Pending Signature') {
-                $current = $row;
+            if ((int) $row['id'] === $id) {
+                $target = $row;
                 break;
             }
         }
-        if (!in_array($role, ['requesting', 'procurement'], true)
-            && (!$current || $current['assigned_office'] !== $role)) {
+        if (!$target) {
+            jsonResponse(['success' => false, 'message' => 'Signatory not found.'], 404);
+        }
+        $isAdmin = in_array($role, ['requesting', 'procurement'], true);
+        if (!$isAdmin && ($target['assigned_office'] !== $role || $target['status'] !== 'Pending Signature')) {
             jsonResponse(['success' => false, 'message' => 'Only the assigned office can update this signatory.'], 403);
         }
-        if (!$current || (int) $current['id'] !== $id) {
+        if (!$isAdmin) {
+            $currentOffice = officeForStatus($request['status']);
+            $current = null;
+            foreach ($rows as $row) {
+                if ($row['assigned_office'] === $currentOffice && $row['status'] === 'Pending Signature') {
+                    $current = $row;
+                    break;
+                }
+            }
+            if (!$current || (int) $current['id'] !== $id) {
+                jsonResponse(['success' => false, 'message' => 'Only the current signatory for this office can be updated.'], 409);
+            }
+        }
+        if (!$isAdmin && $status === 'Pending Signature') {
             jsonResponse(['success' => false, 'message' => 'Only the current signatory can be marked Signed or Skipped.'], 409);
         }
+        $statusWhere = $isAdmin ? '' : ' AND status = "Pending Signature"';
         $update = $pdo->prepare(
             'UPDATE request_signatories SET status = ?, signed_at = ?, updated_by = ?
-             WHERE id = ? AND request_id = ? AND status = "Pending Signature"'
+             WHERE id = ? AND request_id = ?' . $statusWhere
         );
         $update->execute([$status, $status === 'Signed' ? date('Y-m-d H:i:s') : null, $actor, $id, $requestId]);
+        logSignatoryChange($pdo, $requestId, $id, $target['assigned_office'], $status === 'Signed' ? 'Signed' : $status, $status, $actor);
     }
 
     $pdo->commit();

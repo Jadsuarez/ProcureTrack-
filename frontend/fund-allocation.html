@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fund Allocation — Procurement Monitoring</title>
-  <link rel="stylesheet" href="css/style.css?v=19">
+  <link rel="stylesheet" href="css/style.css?v=25">
 </head>
 <body>
   <main class="container-wide">
@@ -15,7 +15,7 @@
         <div>
           <h2>Fund Allocation</h2>
           <p class="text-muted" id="allocationSubtitle" style="margin: 0.35rem 0 0;">
-            Available office funds after request deductions.
+            Budget Office manages allocations; each office sees its own available balance after request deductions.
           </p>
         </div>
       </div>
@@ -24,15 +24,15 @@
     <div class="stats-grid">
       <div class="stat-box">
         <div class="number" id="statTotalAllocated">—</div>
-        <div class="label">Total Available Funds</div>
+        <div class="label" id="totalFundsLabel">Total Available Funds</div>
       </div>
       <div class="stat-box">
         <div class="number" id="statOfficesWithFunds">—</div>
-        <div class="label">Offices With Funds</div>
+        <div class="label" id="officesWithFundsLabel">Offices With Funds</div>
       </div>
       <div class="stat-box">
         <div class="number" id="statOfficeCount">—</div>
-        <div class="label">Registered Offices</div>
+        <div class="label" id="officeCountLabel">Registered Offices</div>
       </div>
     </div>
 
@@ -44,9 +44,10 @@
           <thead>
             <tr>
               <th>Office</th>
-              <th>Code</th>
-              <th>Available Funds</th>
-              <th>Share of Total</th>
+              <th id="officeCodeHeader">Code</th>
+              <th>Available Balance</th>
+              <th>Requests Charged</th>
+              <th id="shareHeader">Share of Total</th>
               <th></th>
             </tr>
           </thead>
@@ -84,8 +85,8 @@
     </div>
   </dialog>
 
-  <script src="js/api.js?v=16"></script>
-  <script src="js/app.js?v=23"></script>
+  <script src="js/api.js?v=19"></script>
+  <script src="js/app.js?v=26"></script>
   <script src="js/fund-allocation.js?v=14"></script>
 </body>
 </html>

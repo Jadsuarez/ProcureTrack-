@@ -4,17 +4,29 @@ let allocationState = {
 };
 
 function renderAllocationSummary(data) {
+  const isBudget = data.office_role === 'budget';
+  const office = data.offices?.[0];
   document.getElementById('statTotalAllocated').textContent = formatPeso(data.total_allocated);
-  document.getElementById('statOfficesWithFunds').textContent = data.offices_with_funds;
-  document.getElementById('statOfficeCount').textContent = data.office_count;
+  document.getElementById('statOfficesWithFunds').textContent = isBudget
+    ? data.offices_with_funds
+    : ((Number(office?.fund_allocation) || 0) > 0 ? 'Yes' : 'No');
+  document.getElementById('statOfficeCount').textContent = isBudget
+    ? data.office_count
+    : (office?.request_count || 0);
+  document.getElementById('totalFundsLabel').textContent = isBudget ? 'Total Available Funds' : 'My Available Funds';
+  document.getElementById('officesWithFundsLabel').textContent = isBudget ? 'Offices With Funds' : 'Balance Status';
+  document.getElementById('officeCountLabel').textContent = isBudget ? 'Registered Offices' : 'Requests Charged';
 }
 
 function renderAllocationTable(data) {
   const body = document.getElementById('allocationTableBody');
   const offices = data.offices || [];
+  const isBudget = data.office_role === 'budget';
+  document.getElementById('officeCodeHeader').classList.toggle('hidden', !isBudget);
+  document.getElementById('shareHeader').classList.toggle('hidden', !isBudget);
 
   if (!offices.length) {
-    body.innerHTML = '<tr><td colspan="5" class="text-muted">No offices registered.</td></tr>';
+    body.innerHTML = '<tr><td colspan="6" class="text-muted">No office fund record available.</td></tr>';
     return;
   }
 
@@ -28,11 +40,12 @@ function renderAllocationTable(data) {
       return `
         <tr>
           <td><strong>${office.label}</strong></td>
-          <td><code>${office.slug}</code></td>
-          <td>
+          <td class="office-code-cell${isBudget ? '' : ' hidden'}"><code>${office.slug}</code></td>
+          <td class="share-cell${isBudget ? '' : ' hidden'}">
             <div class="alloc-amount">${formatPeso(amount)}</div>
             ${amount === 0 ? '<small class="text-muted">No available funds</small>' : ''}
           </td>
+          <td>${formatPeso(office.used_amount)}<small class="text-muted">${office.request_count} request${office.request_count === 1 ? '' : 's'}</small></td>
           <td>
             <div class="alloc-share-meta">${share}%</div>
             <div class="alloc-bar" aria-hidden="true">
@@ -90,7 +103,7 @@ async function loadAllocations() {
   if (!data.success) {
     showAlert(document.getElementById('alertBox'), data.message || 'Failed to load allocations.');
     document.getElementById('allocationTableBody').innerHTML =
-      `<tr><td colspan="5">${data.message || 'Failed to load allocations.'}</td></tr>`;
+      `<tr><td colspan="6">${data.message || 'Failed to load allocations.'}</td></tr>`;
     return;
   }
 
@@ -148,7 +161,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     subtitle.textContent = 'Manage available office funds after request deductions.';
     hint.textContent = 'Set amount replaces the current available balance. New requests automatically deduct their amount. Amounts are in Philippine pesos.';
   } else {
-    subtitle.textContent = 'View available office funds after request deductions.';
-    hint.textContent = 'Only Budget Office can change allocations.';
+    const office = allocationState.offices[0];
+    subtitle.textContent = office
+      ? `${office.label} balance and request spending.`
+      : 'No fund allocation is assigned to this office.';
+    hint.textContent = 'Budget Office manages allocations. Request amounts are deducted automatically when requests are created.';
   }
 });

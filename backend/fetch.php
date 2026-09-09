@@ -2,6 +2,8 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/workflow.php';
 session_start();
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 
 if (empty($_SESSION['role'])) {
     jsonResponse(['success' => false, 'message' => 'Unauthorized.'], 401);
@@ -33,7 +35,7 @@ try {
             $recent = array_slice($visible, 0, 8);
 
             $focusStatuses = match ($role) {
-                'accounting' => ['Accepted', 'DV Processing', 'For Payment'],
+                'accounting' => ['DV Processing', 'For Payment'],
                 'cashier' => ['For Payment', 'Paid', 'Completed'],
                 'budget' => ['Registered', 'Under Budget Review', 'Reviewed'],
                 'procurement' => ['Reviewed', 'Canvass', 'PO'],
@@ -109,6 +111,21 @@ try {
             ]);
             break;
 
+        case 'office_requests':
+            $officeStmt = $pdo->query(
+                'SELECT tracking_number, title, status, request_amount, created_at, updated_at
+                 FROM requests ORDER BY updated_at DESC, tracking_number ASC'
+            );
+            $officeRequests = filterRequestsForRole($officeStmt->fetchAll(), $role);
+            jsonResponse([
+                'success' => true,
+                'office_label' => roleLabel($role),
+                'requests' => $officeRequests,
+                'total' => count($officeRequests),
+                'statuses' => statusesForOffice($role),
+            ]);
+            break;
+
         case 'detail':
             $tracking = trim($_GET['tracking'] ?? '');
             if ($tracking === '') {
@@ -140,15 +157,29 @@ try {
             $documents = $docStmt->fetchAll();
 
             $signatoryStmt = $pdo->prepare(
-                'SELECT id, signatory_name, designation, document_location, assigned_office, approval_order, status, signed_at, updated_by
+                'SELECT id, signatory_name, designation, document_location, assigned_office, approval_order, status, signed_at, updated_by, updated_at
                  FROM request_signatories
                  WHERE request_id = ? ORDER BY approval_order ASC, id ASC'
             );
             $signatoryStmt->execute([$request['id']]);
             $signatories = $signatoryStmt->fetchAll();
+            $signatoryLogStmt = $pdo->prepare(
+                'SELECT id, signatory_id, assigned_office, action, status, updated_by, created_at
+                 FROM request_signatory_logs WHERE request_id = ? ORDER BY created_at ASC, id ASC'
+            );
+            $signatoryHistory = $signatoryLogStmt->execute([$request['id']]) ? $signatoryLogStmt->fetchAll() : [];
             $signedCount = count(array_filter($signatories, fn($s) => $s['status'] === 'Signed'));
             $remainingCount = count(array_filter($signatories, fn($s) => $s['status'] === 'Pending Signature'));
             $currentOffice = officeForStatus($request['status']);
+            $currentOfficeRows = array_values(array_filter(
+                $signatories,
+                fn($signatory) => $signatory['assigned_office'] === $currentOffice
+            ));
+            $allSignaturesResolved = $signatories
+                && $remainingCount === 0;
+            $currentOfficeReady = $currentOfficeRows
+                ? count(array_filter($currentOfficeRows, fn($s) => $s['status'] === 'Pending Signature')) === 0
+                : $allSignaturesResolved;
             $currentSignatory = null;
             foreach ($signatories as $signatory) {
                 if ($signatory['assigned_office'] === $currentOffice
@@ -178,6 +209,7 @@ try {
                 'timeline' => $timeline,
                 'documents' => $documents,
                 'signatories' => $signatories,
+                'signatory_history' => $signatoryHistory,
                 'signatory_summary' => [
                     'current' => $currentSignatory,
                     'completed' => $signedCount,
@@ -186,19 +218,20 @@ try {
                         ? 'Signatures Complete'
                         : ($signatories ? 'Awaiting Signatures' : 'No Signatories Configured'),
                     'current_office' => $currentOffice,
+                    'ready_for_status_update' => $currentOfficeReady,
                     'by_office' => array_values($officeSummary),
                 ],
             ]);
             break;
 
         case 'notifications':
+            $notificationLimit = $role === 'procurement' ? '' : ' LIMIT 120';
             $logStmt = $pdo->query(
                 'SELECT sl.id, sl.status, sl.notes, sl.updated_by, sl.created_at,
                         r.tracking_number, r.title, r.status AS current_status
                  FROM status_logs sl
                  INNER JOIN requests r ON r.id = sl.request_id
-                 ORDER BY sl.created_at DESC, sl.id DESC
-                 LIMIT 120'
+                 ORDER BY sl.created_at DESC, sl.id DESC' . $notificationLimit
             );
 
             $notifications = [];
@@ -241,7 +274,7 @@ try {
                     'created_at' => $row['created_at'],
                 ];
 
-                if (count($notifications) >= 20) {
+                if ($role !== 'procurement' && count($notifications) >= 20) {
                     break;
                 }
             }

@@ -62,27 +62,36 @@ try {
     }
 
     $currentOffice = officeForStatus($row['status']);
-    if (in_array($role, ['budget', 'procurement', 'pso', 'accounting', 'cashier'], true)) {
-        $signatureCheck = $pdo->prepare(
+    $nextOffice = officeForStatus($status);
+    $signatureCheck = $pdo->prepare(
+        'SELECT COUNT(*) AS assigned_count,
+                SUM(status = "Pending Signature") AS pending_count
+         FROM request_signatories
+         WHERE request_id = ? AND assigned_office = ?'
+    );
+    $signatureCheck->execute([(int) $row['id'], $currentOffice]);
+    $signatureState = $signatureCheck->fetch();
+    if ((int) $signatureState['assigned_count'] === 0) {
+        $allSignatureCheck = $pdo->prepare(
             'SELECT COUNT(*) AS assigned_count,
                     SUM(status = "Pending Signature") AS pending_count
-             FROM request_signatories
-             WHERE request_id = ? AND assigned_office = ?'
+             FROM request_signatories WHERE request_id = ?'
         );
-        $signatureCheck->execute([(int) $row['id'], $currentOffice]);
-        $signatureState = $signatureCheck->fetch();
-        if ((int) $signatureState['assigned_count'] === 0) {
+        $allSignatureCheck->execute([(int) $row['id']]);
+        $allSignatureState = $allSignatureCheck->fetch();
+        if ((int) $allSignatureState['assigned_count'] === 0
+            || (int) $allSignatureState['pending_count'] > 0) {
             jsonResponse([
                 'success' => false,
-                'message' => 'This handoff is blocked because no signatory is assigned to ' . roleLabel($currentOffice) . '.',
+                'message' => 'Status update is blocked because required signatories are not complete.',
             ], 409);
         }
-        if ((int) $signatureState['pending_count'] > 0) {
-            jsonResponse([
-                'success' => false,
-                'message' => roleLabel($currentOffice) . ' cannot advance this request until its required signatories are marked Signed or Skipped.',
-            ], 409);
-        }
+    }
+    if ((int) $signatureState['pending_count'] > 0) {
+        jsonResponse([
+            'success' => false,
+            'message' => roleLabel($currentOffice) . ' cannot update this request until all required signatories are marked Signed or Skipped.',
+        ], 409);
     }
 
     $requestId = (int) $row['id'];

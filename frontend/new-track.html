@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Track Request — PROCUREMENT</title>
-  <link rel="stylesheet" href="css/style.css?v=19">
+  <link rel="stylesheet" href="css/style.css?v=26">
 </head>
 <body>
   <main class="container">
@@ -30,6 +30,10 @@
           <input type="number" id="request_amount" name="request_amount" min="0.01" max="999999999999.99" step="0.01" required placeholder="0.00">
           <small class="text-muted">This amount will be deducted from your office's available funds when the request is created.</small>
         </div>
+        <p class="form-section-title">Signatory Workflow</p>
+        <p class="text-muted">Add the required signatories for each office. The assigned office must mark its signatory Signed or Skipped before the request moves forward.</p>
+        <div id="signatoryRows" class="new-signatory-rows"></div>
+        <button type="button" class="btn btn-secondary" id="addSignatoryBtn">Add Signatory</button>
         <div class="amount-box">
           <div class="label">Monitoring record</div>
           <div class="value">Tracking number generated automatically on submit</div>
@@ -61,14 +65,18 @@
         </div>
         <div class="progress-step">
           <div class="progress-step-icon">3</div>
-          <div class="progress-step-label">Procurement</div>
-        </div>
-        <div class="progress-step">
-          <div class="progress-step-icon">4</div>
           <div class="progress-step-label">Accounting</div>
         </div>
         <div class="progress-step">
+          <div class="progress-step-icon">4</div>
+          <div class="progress-step-label">Procurement</div>
+        </div>
+        <div class="progress-step">
           <div class="progress-step-icon">5</div>
+          <div class="progress-step-label">PSO</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">6</div>
           <div class="progress-step-label">Cashier</div>
         </div>
       </div>
@@ -78,13 +86,59 @@
 
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
-  <script src="js/api.js?v=16"></script>
-  <script src="js/app.js?v=23"></script>
+  <script src="js/api.js?v=20"></script>
+  <script src="js/app.js?v=26"></script>
   <script>
+    const officeOptions = [
+      ['requesting', 'Requesting Office'],
+      ['budget', 'Budget Office'],
+      ['accounting', 'Accounting Office'],
+      ['procurement', 'Procurement Office'],
+      ['pso', 'Property and Supply Office'],
+      ['cashier', 'Cashier'],
+    ];
+
+    function addSignatoryRow() {
+      const rows = document.getElementById('signatoryRows');
+      const row = document.createElement('div');
+      row.className = 'new-signatory-row';
+      row.innerHTML = `
+        <div class="form-group">
+          <label>Signatory name</label>
+          <input type="text" data-signatory-field="signatory_name" maxlength="150" required placeholder="e.g. Dr. Juan Dela Cruz">
+        </div>
+        <div class="form-group">
+          <label>Designation</label>
+          <input type="text" data-signatory-field="designation" maxlength="150" placeholder="e.g. Chancellor">
+        </div>
+        <div class="form-group">
+          <label>Assigned office</label>
+          <select data-signatory-field="assigned_office" required>
+            <option value="">Select office</option>
+            ${officeOptions.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Document location</label>
+          <input type="text" data-signatory-field="document_location" maxlength="255" placeholder="e.g. Dean's Office">
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary remove-signatory-btn">Remove</button>
+      `;
+      rows.appendChild(row);
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
       const session = await requireAuth(['requesting']);
       if (!session) return;
       initAppLayout(session);
+      addSignatoryRow();
+
+      document.getElementById('addSignatoryBtn').addEventListener('click', addSignatoryRow);
+      document.getElementById('signatoryRows').addEventListener('click', (event) => {
+        if (!event.target.classList.contains('remove-signatory-btn')) return;
+        const rows = document.querySelectorAll('.new-signatory-row');
+        if (rows.length > 1) event.target.closest('.new-signatory-row').remove();
+      });
 
       document.getElementById('createForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -96,6 +150,13 @@
           title: document.getElementById('title').value.trim(),
           description: document.getElementById('description').value.trim(),
           request_amount: document.getElementById('request_amount').value,
+          signatories: [...document.querySelectorAll('.new-signatory-row')].map((row) => {
+            const values = {};
+            row.querySelectorAll('[data-signatory-field]').forEach((field) => {
+              values[field.dataset.signatoryField] = field.value.trim();
+            });
+            return values;
+          }),
         };
 
         const submitButton = e.target.querySelector('[type="submit"]');
@@ -127,6 +188,8 @@
         document.getElementById('createdCard').classList.remove('hidden');
         showAlert(document.getElementById('successBox'), result.message, 'success');
         e.target.reset();
+        document.getElementById('signatoryRows').innerHTML = '';
+        addSignatoryRow();
 
       });
 

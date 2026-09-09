@@ -19,9 +19,63 @@ function getConnection(): PDO
         ensureOfficeFundAllocationColumn($pdo);
         ensureRequestFundingColumns($pdo);
         ensureSignatoryTables($pdo);
+        ensureSignatoryAuditTables($pdo);
         ensureLegacyStatusMigration($pdo);
+        ensureExistingFundDeductions($pdo);
     }
     return $pdo;
+}
+
+function ensureSignatoryAuditTables(PDO $pdo): void
+{
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS request_signatory_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            request_id INT NOT NULL,
+            signatory_id INT DEFAULT NULL,
+            assigned_office VARCHAR(30) DEFAULT NULL,
+            action VARCHAR(30) NOT NULL,
+            status VARCHAR(30) DEFAULT NULL,
+            notes TEXT DEFAULT NULL,
+            updated_by VARCHAR(50) DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE,
+            INDEX idx_signatory_logs_request (request_id, created_at, id)
+        ) ENGINE=InnoDB'
+    );
+}
+
+function ensureExistingFundDeductions(PDO $pdo): void
+{
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS system_migrations (
+            migration_key VARCHAR(100) PRIMARY KEY,
+            applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB'
+    );
+    $check = $pdo->prepare('SELECT 1 FROM system_migrations WHERE migration_key = ?');
+    $check->execute(['reconcile_request_funds']);
+    if ($check->fetchColumn()) {
+        return;
+    }
+
+    $pdo->beginTransaction();
+    try {
+        $pdo->exec(
+            "UPDATE offices o
+             SET fund_allocation = GREATEST(0, fund_allocation - COALESCE((
+                 SELECT SUM(r.request_amount)
+                 FROM requests r
+                 WHERE (r.funding_office = o.slug OR (o.slug = 'requesting' AND r.funding_office IS NULL))
+             ), 0))"
+        );
+        $mark = $pdo->prepare('INSERT INTO system_migrations (migration_key) VALUES (?)');
+        $mark->execute(['reconcile_request_funds']);
+        $pdo->commit();
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $e;
+    }
 }
 
 function ensureLegacyStatusMigration(PDO $pdo): void

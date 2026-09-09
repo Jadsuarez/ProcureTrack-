@@ -111,6 +111,21 @@ CREATE TABLE IF NOT EXISTS request_signatories (
   INDEX idx_request_signatories_order (request_id, approval_order, id)
 ) ENGINE=InnoDB;
 
+-- Signatory monitoring history (no digital signatures are stored)
+CREATE TABLE IF NOT EXISTS request_signatory_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  request_id INT NOT NULL,
+  signatory_id INT DEFAULT NULL,
+  assigned_office VARCHAR(30) DEFAULT NULL,
+  action VARCHAR(30) NOT NULL,
+  status VARCHAR(30) DEFAULT NULL,
+  notes TEXT DEFAULT NULL,
+  updated_by VARCHAR(50) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE,
+  INDEX idx_signatory_logs_request (request_id, created_at, id)
+) ENGINE=InnoDB;
+
 -- Sample pre-existing requests (monitoring only — created in DB, not via UI)
 INSERT INTO requests (tracking_number, title, description, status, updated_by) VALUES
 ('PR-0001', 'Office Supplies Q1', 'Paper, pens, and folders for admin office', 'Registered', 'system'),
@@ -170,6 +185,24 @@ VALUES
 ('PR-J2604', 'BS Electrical Engineering Renewable Energy Trainer', 'Renewable energy training equipment and laboratory accessories for electrical engineering activities.', 486900.00, 'requesting', 'BUR-2026-072', 'ORS-2026-142', 'Capital Outlay', 'Accepted', 'Mock transaction accepted by PSO.', 'PSO', '2026-07-22 14:20:00', '2026-08-20 15:10:00'),
 ('PR-A2603', 'BS Mechanical Engineering Computer-Aided Design Licenses', 'Temporary software licenses and training resources for mechanical engineering design activities.', 219600.00, 'requesting', 'BUR-2026-081', 'ORS-2026-151', 'MOOE', 'Canvass', 'Mock canvassing transaction.', 'Procurement Office', '2026-08-05 08:50:00', '2026-08-13 11:00:00'),
 ('PR-A2604', 'BS Computer Science Student Project Equipment', 'Microcontroller kits, sensors, and project components for computer science student development activities.', 118750.00, 'requesting', NULL, NULL, NULL, 'Registered', 'Mock newly registered request.', 'Requesting Office', '2026-08-26 10:25:00', '2026-08-26 10:25:00');
+
+-- Reduce available funds for the fictional mock requests above.
+UPDATE offices o
+SET fund_allocation = GREATEST(
+  0,
+  fund_allocation - COALESCE((
+    SELECT SUM(r.request_amount)
+    FROM requests r
+    WHERE r.funding_office = o.slug
+      AND r.tracking_number REGEXP '^PR-[MAJ]26[0-9]+$'
+  ), 0)
+);
+
+CREATE TABLE IF NOT EXISTS system_migrations (
+  migration_key VARCHAR(100) PRIMARY KEY,
+  applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+INSERT IGNORE INTO system_migrations (migration_key) VALUES ('reconcile_request_funds');
 
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
 SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', '2026-03-05 09:00:00' FROM requests WHERE tracking_number = 'PR-M2601';

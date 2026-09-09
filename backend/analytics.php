@@ -41,7 +41,7 @@ const FLOW_STEPS = [
 const BUDGET_STATUSES = ['Registered', 'Under Budget Review', 'Reviewed'];
 const PROCUREMENT_STATUSES = ['Reviewed', 'Canvass', 'PO'];
 const PSO_STATUSES = ['Delivered', 'For Inspection', 'Accepted'];
-const ACCOUNTING_STATUSES = ['Accepted', 'DV Processing', 'For Payment'];
+const ACCOUNTING_STATUSES = ['DV Processing', 'For Payment'];
 const CASHIER_STATUSES = ['For Payment', 'Paid', 'Completed'];
 
 function daysBetween(?string $start, ?string $end): float
@@ -86,7 +86,7 @@ function officeScope(string $role): array
         'accounting' => [
             'label' => 'Accounting Office',
             'statuses' => ACCOUNTING_STATUSES,
-            'focus_stages' => ['Accepted', 'DV Processing', 'For Payment'],
+            'focus_stages' => ['DV Processing', 'For Payment'],
             'queue_status' => 'DV Processing',
             'handoff_status' => 'For Payment',
         ],
@@ -248,7 +248,7 @@ try {
         'budget' => ['Registered', 'Under Budget Review', 'Reviewed'],
         'procurement' => ['Reviewed', 'Canvass', 'PO'],
         'pso' => ['Delivered', 'For Inspection', 'Accepted'],
-        'accounting' => ['Accepted', 'DV Processing', 'For Payment'],
+        'accounting' => ['DV Processing', 'For Payment'],
         'cashier' => ['For Payment', 'Paid', 'Completed'],
         default => FLOW_STEPS,
     };

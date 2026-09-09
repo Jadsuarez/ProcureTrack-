@@ -100,7 +100,10 @@ const Api = {
   },
 
   async listAllocations() {
-    const res = await fetch(`${API_BASE}/allocations.php`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/allocations.php`, {
+      credentials: 'include',
+      cache: 'no-store',
+    });
     return res.json();
   },
 
@@ -144,6 +147,14 @@ const Api = {
     return res.json();
   },
 
+  async officeRequests() {
+    const res = await fetch(`${API_BASE}/fetch.php?action=office_requests`, {
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    return res.json();
+  },
+
   async detail(tracking) {
     const res = await fetch(
       `${API_BASE}/fetch.php?action=detail&tracking=${encodeURIComponent(tracking)}`,
@@ -172,6 +183,7 @@ const Api = {
   async notifications() {
     const res = await fetch(`${API_BASE}/fetch.php?action=notifications`, {
       credentials: 'include',
+      cache: 'no-store',
     });
     return res.json();
   },
@@ -311,8 +323,9 @@ const FLOW_STEPS = [
 const OFFICE_STEPS = [
   { label: 'Office', statuses: ['Registered'] },
   { label: 'Budget', statuses: ['Under Budget Review', 'Reviewed'] },
-  { label: 'Procurement', statuses: ['Canvass', 'PO'] },
   { label: 'Accounting', statuses: ['DV Processing', 'For Payment'] },
+  { label: 'Procurement', statuses: ['Canvass', 'PO'] },
+  { label: 'PSO', statuses: ['Delivered', 'For Inspection', 'Accepted'] },
   { label: 'Cashier', statuses: ['Paid', 'Completed'] },
 ];
 

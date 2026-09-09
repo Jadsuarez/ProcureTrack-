@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Request Details — PROCUREMENT</title>
-  <link rel="stylesheet" href="css/style.css?v=20">
+  <link rel="stylesheet" href="css/style.css?v=28">
 </head>
 <body>
   <main class="container">
@@ -41,15 +41,20 @@
         <div class="section-heading-row">
           <div>
             <h2>Signatory Workflow</h2>
-            <p class="text-muted">Requesting Office or Procurement assigns the signatory and office. The assigned office marks its current step Signed or Skipped. Monitoring only; no digital signatures are collected.</p>
+            <p class="text-muted">Any office can assign signatories to any office stage for this request. The assigned office marks its step Signed or Skipped. Monitoring only; no digital signatures are collected.</p>
           </div>
           <span class="status-badge" id="signatoryOverallStatus">No Signatories Configured</span>
         </div>
         <div class="signatory-summary" id="signatorySummary"></div>
+        <p class="signatory-gate-message" id="signatoryGateMessage"></p>
         <ol class="signatory-list" id="signatoryList">
           <li class="text-muted">No signatories configured.</li>
         </ol>
-        <p class="text-muted hidden" id="signatoryAccessMessage">Only Requesting Office or Procurement administrators can add and arrange signatories.</p>
+        <details class="signatory-history">
+          <summary>Signatory change history</summary>
+          <ul id="signatoryHistory"><li class="text-muted">No signatory changes recorded.</li></ul>
+        </details>
+        <p class="text-muted hidden" id="signatoryAccessMessage">Any office can assign a signatory to any office stage. The assigned office marks that signatory Signed or Skipped.</p>
         <form id="signatoryForm" class="signatory-form hidden">
           <div class="form-row">
             <div class="form-group">
@@ -128,7 +133,7 @@
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
   <script src="js/api.js?v=17"></script>
-  <script src="js/app.js?v=23"></script>
-  <script src="js/details.js?v=14"></script>
+  <script src="js/app.js?v=26"></script>
+  <script src="js/details.js?v=19"></script>
 </body>
 </html>

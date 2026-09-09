@@ -14,7 +14,7 @@ const ICONS = {
 const NAV_BY_ROLE = {
   requesting: [
     { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
-    { href: 'requesting-dashboard.html', label: 'My Requests', icon: 'track' },
+    { href: 'status.html', label: 'My Requests', icon: 'track' },
     { href: 'fund-allocation.html', label: 'Fund Allocation', icon: 'funds' },
     { href: 'analytics.html', label: 'Analytics', icon: 'analytics' },
     { href: 'new-track.html', label: 'New Track', icon: 'newTrack' },
@@ -23,12 +23,14 @@ const NAV_BY_ROLE = {
   ],
   budget: [
     { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+    { href: 'status.html', label: 'Office Requests', icon: 'track' },
     { href: 'fund-allocation.html', label: 'Fund Allocation', icon: 'funds' },
     { href: 'analytics.html', label: 'Analytics', icon: 'analytics' },
     { href: 'track.html', label: 'Track Request', icon: 'track' },
   ],
   procurement: [
     { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+    { href: 'status.html', label: 'Office Requests', icon: 'track' },
     { href: 'fund-allocation.html', label: 'Fund Allocation', icon: 'funds' },
     { href: 'analytics.html', label: 'Analytics', icon: 'analytics' },
     { href: 'track.html', label: 'Track Request', icon: 'track' },
@@ -36,6 +38,7 @@ const NAV_BY_ROLE = {
   ],
   accounting: [
     { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+    { href: 'status.html', label: 'Office Requests', icon: 'track' },
     { href: 'fund-allocation.html', label: 'Fund Allocation', icon: 'funds' },
     { href: 'analytics.html', label: 'Analytics', icon: 'analytics' },
     { href: 'track.html', label: 'Track Request', icon: 'track' },
@@ -43,6 +46,7 @@ const NAV_BY_ROLE = {
   ],
   pso: [
     { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+    { href: 'status.html', label: 'Office Requests', icon: 'track' },
     { href: 'fund-allocation.html', label: 'Fund Allocation', icon: 'funds' },
     { href: 'analytics.html', label: 'Analytics', icon: 'analytics' },
     { href: 'track.html', label: 'Track Request', icon: 'track' },
@@ -50,6 +54,7 @@ const NAV_BY_ROLE = {
   ],
   cashier: [
     { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+    { href: 'status.html', label: 'Office Requests', icon: 'track' },
     { href: 'fund-allocation.html', label: 'Fund Allocation', icon: 'funds' },
     { href: 'analytics.html', label: 'Analytics', icon: 'analytics' },
     { href: 'track.html', label: 'Track Request', icon: 'track' },
@@ -76,9 +81,10 @@ function initAppLayout(session) {
         </div>
       </div>
       <div class="sidebar-office">
-        <span class="sidebar-office-label">Office</span>
-        <strong class="sidebar-office-name" id="roleBadge">—</strong>
-        <span class="sidebar-user-name" id="userBadge"></span>
+          <span class="sidebar-office-label">Signed in as</span>
+          <strong class="sidebar-user-name" id="userBadge">—</strong>
+          <span class="sidebar-office-label sidebar-office-label-secondary">Office</span>
+          <strong class="sidebar-office-name" id="roleBadge">—</strong>
       </div>
       <nav class="sidebar-nav" id="mainNav" aria-label="Main navigation"></nav>
     `;
@@ -116,6 +122,7 @@ function initAppLayout(session) {
 const PAGE_TITLES = {
   'dashboard.html': 'Dashboard',
   'requesting-dashboard.html': 'My Requests',
+  'status.html': 'Requests Dashboard',
   'fund-allocation.html': 'Fund Allocation',
   'analytics.html': 'System Analytics',
   'new-track.html': 'New Track',
@@ -179,8 +186,8 @@ function initTopNavbar(session) {
           <button type="button" class="user-chip" id="userMenuBtn" aria-haspopup="true" aria-expanded="false">
             <span class="user-avatar">${initial}</span>
             <span class="user-chip-meta">
-              <span class="user-chip-name">${username}</span>
-              <span class="user-chip-office">${session?.role_label || ''}</span>
+              <span class="user-chip-name"><small>Username:</small> ${username}</span>
+              <span class="user-chip-office"><small>Office:</small> ${session?.role_label || ''}</span>
             </span>
           </button>
           <div class="user-menu hidden" id="userMenu">
@@ -260,6 +267,11 @@ function setClearedNotifId(id) {
   setSeenNotifId(id);
 }
 
+function notificationKey(notification) {
+  const timestamp = Date.parse(String(notification.created_at || '').replace(' ', 'T'));
+  return (Number.isFinite(timestamp) ? timestamp * 1000 : 0) + (Number(notification.id) || 0);
+}
+
 function closeNotifMenu() {
   const menu = document.getElementById('notifMenu');
   const btn = document.getElementById('notifBtn');
@@ -312,18 +324,18 @@ async function loadNavbarNotifications() {
     }
 
     const clearedId = getClearedNotifId();
-    const items = allItems.filter((n) => Number(n.id) > clearedId);
+    const items = allItems.filter((n) => notificationKey(n) > clearedId);
     const filteredItems = items.filter((n) => {
       if (selectedFilter === 'new') return n.status === 'Registered';
       return selectedFilter === 'all' || n.status === selectedFilter;
     });
     const seenId = Math.max(getSeenNotifId(), clearedId);
-    const unread = items.filter((n) => Number(n.id) > seenId).length;
+    const unread = items.filter((n) => notificationKey(n) > seenId).length;
     renderNotifBadge(unread);
 
     const latestSource = allItems.length ? allItems : items;
     if (menu && latestSource.length) {
-      menu.dataset.latestId = String(Math.max(...latestSource.map((n) => Number(n.id) || 0)));
+      menu.dataset.latestId = String(Math.max(...latestSource.map(notificationKey)));
     }
 
     const clearBtn = document.getElementById('clearNotifBtn');
@@ -336,7 +348,7 @@ async function loadNavbarNotifications() {
 
     list.innerHTML = filteredItems
       .map((n) => {
-        const unreadClass = Number(n.id) > seenId ? ' unread' : '';
+        const unreadClass = notificationKey(n) > seenId ? ' unread' : '';
         return `<li class="notif-item${unreadClass}">
           <a ${n.can_view === false ? 'aria-disabled="true"' : `href="details.html?tracking=${encodeURIComponent(n.tracking_number)}"`}>
             <strong>${n.tracking_number}</strong>
@@ -469,22 +481,8 @@ function normalizeRole(role) {
 function getNavLinksForRole(role) {
   const office = normalizeRole(role);
   const links = NAV_BY_ROLE[office] || NAV_BY_ROLE.budget;
-  const statuses = {
-    requesting: [],
-    budget: ['Registered', 'Under Budget Review', 'Reviewed'],
-    procurement: ['Reviewed', 'Canvass', 'PO'],
-    pso: ['Delivered', 'For Inspection', 'Accepted'],
-    accounting: ['Accepted', 'DV Processing', 'For Payment'],
-    cashier: ['For Payment', 'Paid', 'Completed'],
-  }[office] || [];
   return [
     ...links,
-    ...statuses.map((status) => ({
-      href: `status.html?status=${encodeURIComponent(status)}`,
-      label: status,
-      icon: 'track',
-      status,
-    })),
   ];
 }
 
@@ -494,7 +492,6 @@ function buildNav(session) {
 
   const role = typeof session === 'string' ? session : session?.role;
   const current = window.location.pathname.split('/').pop() || 'dashboard.html';
-  const currentStatus = new URLSearchParams(window.location.search).get('status');
   const links = getNavLinksForRole(role);
 
   nav.innerHTML =
@@ -502,8 +499,7 @@ function buildNav(session) {
       .map((l) => {
         const active =
           l.href === current ||
-          (l.href === 'manage-accounts.html' && current === 'create-account.html') ||
-          (l.href.startsWith('status.html?status=') && current === 'status.html' && l.status === currentStatus)
+          (l.href === 'manage-accounts.html' && current === 'create-account.html')
             ? ' active'
             : '';
         const icon = ICONS[l.icon] || '';

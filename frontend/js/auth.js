@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const alertBox = document.getElementById('alertBox');
 
   function landingPage() {
-    return sessionRole === 'requesting' ? 'requesting-dashboard.html' : 'dashboard.html';
+    return sessionRole === 'requesting' ? 'status.html' : 'dashboard.html';
   }
 
   const session = await Api.session();

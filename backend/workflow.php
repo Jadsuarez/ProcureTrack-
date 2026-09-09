@@ -10,13 +10,13 @@ function getFlowSteps(): array
         'Registered',
         'Under Budget Review',
         'Reviewed',
+        'DV Processing',
+        'For Payment',
         'Canvass',
         'PO',
         'Delivered',
         'For Inspection',
         'Accepted',
-        'DV Processing',
-        'For Payment',
         'Paid',
         'Completed',
     ];
@@ -45,10 +45,10 @@ function officeVisibilityEntryStatus(string $role): string
 {
     return match ($role) {
         'requesting', 'budget' => 'Registered',
-        'procurement' => 'Reviewed',
+        'accounting' => 'Reviewed',
+        'procurement' => 'For Payment',
         'pso' => 'Delivered',
-        'accounting' => 'Accepted',
-        'cashier' => 'For Payment',
+        'cashier' => 'Accepted',
         default => 'Registered',
     };
 }
@@ -92,9 +92,9 @@ function officeForStatus(string $status): string
     return match ($status) {
         'Registered' => 'requesting',
         'Under Budget Review', 'Reviewed' => 'budget',
+        'DV Processing', 'For Payment' => 'accounting',
         'Canvass', 'PO' => 'procurement',
         'Delivered', 'For Inspection', 'Accepted' => 'pso',
-        'DV Processing', 'For Payment' => 'accounting',
         'Paid', 'Completed' => 'cashier',
         default => 'requesting',
     };

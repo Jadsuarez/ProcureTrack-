@@ -40,6 +40,24 @@ if (!is_scalar($amount) || !preg_match('/^\d{1,13}(\.\d{1,2})?$/', (string) $amo
     jsonResponse(['success' => false, 'message' => 'Enter a positive request amount with at most two decimal places.'], 400);
 }
 $fundingOffice = currentRole();
+$signatories = $input['signatories'] ?? [];
+if (!is_array($signatories) || count($signatories) < 1) {
+    jsonResponse(['success' => false, 'message' => 'Add at least one required signatory before creating the request.'], 400);
+}
+$validSignatoryOffices = ['requesting', 'budget', 'accounting', 'procurement', 'pso', 'cashier'];
+foreach ($signatories as $signatory) {
+    if (!is_array($signatory)) {
+        jsonResponse(['success' => false, 'message' => 'Invalid signatory data.'], 400);
+    }
+    $name = trim($signatory['signatory_name'] ?? '');
+    $designation = trim($signatory['designation'] ?? '');
+    $documentLocation = trim($signatory['document_location'] ?? '');
+    $assignedOffice = trim($signatory['assigned_office'] ?? '');
+    if ($name === '' || strlen($name) > 150 || strlen($designation) > 150
+        || strlen($documentLocation) > 255 || !in_array($assignedOffice, $validSignatoryOffices, true)) {
+        jsonResponse(['success' => false, 'message' => 'Each signatory needs a name and valid assigned office.'], 400);
+    }
+}
 
 try {
     $pdo->beginTransaction();
@@ -86,6 +104,32 @@ try {
         'New tracking record created by Requesting Office',
         $updatedBy,
     ]);
+
+    $signatoryInsert = $pdo->prepare(
+        'INSERT INTO request_signatories
+         (request_id, signatory_name, designation, document_location, assigned_office, approval_order, status, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, "Pending Signature", ?)'
+    );
+    $officeOrders = [];
+    $signatoryLog = $pdo->prepare(
+        'INSERT INTO request_signatory_logs
+         (request_id, signatory_id, assigned_office, action, status, updated_by)
+         VALUES (?, ?, ?, "Added", "Pending Signature", ?)'
+    );
+    foreach ($signatories as $signatory) {
+        $assignedOffice = trim($signatory['assigned_office']);
+        $officeOrders[$assignedOffice] = ($officeOrders[$assignedOffice] ?? 0) + 1;
+        $signatoryInsert->execute([
+            $requestId,
+            trim($signatory['signatory_name']),
+            trim($signatory['designation'] ?? '') ?: null,
+            trim($signatory['document_location'] ?? '') ?: null,
+            $assignedOffice,
+            $officeOrders[$assignedOffice],
+            $updatedBy,
+        ]);
+        $signatoryLog->execute([$requestId, (int) $pdo->lastInsertId(), $assignedOffice, $updatedBy]);
+    }
 
     $fund->execute([$fundingOffice]);
     $remaining = $fund->fetchColumn();

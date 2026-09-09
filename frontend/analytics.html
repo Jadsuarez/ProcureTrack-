@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>System Analytics — Procurement Monitoring</title>
-  <link rel="stylesheet" href="css/style.css?v=19">
+  <link rel="stylesheet" href="css/style.css?v=24">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -12,8 +12,8 @@
     <div id="alertBox" class="hidden"></div>
 
     <div class="card">
-      <h2>System Analytics</h2>
-      <p class="text-muted" id="officeSubtitle">Loading analytics for your office…</p>
+      <h2>Daily Analytics</h2>
+      <p class="text-muted" id="officeSubtitle">Loading your office summary...</p>
     </div>
 
     <form class="card analytics-date-filter" id="analyticsDateFilter">
@@ -27,19 +27,19 @@
       </div>
       <button type="submit" class="btn btn-primary analytics-filter-btn">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.5 7.2V18l-3 1.5v-7.3L4 5z"/></svg>
-        Apply
+        Apply dates
       </button>
     </form>
 
     <!-- Main KPIs -->
     <div class="stats-grid" id="mainKpis">
       <div class="stat-box stat-box-large">
-        <div class="number" id="kpiTotalBudget">—</div>
+        <div class="number" id="kpiActive">—</div>
         <div class="label">Active</div>
       </div>
       <div class="stat-box stat-box-large">
         <div class="number" id="kpiTotalRequests">—</div>
-        <div class="label">Total Requests</div>
+        <div class="label">Requests in scope</div>
       </div>
       <div class="stat-box stat-box-large">
         <div class="number" id="kpiCompletionRate">—</div>
@@ -47,48 +47,14 @@
       </div>
       <div class="stat-box stat-box-large">
         <div class="number" id="kpiAvgTime">—</div>
-        <div class="label">Avg. Processing Time</div>
+        <div class="label">Average queue days</div>
       </div>
     </div>
 
-    <!-- Descriptive -->
-    <section class="analytics-section" id="sectionDescriptive">
-      <div class="analytics-section-header">
-        <span class="analytics-type-badge descriptive">Descriptive</span>
-        <h2>What is happening?</h2>
-      </div>
-      <p class="analytics-insight" id="insightDescriptive"></p>
-
-      <div class="stats-grid" id="descKpis"></div>
-
-      <div class="analytics-charts-row">
-        <div class="card chart-card">
-          <h3>Status distribution</h3>
-          <canvas id="statusChart" height="220"></canvas>
-        </div>
-        <div class="card chart-card">
-          <h3>Monthly activity (last 6 months)</h3>
-          <canvas id="trendChart" height="220"></canvas>
-        </div>
-      </div>
-    </section>
-
-    <!-- Fund Utilization Trend -->
-    <div class="card">
-      <h2>Fund Utilization Trend</h2>
-      <div class="analytics-charts-row">
-        <div class="card chart-card chart-card-wide">
-          <h3>Fund utilization over time</h3>
-          <canvas id="fundUtilizationChart" height="250"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Diagnostic -->
     <section class="analytics-section" id="sectionDiagnostic">
       <div class="analytics-section-header">
         <span class="analytics-type-badge diagnostic">Diagnostic</span>
-        <h2>Why is it happening?</h2>
+        <h2>Needs attention</h2>
       </div>
       <p class="analytics-insight" id="insightDiagnostic"></p>
 
@@ -96,20 +62,13 @@
 
       <p class="bottleneck-note" id="bottleneckNote"></p>
 
-      <div class="analytics-charts-row">
-        <div class="card chart-card chart-card-wide">
-          <h3>Average time per stage (days)</h3>
-          <canvas id="stageDurationChart" height="200"></canvas>
-        </div>
-      </div>
-
       <div class="card" id="missingDocsCard">
         <h3>Requests without documents</h3>
         <div id="missingDocsList"></div>
       </div>
 
       <div class="card">
-        <h3>Longest time in current stage</h3>
+        <h3>Requests waiting longest</h3>
         <div class="table-wrap">
           <table>
             <thead>
@@ -126,9 +85,31 @@
           </table>
         </div>
       </div>
+      <div class="card chart-card chart-card-wide">
+        <h3>Average days by stage</h3>
+        <canvas id="stageDurationChart" height="160"></canvas>
+      </div>
     </section>
 
-    <!-- Predictive -->
+    <section class="analytics-section" id="sectionDescriptive">
+      <div class="analytics-section-header">
+        <span class="analytics-type-badge descriptive">Descriptive</span>
+        <h2>Current flow</h2>
+      </div>
+      <p class="analytics-insight" id="insightDescriptive"></p>
+      <div class="stats-grid" id="descKpis"></div>
+      <div class="analytics-charts-row">
+        <div class="card chart-card">
+          <h3>Requests by status</h3>
+          <canvas id="statusChart" height="180"></canvas>
+        </div>
+        <div class="card chart-card">
+          <h3>Monthly activity</h3>
+          <canvas id="trendChart" height="180"></canvas>
+        </div>
+      </div>
+    </section>
+
     <section class="analytics-section" id="sectionPredictive">
       <div class="analytics-section-header">
         <span class="analytics-type-badge predictive">Predictive</span>
@@ -138,15 +119,8 @@
 
       <div class="stats-grid" id="predKpis"></div>
 
-      <div class="analytics-charts-row">
-        <div class="card chart-card chart-card-wide">
-          <h3>Estimated days to completion (active requests)</h3>
-          <canvas id="forecastChart" height="200"></canvas>
-        </div>
-      </div>
-
       <div class="card">
-        <h3>Completion forecasts</h3>
+        <h3>Expected completion</h3>
         <div class="table-wrap">
           <table>
             <thead>
@@ -165,44 +139,13 @@
         </div>
       </div>
     </section>
-
-    <!-- Recent Report -->
-    <div class="card">
-      <h2>Recent Report</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Report Type</th>
-              <th>Generated</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Monthly Summary</td>
-              <td>2026-08-01</td>
-              <td><span class="status-badge completed">Completed</span></td>
-              <td><a href="#" class="btn btn-sm btn-secondary">Download</a></td>
-            </tr>
-            <tr>
-              <td>Department Analysis</td>
-              <td>2026-07-15</td>
-              <td><span class="status-badge completed">Completed</span></td>
-              <td><a href="#" class="btn btn-sm btn-secondary">Download</a></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
   </main>
 
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
-  <script src="js/api.js?v=16"></script>
-  <script src="js/app.js?v=23"></script>
-  <script src="js/analytics.js?v=14"></script>
+  <script src="js/api.js?v=18"></script>
+  <script src="js/app.js?v=26"></script>
+  <script src="js/analytics.js?v=15"></script>
   <script>
     let charts = [];
 
@@ -242,7 +185,7 @@
       const diag = data.diagnostic;
       const pred = data.predictive;
 
-      document.getElementById('kpiTotalBudget').textContent = d.active;
+      document.getElementById('kpiActive').textContent = d.active;
       document.getElementById('kpiTotalRequests').textContent = d.total_in_scope;
       document.getElementById('kpiCompletionRate').textContent = d.completion_rate_pct + '%';
       document.getElementById('kpiAvgTime').textContent = diag.avg_days_in_queue + ' days';
@@ -302,9 +245,7 @@
 
       charts.push(buildStatusChart('statusChart', d.by_status));
       charts.push(buildTrendChart('trendChart', d.monthly_trend));
-      charts.push(buildFundUtilizationChart('fundUtilizationChart'));
       charts.push(buildStageDurationChart('stageDurationChart', diag.avg_days_per_stage));
-      charts.push(buildForecastChart('forecastChart', pred.forecasts));
     });
   </script>
 </body>
