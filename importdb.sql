@@ -2,7 +2,7 @@
 -- Import via phpMyAdmin or: mysql -u root < importdb.sql
 --
 -- Creates: offices (with fund_allocation), users, requests, status_logs, documents
--- Seeds:   5 system offices with sample fund allocations, 5 login accounts, sample tracking PR-0001–PR-0006
+-- Seeds:   5 system offices with sample fund allocations, 5 login accounts, sample tracking PR-0001–PR-0006, and six months of mock Lipa Campus requests
 
 CREATE DATABASE IF NOT EXISTS procurement_monitoring
   CHARACTER SET utf8mb4
@@ -152,3 +152,183 @@ UPDATE requests SET bur = 'BUR-2024-001', ors = 'ORS-2024-050', budget_type = 'M
 UPDATE requests SET bur = 'BUR-2024-002', ors = 'ORS-2024-051', budget_type = 'Capital Outlay' WHERE tracking_number = 'PR-0004';
 UPDATE requests SET bur = 'BUR-2024-003', ors = 'ORS-2024-052', budget_type = 'MOOE' WHERE tracking_number = 'PR-0005';
 UPDATE requests SET bur = 'BUR-2024-004', ors = 'ORS-2024-053', budget_type = 'MOOE' WHERE tracking_number = 'PR-0006';
+
+-- Six months of mock BatStateU Lipa Campus transactions (March-August 2026)
+-- Program references use established degree-program names; amounts, dates, and statuses are fictional test data.
+INSERT INTO requests
+  (tracking_number, title, description, request_amount, funding_office, bur, ors, budget_type, status, notes, updated_by, created_at, updated_at)
+VALUES
+('PR-M2601', 'BS Information Technology Laboratory Network Upgrade', 'Network switches, access points, and cabling for information technology laboratory activities.', 285000.00, 'requesting', 'BUR-2026-031', 'ORS-2026-101', 'MOOE', 'Completed', 'Mock completed transaction.', 'Cashier', '2026-03-05 09:00:00', '2026-04-09 15:30:00'),
+('PR-M2602', 'BS Civil Engineering Surveying Instruments', 'Surveying instruments and field accessories for civil engineering laboratory and fieldwork.', 438500.00, 'requesting', 'BUR-2026-032', 'ORS-2026-102', 'Capital Outlay', 'For Inspection', 'Mock transaction awaiting inspection.', 'PSO', '2026-03-18 10:15:00', '2026-04-02 14:00:00'),
+('PR-A2601', 'BS Computer Science Development Workstations', 'Desktop workstations and peripherals for computer science programming and software development activities.', 612000.00, 'requesting', 'BUR-2026-041', 'ORS-2026-111', 'Capital Outlay', 'Canvass', 'Mock canvassing transaction.', 'Procurement Office', '2026-04-02 08:45:00', '2026-04-10 11:20:00'),
+('PR-A2602', 'BS Electrical Engineering Test Equipment', 'Digital multimeters, oscilloscopes, and regulated power supplies for electrical engineering laboratories.', 357750.00, 'requesting', 'BUR-2026-042', 'ORS-2026-112', 'Capital Outlay', 'Completed', 'Mock completed transaction.', 'Cashier', '2026-04-21 13:10:00', '2026-05-27 16:00:00'),
+('PR-M2603', 'BS Mechanical Engineering Machine Shop Tools', 'Machine shop tools, measuring instruments, and safety equipment for mechanical engineering instruction.', 524300.00, 'requesting', 'BUR-2026-051', 'ORS-2026-121', 'Capital Outlay', 'DV Processing', 'Mock disbursement voucher monitoring.', 'Accounting Office', '2026-05-06 09:30:00', '2026-06-04 10:00:00'),
+('PR-M2604', 'BS Accountancy Instructional Materials', 'Accounting textbooks, practice sets, and instructional materials for accountancy courses.', 96500.00, 'requesting', 'BUR-2026-052', 'ORS-2026-122', 'MOOE', 'Reviewed', 'Mock budget-reviewed transaction.', 'Budget Office', '2026-05-19 11:00:00', '2026-05-25 09:15:00'),
+('PR-J2601', 'BS Business Administration Entrepreneurship Supplies', 'Training materials and workshop supplies for business administration entrepreneurship activities.', 142800.00, 'requesting', 'BUR-2026-061', 'ORS-2026-131', 'MOOE', 'PO', 'Mock purchase order monitoring.', 'Procurement Office', '2026-06-03 08:30:00', '2026-06-18 14:45:00'),
+('PR-J2602', 'BS Information Technology Server Room Cooling', 'Dedicated cooling equipment and monitoring devices for the information technology server room.', 198400.00, 'requesting', 'BUR-2026-062', 'ORS-2026-132', 'Capital Outlay', 'Paid', 'Mock paid transaction awaiting final completion marking.', 'Cashier', '2026-06-24 10:40:00', '2026-07-31 13:00:00'),
+('PR-J2603', 'BS Civil Engineering Materials Testing Supplies', 'Concrete, aggregate, and materials testing consumables for civil engineering laboratory exercises.', 176250.00, 'requesting', NULL, NULL, NULL, 'Under Budget Review', 'Mock request under budget review.', 'Budget Office', '2026-07-08 09:05:00', '2026-07-10 10:30:00'),
+('PR-J2604', 'BS Electrical Engineering Renewable Energy Trainer', 'Renewable energy training equipment and laboratory accessories for electrical engineering activities.', 486900.00, 'requesting', 'BUR-2026-072', 'ORS-2026-142', 'Capital Outlay', 'Accepted', 'Mock transaction accepted by PSO.', 'PSO', '2026-07-22 14:20:00', '2026-08-20 15:10:00'),
+('PR-A2603', 'BS Mechanical Engineering Computer-Aided Design Licenses', 'Temporary software licenses and training resources for mechanical engineering design activities.', 219600.00, 'requesting', 'BUR-2026-081', 'ORS-2026-151', 'MOOE', 'Canvass', 'Mock canvassing transaction.', 'Procurement Office', '2026-08-05 08:50:00', '2026-08-13 11:00:00'),
+('PR-A2604', 'BS Computer Science Student Project Equipment', 'Microcontroller kits, sensors, and project components for computer science student development activities.', 118750.00, 'requesting', NULL, NULL, NULL, 'Registered', 'Mock newly registered request.', 'Requesting Office', '2026-08-26 10:25:00', '2026-08-26 10:25:00');
+
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', '2026-03-05 09:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Under Budget Review', 'Budget Office', 'Mock budget review started.', '2026-03-06 10:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Reviewed', 'Budget Office', 'Mock budget review completed.', '2026-03-10 14:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Canvass', 'Procurement Office', 'Mock canvassing started.', '2026-03-12 09:30:00' FROM requests WHERE tracking_number = 'PR-M2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'PO', 'Procurement Office', 'Mock purchase order issued.', '2026-03-18 15:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Delivered', 'PSO', 'Mock delivery received.', '2026-03-25 10:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'For Inspection', 'PSO', 'Mock inspection started.', '2026-03-27 13:30:00' FROM requests WHERE tracking_number = 'PR-M2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Accepted', 'PSO', 'Mock inspection accepted.', '2026-04-01 09:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'DV Processing', 'Accounting Office', 'Mock disbursement voucher processing.', '2026-04-03 11:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'For Payment', 'Accounting Office', 'Mock payment handoff.', '2026-04-05 14:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Paid', 'Cashier', 'Mock payment recorded.', '2026-04-08 10:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Completed', 'Cashier', 'Mock transaction completed.', '2026-04-09 15:30:00' FROM requests WHERE tracking_number = 'PR-M2601';
+
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', '2026-03-18 10:15:00' FROM requests WHERE tracking_number = 'PR-M2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Under Budget Review', 'Budget Office', 'Mock budget review completed.', '2026-03-20 09:00:00' FROM requests WHERE tracking_number = 'PR-M2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Reviewed', 'Budget Office', 'Mock request reviewed.', '2026-03-24 13:00:00' FROM requests WHERE tracking_number = 'PR-M2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Canvass', 'Procurement Office', 'Mock canvassing completed.', '2026-03-28 10:00:00' FROM requests WHERE tracking_number = 'PR-M2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'PO', 'Procurement Office', 'Mock purchase order issued.', '2026-03-30 15:00:00' FROM requests WHERE tracking_number = 'PR-M2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Delivered', 'PSO', 'Mock delivery received.', '2026-04-01 11:00:00' FROM requests WHERE tracking_number = 'PR-M2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'For Inspection', 'PSO', 'Mock inspection pending completion.', '2026-04-02 14:00:00' FROM requests WHERE tracking_number = 'PR-M2602';
+
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', created_at FROM requests WHERE tracking_number = 'PR-A2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Under Budget Review', 'Budget Office', 'Mock budget review completed.', '2026-04-05 10:00:00' FROM requests WHERE tracking_number = 'PR-A2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Reviewed', 'Budget Office', 'Mock request reviewed.', '2026-04-07 14:00:00' FROM requests WHERE tracking_number = 'PR-A2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Canvass', 'Procurement Office', 'Mock canvassing in progress.', '2026-04-10 11:20:00' FROM requests WHERE tracking_number = 'PR-A2601';
+
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', '2026-04-21 13:10:00' FROM requests WHERE tracking_number = 'PR-A2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Under Budget Review', 'Budget Office', 'Mock budget review completed.', '2026-04-23 09:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Reviewed', 'Budget Office', 'Mock request reviewed.', '2026-04-27 15:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Canvass', 'Procurement Office', 'Mock canvassing completed.', '2026-04-30 10:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'PO', 'Procurement Office', 'Mock purchase order issued.', '2026-05-04 14:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Delivered', 'PSO', 'Mock delivery received.', '2026-05-12 09:30:00' FROM requests WHERE tracking_number = 'PR-A2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'For Inspection', 'PSO', 'Mock inspection completed.', '2026-05-15 13:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Accepted', 'PSO', 'Mock inspection accepted.', '2026-05-18 10:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'DV Processing', 'Accounting Office', 'Mock disbursement voucher processing.', '2026-05-20 11:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'For Payment', 'Accounting Office', 'Mock payment handoff.', '2026-05-22 14:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Paid', 'Cashier', 'Mock payment recorded.', '2026-05-25 10:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Completed', 'Cashier', 'Mock transaction completed.', '2026-05-27 16:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
+
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', created_at FROM requests WHERE tracking_number = 'PR-M2603';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Under Budget Review', 'Budget Office', 'Mock budget review completed.', '2026-05-08 10:00:00' FROM requests WHERE tracking_number = 'PR-M2603';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Reviewed', 'Budget Office', 'Mock request reviewed.', '2026-05-12 14:00:00' FROM requests WHERE tracking_number = 'PR-M2603';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Canvass', 'Procurement Office', 'Mock canvassing completed.', '2026-05-18 09:00:00' FROM requests WHERE tracking_number = 'PR-M2603';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'PO', 'Procurement Office', 'Mock purchase order issued.', '2026-05-22 15:00:00' FROM requests WHERE tracking_number = 'PR-M2603';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Delivered', 'PSO', 'Mock delivery received.', '2026-05-28 10:00:00' FROM requests WHERE tracking_number = 'PR-M2603';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'For Inspection', 'PSO', 'Mock inspection completed.', '2026-06-01 13:00:00' FROM requests WHERE tracking_number = 'PR-M2603';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Accepted', 'PSO', 'Mock inspection accepted.', '2026-06-02 09:00:00' FROM requests WHERE tracking_number = 'PR-M2603';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'DV Processing', 'Accounting Office', 'Mock disbursement voucher in process.', '2026-06-04 10:00:00' FROM requests WHERE tracking_number = 'PR-M2603';
+
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', created_at FROM requests WHERE tracking_number = 'PR-M2604';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Under Budget Review', 'Budget Office', 'Mock budget review completed.', '2026-05-21 09:00:00' FROM requests WHERE tracking_number = 'PR-M2604';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Reviewed', 'Budget Office', 'Mock request reviewed.', '2026-05-25 13:00:00' FROM requests WHERE tracking_number = 'PR-M2604';
+
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', created_at FROM requests WHERE tracking_number = 'PR-J2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Under Budget Review', 'Budget Office', 'Mock budget review completed.', '2026-06-05 10:00:00' FROM requests WHERE tracking_number = 'PR-J2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Reviewed', 'Budget Office', 'Mock request reviewed.', '2026-06-09 14:00:00' FROM requests WHERE tracking_number = 'PR-J2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Canvass', 'Procurement Office', 'Mock canvassing completed.', '2026-06-12 11:00:00' FROM requests WHERE tracking_number = 'PR-J2601';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'PO', 'Procurement Office', 'Mock purchase order issued.', '2026-06-18 14:45:00' FROM requests WHERE tracking_number = 'PR-J2601';
+
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', created_at FROM requests WHERE tracking_number = 'PR-J2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Under Budget Review', 'Budget Office', 'Mock budget review completed.', '2026-06-26 09:00:00' FROM requests WHERE tracking_number = 'PR-J2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Reviewed', 'Budget Office', 'Mock request reviewed.', '2026-06-30 14:00:00' FROM requests WHERE tracking_number = 'PR-J2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Canvass', 'Procurement Office', 'Mock canvassing completed.', '2026-07-03 10:00:00' FROM requests WHERE tracking_number = 'PR-J2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'PO', 'Procurement Office', 'Mock purchase order issued.', '2026-07-08 15:00:00' FROM requests WHERE tracking_number = 'PR-J2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Delivered', 'PSO', 'Mock delivery received.', '2026-07-15 11:00:00' FROM requests WHERE tracking_number = 'PR-J2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'For Inspection', 'PSO', 'Mock inspection completed.', '2026-07-20 13:00:00' FROM requests WHERE tracking_number = 'PR-J2602';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Accepted', 'PSO', 'Mock transaction accepted.', '2026-08-20 15:10:00' FROM requests WHERE tracking_number = 'PR-J2602';
+
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', created_at FROM requests WHERE tracking_number = 'PR-J2603';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Under Budget Review', 'Budget Office', 'Mock budget review in progress.', '2026-07-10 10:30:00' FROM requests WHERE tracking_number = 'PR-J2603';
+
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', created_at FROM requests WHERE tracking_number = 'PR-J2604';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Under Budget Review', 'Budget Office', 'Mock budget review completed.', '2026-07-25 10:00:00' FROM requests WHERE tracking_number = 'PR-J2604';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Reviewed', 'Budget Office', 'Mock request reviewed.', '2026-07-29 14:00:00' FROM requests WHERE tracking_number = 'PR-J2604';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Canvass', 'Procurement Office', 'Mock canvassing completed.', '2026-08-03 09:00:00' FROM requests WHERE tracking_number = 'PR-J2604';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'PO', 'Procurement Office', 'Mock purchase order issued.', '2026-08-07 15:00:00' FROM requests WHERE tracking_number = 'PR-J2604';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Delivered', 'PSO', 'Mock delivery received.', '2026-08-12 10:00:00' FROM requests WHERE tracking_number = 'PR-J2604';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'For Inspection', 'PSO', 'Mock inspection completed.', '2026-08-15 13:00:00' FROM requests WHERE tracking_number = 'PR-J2604';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Accepted', 'PSO', 'Mock transaction accepted.', '2026-08-20 15:10:00' FROM requests WHERE tracking_number = 'PR-J2604';
+
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', created_at FROM requests WHERE tracking_number = 'PR-A2603';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Under Budget Review', 'Budget Office', 'Mock budget review completed.', '2026-08-07 10:00:00' FROM requests WHERE tracking_number = 'PR-A2603';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Reviewed', 'Budget Office', 'Mock request reviewed.', '2026-08-10 14:00:00' FROM requests WHERE tracking_number = 'PR-A2603';
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Canvass', 'Procurement Office', 'Mock canvassing in progress.', '2026-08-13 11:00:00' FROM requests WHERE tracking_number = 'PR-A2603';
+
+INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
+SELECT id, 'Registered', 'Requesting Office', 'Mock newly registered request.', created_at FROM requests WHERE tracking_number = 'PR-A2604';
