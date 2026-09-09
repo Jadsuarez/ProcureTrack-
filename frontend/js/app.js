@@ -154,6 +154,13 @@ function initTopNavbar(session) {
               <span>Notifications</span>
               <button type="button" class="notif-clear-btn" id="clearNotifBtn">Clear</button>
             </div>
+            <div class="notif-filter-row">
+              <label for="notifFilter">Show</label>
+              <select id="notifFilter" aria-label="Filter notifications">
+                <option value="all">All updates</option>
+                <option value="new">New requests</option>
+              </select>
+            </div>
             <ul class="notif-menu-list" id="notifMenuList">
               <li class="text-muted">Loading…</li>
             </ul>
@@ -275,8 +282,32 @@ async function loadNavbarNotifications() {
     }
 
     const allItems = data.notifications || [];
+    const filter = document.getElementById('notifFilter');
+    const selectedFilter = filter?.value || 'all';
+    if (filter) {
+      const statuses = [...new Set(allItems.map((n) => n.status).filter(Boolean))];
+      const existingStatusOptions = [...filter.options]
+        .filter((option) => option.dataset.status)
+        .map((option) => option.value);
+      statuses.forEach((status) => {
+        if (!existingStatusOptions.includes(status)) {
+          const option = document.createElement('option');
+          option.value = status;
+          option.dataset.status = '1';
+          option.textContent = status;
+          filter.appendChild(option);
+        }
+      });
+      filter.value = selectedFilter;
+      if (filter.value !== selectedFilter) filter.value = 'all';
+    }
+
     const clearedId = getClearedNotifId();
     const items = allItems.filter((n) => Number(n.id) > clearedId);
+    const filteredItems = items.filter((n) => {
+      if (selectedFilter === 'new') return n.status === 'Registered';
+      return selectedFilter === 'all' || n.status === selectedFilter;
+    });
     const seenId = Math.max(getSeenNotifId(), clearedId);
     const unread = items.filter((n) => Number(n.id) > seenId).length;
     renderNotifBadge(unread);
@@ -289,12 +320,12 @@ async function loadNavbarNotifications() {
     const clearBtn = document.getElementById('clearNotifBtn');
     if (clearBtn) clearBtn.disabled = items.length === 0;
 
-    if (!items.length) {
-      list.innerHTML = '<li class="text-muted">No notifications.</li>';
-      return items;
+    if (!filteredItems.length) {
+      list.innerHTML = `<li class="text-muted">${items.length ? 'No matching notifications.' : 'No notifications.'}</li>`;
+      return filteredItems;
     }
 
-    list.innerHTML = items
+    list.innerHTML = filteredItems
       .map((n) => {
         const unreadClass = Number(n.id) > seenId ? ' unread' : '';
         return `<li class="notif-item${unreadClass}">
@@ -337,6 +368,8 @@ function bindNotifMenu(session) {
     document.getElementById('clearNotifBtn').disabled = true;
     renderNotifBadge(0);
   });
+
+  document.getElementById('notifFilter')?.addEventListener('change', loadNavbarNotifications);
 
   btn.addEventListener('click', (e) => {
     e.stopPropagation();

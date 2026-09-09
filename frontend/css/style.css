@@ -583,6 +583,27 @@ a:hover {
   margin-top: 0.2rem;
 }
 
+.notif-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.notif-filter-row select {
+  min-width: 0;
+  flex: 1;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+
 .form-section-title {
   font-size: 0.8rem;
   font-weight: 600;
