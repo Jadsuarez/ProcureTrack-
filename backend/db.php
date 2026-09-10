@@ -19,6 +19,7 @@ function getConnection(): PDO
         ensureOfficeFundAllocationColumn($pdo);
         ensureUserProfileColumns($pdo);
         ensureRequestFundingColumns($pdo);
+        ensureSystemOffices($pdo);
         ensureSignatoryTables($pdo);
         ensureSignatoryAuditTables($pdo);
         ensureLegacyStatusMigration($pdo);
@@ -187,6 +188,7 @@ function ensureRequestFundingColumns(PDO $pdo): void
     foreach ([
         'request_amount' => 'DECIMAL(15, 2) NOT NULL DEFAULT 0',
         'funding_office' => 'VARCHAR(30) DEFAULT NULL',
+        'funds_restored' => 'TINYINT(1) NOT NULL DEFAULT 0',
     ] as $name => $definition) {
         if (!in_array($name, $columns, true)) {
             try {
@@ -196,6 +198,38 @@ function ensureRequestFundingColumns(PDO $pdo): void
             }
         }
     }
+}
+
+function ensureSystemOffices(PDO $pdo): void
+{
+    try {
+        $pdo->exec(
+            "INSERT IGNORE INTO offices (slug, label, is_system, created_by, fund_allocation)
+             VALUES ('pso', 'Property and Supply Office', 1, 'system', 0)"
+        );
+    } catch (PDOException $e) {
+        // offices table may not exist yet
+    }
+}
+
+function isClosedStatus(string $status): bool
+{
+    return in_array($status, ['Returned', 'Cancelled'], true);
+}
+
+function restoreRequestFunds(PDO $pdo, array $request): void
+{
+    if ((int) ($request['funds_restored'] ?? 0) === 1) {
+        return;
+    }
+    $amount = round((float) ($request['request_amount'] ?? 0), 2);
+    $office = trim((string) ($request['funding_office'] ?? '')) ?: 'requesting';
+    if ($amount > 0) {
+        $stmt = $pdo->prepare('UPDATE offices SET fund_allocation = fund_allocation + ? WHERE slug = ?');
+        $stmt->execute([$amount, $office]);
+    }
+    $mark = $pdo->prepare('UPDATE requests SET funds_restored = 1 WHERE id = ?');
+    $mark->execute([(int) $request['id']]);
 }
 
 function ensureOfficeFundAllocationColumn(PDO $pdo): void
@@ -247,6 +281,7 @@ function defaultOfficeRows(): array
         ['id' => 0, 'slug' => 'budget', 'label' => 'Budget Office', 'is_system' => 1],
         ['id' => 0, 'slug' => 'procurement', 'label' => 'Procurement Office', 'is_system' => 1],
         ['id' => 0, 'slug' => 'accounting', 'label' => 'Accounting Office', 'is_system' => 1],
+        ['id' => 0, 'slug' => 'pso', 'label' => 'Property and Supply Office', 'is_system' => 1],
         ['id' => 0, 'slug' => 'cashier', 'label' => 'Cashier', 'is_system' => 1],
     ];
 }

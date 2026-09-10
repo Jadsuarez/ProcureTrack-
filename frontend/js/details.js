@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('detailGrid').innerHTML = `
     <div class="detail-item"><div class="label">Tracking ID</div><div class="value">${req.tracking_number}</div></div>
     <div class="detail-item"><div class="label">Current Status</div><div class="value"><span class="status-badge ${statusBadgeClass(req.status)}">${req.status}</span></div></div>
+    <div class="detail-item"><div class="label">Amount</div><div class="value">${formatPeso(req.request_amount)}</div></div>
     <div class="detail-item"><div class="label">Description</div><div class="value">${req.description || '—'}</div></div>
     <div class="detail-item"><div class="label">Last Updated By</div><div class="value">${req.updated_by || '—'}</div></div>
     <div class="detail-item"><div class="label">Last Updated</div><div class="value">${formatDate(req.updated_at)}</div></div>
@@ -155,6 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         .join('')
     : '<p class="text-muted">No status history yet.</p>';
 
+  const canRemoveDocs = ['requesting', 'procurement'].includes(session.role);
   const docList = document.getElementById('docList');
   if (data.documents.length) {
     docList.innerHTML = data.documents
@@ -162,7 +164,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         (d) => `
       <li>
         <span>${d.file_name} <small class="text-muted">(${d.uploaded_by || '—'}, ${formatDate(d.uploaded_at)})</small></span>
-        <a href="../${d.file_path}" target="_blank" rel="noopener" class="btn btn-sm btn-secondary">Open</a>
+        <span>
+          <a href="../${d.file_path}" target="_blank" rel="noopener" class="btn btn-sm btn-secondary">Open</a>
+          ${canRemoveDocs ? `<button type="button" class="btn btn-sm btn-danger print-hide" data-delete-doc="${d.id}">Remove</button>` : ''}
+        </span>
       </li>
     `
       )
@@ -171,6 +176,40 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('uploadLink').href =
     `upload.html?tracking=${encodeURIComponent(req.tracking_number)}`;
+
+  const closed = ['Returned', 'Cancelled', 'Completed'].includes(req.status);
+  document.getElementById('printDetailsBtn')?.addEventListener('click', () => window.print());
+  const cancelBtn = document.getElementById('cancelRequestBtn');
+  const returnBtn = document.getElementById('returnRequestBtn');
+  if (cancelBtn && session.role === 'requesting' && !closed && req.status !== 'Paid') {
+    cancelBtn.classList.remove('hidden');
+    cancelBtn.addEventListener('click', async () => {
+      if (!confirm('Cancel this request and restore funds?')) return;
+      const notes = prompt('Reason (optional):') || '';
+      const result = await Api.closeRequest({ tracking_number: req.tracking_number, action: 'cancel', notes });
+      if (result.success) window.location.reload();
+      else showAlert(document.getElementById('alertBox'), result.message);
+    });
+  }
+  if (returnBtn && session.role === 'budget' && ['Registered', 'Under Budget Review', 'Reviewed'].includes(req.status)) {
+    returnBtn.classList.remove('hidden');
+    returnBtn.addEventListener('click', async () => {
+      if (!confirm('Return this request to Requesting Office and restore funds?')) return;
+      const notes = prompt('Reason (optional):') || '';
+      const result = await Api.closeRequest({ tracking_number: req.tracking_number, action: 'return', notes });
+      if (result.success) window.location.reload();
+      else showAlert(document.getElementById('alertBox'), result.message);
+    });
+  }
+
+  docList?.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-delete-doc]');
+    if (!btn) return;
+    if (!confirm('Remove this document?')) return;
+    const result = await Api.deleteDocument(Number(btn.dataset.deleteDoc));
+    if (result.success) window.location.reload();
+    else showAlert(document.getElementById('alertBox'), result.message);
+  });
 
   renderSignatoryWorkflow(data, session, tracking);
   const signatoryForm = document.getElementById('signatoryForm');
@@ -232,8 +271,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   const canUpdate = ['budget', 'procurement', 'pso', 'accounting', 'cashier'].includes(session.role);
+  const closedRequest = ['Returned', 'Cancelled', 'Completed'].includes(req.status);
   const currentSignaturesReady = Boolean(data.signatory_summary?.ready_for_status_update);
-  if (canUpdate && currentSignaturesReady) {
+  if (canUpdate && currentSignaturesReady && !closedRequest) {
     const opts = await Api.statusOptions();
     if (opts.success && opts.options.length) {
       const updateCard = document.getElementById('updateCard');

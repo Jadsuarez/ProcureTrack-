@@ -55,6 +55,10 @@ function officeVisibilityEntryStatus(string $role): string
 
 function isRequestVisibleToRole(string $status, string $role): bool
 {
+    if (isClosedStatus($status)) {
+        return in_array($role, ['requesting', 'budget', 'procurement'], true);
+    }
+
     $entry = officeVisibilityEntryStatus($role);
     $statusIdx = workflowStageIndex($status);
     $entryIdx = workflowStageIndex($entry);
@@ -96,6 +100,7 @@ function officeForStatus(string $status): string
         'Canvass', 'PO' => 'procurement',
         'Delivered', 'For Inspection', 'Accepted' => 'pso',
         'Paid', 'Completed' => 'cashier',
+        'Returned', 'Cancelled' => 'requesting',
         default => 'requesting',
     };
 }

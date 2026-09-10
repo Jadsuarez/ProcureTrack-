@@ -243,6 +243,26 @@ const Api = {
     return res.json();
   },
 
+  async deleteDocument(id) {
+    const res = await fetch(`${API_BASE}/submit.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'delete_document', id }),
+    });
+    return res.json();
+  },
+
+  async closeRequest(data) {
+    const res = await fetch(`${API_BASE}/close_request.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
   async nextTrackingId() {
     const res = await fetch(`${API_BASE}/create_request.php?action=next_id`, {
       credentials: 'include',
@@ -274,8 +294,10 @@ const Api = {
 
 function statusBadgeClass(status) {
   if (status === 'Completed') return 'completed';
+  if (['Returned', 'Cancelled'].includes(status)) return 'closed';
   if (['Under Budget Review', 'Reviewed'].includes(status)) return 'budget';
   if (['Canvass', 'PO'].includes(status)) return 'procurement';
+  if (['Delivered', 'For Inspection', 'Accepted'].includes(status)) return 'pso';
   if (['DV Processing', 'For Payment'].includes(status)) return 'accounting';
   if (status === 'Paid') return 'cashier';
   return '';

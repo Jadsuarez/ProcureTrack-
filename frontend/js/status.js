@@ -110,4 +110,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     page += 1;
     renderRequests();
   });
+
+  document.getElementById('exportRequestsBtn')?.addEventListener('click', () => {
+    const selectedStatus = filterSelect.value;
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    const rows = requests.filter((request) => {
+      const matchesStatus = selectedStatus === 'all' || request.status === selectedStatus;
+      const searchableText = `${request.tracking_number || ''} ${request.title || ''}`.toLowerCase();
+      const amount = Number(request.request_amount) || 0;
+      const matchesSearch = !searchTerm || searchableText.includes(searchTerm);
+      const matchesMinimum = !minimumAmountInput.value || amount >= Number(minimumAmountInput.value);
+      const matchesMaximum = !maximumAmountInput.value || amount <= Number(maximumAmountInput.value);
+      return matchesStatus && matchesSearch && matchesMinimum && matchesMaximum;
+    });
+    const header = ['Tracking ID', 'Title', 'Status', 'Amount', 'Updated'];
+    const csv = [header].concat(rows.map((r) => [
+      r.tracking_number || '',
+      r.title || '',
+      r.status || '',
+      r.request_amount || '0',
+      r.updated_at || '',
+    ])).map((line) => line.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'office-requests.csv';
+    link.click();
+  });
 });

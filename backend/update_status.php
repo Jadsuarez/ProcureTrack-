@@ -57,6 +57,10 @@ try {
         jsonResponse(['success' => false, 'message' => 'Request not found.'], 404);
     }
 
+    if (isClosedStatus($row['status']) || $row['status'] === 'Completed') {
+        jsonResponse(['success' => false, 'message' => 'Closed or completed requests cannot be updated.'], 400);
+    }
+
     if (!isRequestVisibleToRole($row['status'], $role)) {
         jsonResponse(['success' => false, 'message' => requestVisibilityMessage($role)], 403);
     }

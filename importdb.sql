@@ -26,6 +26,7 @@ INSERT IGNORE INTO offices (slug, label, is_system, created_by, fund_allocation)
 ('budget', 'Budget Office', 1, 'system', 250000.00),
 ('procurement', 'Procurement Office', 1, 'system', 1200000.00),
 ('accounting', 'Accounting Office', 1, 'system', 400000.00),
+('pso', 'Property and Supply Office', 1, 'system', 0.00),
 ('cashier', 'Cashier', 1, 'system', 150000.00);
 
 UPDATE offices SET fund_allocation = 5000000.00 WHERE slug = 'requesting' AND fund_allocation = 0;

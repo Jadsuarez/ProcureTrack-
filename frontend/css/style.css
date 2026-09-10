@@ -1524,6 +1524,16 @@ tr:hover td {
   color: #4338ca;
 }
 
+.status-badge.pso {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.status-badge.closed {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
 tr.row-focus td {
   background: #f0f9ff;
 }
@@ -2106,4 +2116,28 @@ footer.app-footer {
   height: 100%;
   background: var(--primary);
   border-radius: 999px;
+}
+
+@media print {
+  .app-sidebar,
+  .top-navbar,
+  .app-footer,
+  .print-hide,
+  .update-section,
+  .signatory-form,
+  #uploadLink,
+  .signatory-actions {
+    display: none !important;
+  }
+
+  .app-layout,
+  .app-main {
+    display: block;
+    background: #fff;
+  }
+
+  .card {
+    box-shadow: none;
+    break-inside: avoid;
+  }
 }

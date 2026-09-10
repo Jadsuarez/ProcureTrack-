@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Requests Dashboard - Procurement Monitoring</title>
-  <link rel="stylesheet" href="css/style.css?v=29">
+  <link rel="stylesheet" href="css/style.css?v=30">
 </head>
 <body>
   <main class="container-wide">
@@ -26,6 +26,7 @@
         <input type="number" id="minimumRequestAmount" min="0" step="0.01" placeholder="0.00" aria-label="Minimum request amount">
         <label for="maximumRequestAmount">Price to</label>
         <input type="number" id="maximumRequestAmount" min="0" step="0.01" placeholder="No limit" aria-label="Maximum request amount">
+        <button type="button" class="btn btn-sm btn-secondary" id="exportRequestsBtn">Export CSV</button>
         <label for="officeRequestSort">Sort by</label>
         <select id="officeRequestSort" aria-label="Sort office requests">
           <option value="updated_desc">Last updated (newest)</option>
@@ -63,8 +64,8 @@
     </div>
   </main>
   <footer class="app-footer">PROCUREMENT - Monitoring System</footer>
-  <script src="js/api.js?v=22"></script>
+  <script src="js/api.js?v=23"></script>
   <script src="js/app.js?v=27"></script>
-  <script src="js/status.js?v=4"></script>
+  <script src="js/status.js?v=5"></script>
 </body>
 </html>

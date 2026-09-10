@@ -38,8 +38,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'lookup'
     }
 }
 
-// File upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+    if (stripos($contentType, 'application/json') !== false) {
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (is_array($input) && ($input['action'] ?? '') === 'delete_document') {
+            $docId = (int) ($input['id'] ?? 0);
+            $role = $_SESSION['role'];
+            if ($docId <= 0) {
+                jsonResponse(['success' => false, 'message' => 'Document ID is required.'], 400);
+            }
+            if (!in_array($role, ['requesting', 'procurement'], true)) {
+                jsonResponse(['success' => false, 'message' => 'Only Requesting or Procurement can remove documents.'], 403);
+            }
+            try {
+                $pdo = getConnection();
+                $stmt = $pdo->prepare(
+                    'SELECT d.id, d.file_path, r.status
+                     FROM documents d
+                     INNER JOIN requests r ON r.id = d.request_id
+                     WHERE d.id = ?'
+                );
+                $stmt->execute([$docId]);
+                $doc = $stmt->fetch();
+                if (!$doc) {
+                    jsonResponse(['success' => false, 'message' => 'Document not found.'], 404);
+                }
+                if (!isRequestVisibleToRole($doc['status'], $role)) {
+                    jsonResponse(['success' => false, 'message' => requestVisibilityMessage($role)], 403);
+                }
+                $pdo->prepare('DELETE FROM documents WHERE id = ?')->execute([$docId]);
+                $abs = dirname(__DIR__) . '/' . ltrim((string) $doc['file_path'], '/');
+                if (is_file($abs)) {
+                    @unlink($abs);
+                }
+                jsonResponse(['success' => true, 'message' => 'Document removed.']);
+            } catch (PDOException $e) {
+                jsonResponse(['success' => false, 'message' => 'Database error.'], 500);
+            }
+        }
+        jsonResponse(['success' => false, 'message' => 'Invalid request.'], 400);
+    }
+
     $tracking = trim($_POST['tracking_number'] ?? '');
     if ($tracking === '') {
         jsonResponse(['success' => false, 'message' => 'Tracking number required.'], 400);
