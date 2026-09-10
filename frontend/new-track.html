@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Track Request — PROCUREMENT</title>
-  <link rel="stylesheet" href="css/style.css?v=26">
+  <link rel="stylesheet" href="css/style.css?v=29">
 </head>
 <body>
   <main class="container">
@@ -86,8 +86,8 @@
 
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
-  <script src="js/api.js?v=20"></script>
-  <script src="js/app.js?v=26"></script>
+  <script src="js/api.js?v=22"></script>
+  <script src="js/app.js?v=27"></script>
   <script>
     const officeOptions = [
       ['requesting', 'Requesting Office'],
@@ -190,6 +190,7 @@
         e.target.reset();
         document.getElementById('signatoryRows').innerHTML = '';
         addSignatoryRow();
+        if (typeof applyOfficePreferences === 'function') applyOfficePreferences(session);
 
       });
 

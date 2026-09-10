@@ -114,9 +114,11 @@ function initAppLayout(session) {
     );
   }
 
-  renderHeader(session.role_label, displayUsername(session.username));
+  renderHeader(session.role_label, chipDisplayName(session));
   buildNav(session);
   initTopNavbar(session);
+  window.__session = session;
+  applyOfficePreferences(session);
 }
 
 const PAGE_TITLES = {
@@ -139,7 +141,7 @@ function initTopNavbar(session) {
 
   let navbar = mainWrap.querySelector('.top-navbar');
   if (!navbar) {
-    const username = displayUsername(session?.username);
+    const username = chipDisplayName(session);
     const initial = (username || 'U').slice(0, 1).toUpperCase();
     navbar = document.createElement('header');
     navbar.className = 'top-navbar';
@@ -191,6 +193,9 @@ function initTopNavbar(session) {
             </span>
           </button>
           <div class="user-menu hidden" id="userMenu">
+            <a href="#" data-account-action="profile">Edit Profile</a>
+            <a href="#" data-account-action="settings">Settings</a>
+            <div class="user-menu-divider"></div>
             <a href="#" data-logout="1">Logout</a>
           </div>
         </div>
@@ -198,19 +203,218 @@ function initTopNavbar(session) {
     `;
     mainWrap.insertBefore(navbar, mainWrap.firstChild);
     bindGlobalSearch();
-    bindUserMenu();
+    bindUserMenu(session);
     bindNotifMenu(session);
   } else {
+    bindUserMenu(session);
     bindNotifMenu(session);
   }
 
   setTopNavbarTitle();
 }
 
-function bindUserMenu() {
+function chipDisplayName(session) {
+  const named = String(session?.display_name || '').trim();
+  return named || displayUsername(session?.username);
+}
+
+function getUserPreferences() {
+  return window.__session?.preferences || {};
+}
+
+function applyOfficePreferences(session) {
+  const prefs = session?.preferences || {};
+  const filter = document.getElementById('notifFilter');
+  if (filter && (prefs.notify_filter === 'all' || prefs.notify_filter === 'new')) {
+    filter.value = prefs.notify_filter;
+  }
+
+  const title = document.getElementById('title');
+  const description = document.getElementById('description');
+  if (session?.role === 'requesting' && title && !title.value && prefs.default_title) {
+    title.value = prefs.default_title;
+  }
+  if (session?.role === 'requesting' && description && !description.value && prefs.default_description) {
+    description.value = prefs.default_description;
+  }
+}
+
+function applyProfileToSession(profile) {
+  if (!profile || !window.__session) return;
+  window.__session = {
+    ...window.__session,
+    username: profile.username,
+    display_name: profile.display_name || '',
+    email: profile.email || '',
+    preferences: profile.preferences || {},
+    role: profile.office || window.__session.role,
+    role_label: profile.office_label || window.__session.role_label,
+  };
+  updateUserChip(window.__session);
+  applyOfficePreferences(window.__session);
+}
+
+function updateUserChip(session) {
+  const name = chipDisplayName(session);
+  const initial = (name || 'U').slice(0, 1).toUpperCase();
+  const nameEl = document.querySelector('.user-chip-name');
+  const officeEl = document.querySelector('.user-chip-office');
+  const avatar = document.querySelector('.user-avatar');
+  if (nameEl) nameEl.innerHTML = `<small>Username:</small> ${name}`;
+  if (officeEl) officeEl.innerHTML = `<small>Office:</small> ${session?.role_label || ''}`;
+  if (avatar) avatar.textContent = initial;
+  renderHeader(session?.role_label, name);
+}
+
+function openAccountModal(id) {
+  const el = document.getElementById(id);
+  if (!el || el.open) return;
+  if (typeof el.showModal === 'function') el.showModal();
+  document.body.classList.add('modal-open');
+}
+
+function closeAccountModal(id) {
+  const el = document.getElementById(id);
+  if (el && typeof el.close === 'function' && el.open) el.close();
+  if (!document.querySelector('.popup-dialog[open]')) {
+    document.body.classList.remove('modal-open');
+  }
+}
+
+function ensureAccountModals() {
+  if (document.getElementById('editProfileModal')) return;
+
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <dialog class="popup-dialog" id="editProfileModal">
+      <div class="card popup-window">
+        <div class="panel-header">
+          <h2>Edit Profile</h2>
+          <button type="button" class="popup-close" data-close-account="editProfileModal" aria-label="Close">&times;</button>
+        </div>
+        <div id="profileAlert" class="hidden"></div>
+        <form id="editProfileForm">
+          <div class="form-group">
+            <label for="profileUsername">Username</label>
+            <input type="text" id="profileUsername" required pattern="[a-zA-Z0-9_]{3,50}" maxlength="50">
+          </div>
+          <div class="form-group">
+            <label for="profileDisplayName">Display Name</label>
+            <input type="text" id="profileDisplayName" maxlength="100" placeholder="Name shown in the system">
+          </div>
+          <div class="form-group">
+            <label for="profileEmail">Email</label>
+            <input type="email" id="profileEmail" maxlength="150" placeholder="optional">
+          </div>
+          <div class="form-group">
+            <label for="profilePassword">New Password <small class="text-muted">(leave blank to keep current)</small></label>
+            <input type="password" id="profilePassword" minlength="6" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="profileConfirmPassword">Confirm Password</label>
+            <input type="password" id="profileConfirmPassword" minlength="6" autocomplete="new-password">
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" data-close-account="editProfileModal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Profile</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+    <dialog class="popup-dialog" id="accountSettingsModal">
+      <div class="card popup-window">
+        <div class="panel-header">
+          <h2>Settings</h2>
+          <button type="button" class="popup-close" data-close-account="accountSettingsModal" aria-label="Close">&times;</button>
+        </div>
+        <div id="settingsAlert" class="hidden"></div>
+        <form id="accountSettingsForm">
+          <p class="text-muted" id="settingsOfficeHint"></p>
+          <div class="form-group">
+            <label for="settingsNotifyFilter">Default notification view</label>
+            <select id="settingsNotifyFilter">
+              <option value="all">All updates</option>
+              <option value="new">New requests</option>
+            </select>
+          </div>
+          <div id="settingsRequestingFields" class="hidden">
+            <div class="form-group">
+              <label for="settingsDefaultTitle">Default request title</label>
+              <input type="text" id="settingsDefaultTitle" maxlength="255" placeholder="Used on New Track">
+            </div>
+            <div class="form-group">
+              <label for="settingsDefaultDescription">Default request description</label>
+              <textarea id="settingsDefaultDescription" rows="3" maxlength="1000" placeholder="Used on New Track"></textarea>
+            </div>
+          </div>
+          <div id="settingsBudgetFields" class="hidden">
+            <div class="form-group">
+              <label for="settingsDefaultBudgetType">Default budget type</label>
+              <input type="text" id="settingsDefaultBudgetType" maxlength="100" placeholder="e.g. MOOE">
+            </div>
+          </div>
+          <div id="settingsNotesFields" class="hidden">
+            <div class="form-group">
+              <label for="settingsDefaultNotes">Default status notes</label>
+              <textarea id="settingsDefaultNotes" rows="3" maxlength="500" placeholder="Filled in when updating a request"></textarea>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" data-close-account="accountSettingsModal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+  `;
+  document.body.append(...wrap.children);
+}
+
+async function openEditProfileModal() {
+  clearAlert(document.getElementById('profileAlert'));
+  const data = await Api.profile();
+  if (!data.success) {
+    showAlert(document.getElementById('profileAlert'), data.message || 'Unable to load profile.');
+    openAccountModal('editProfileModal');
+    return;
+  }
+  const p = data.profile;
+  document.getElementById('profileUsername').value = p.username || '';
+  document.getElementById('profileDisplayName').value = p.display_name || '';
+  document.getElementById('profileEmail').value = p.email || '';
+  document.getElementById('profilePassword').value = '';
+  document.getElementById('profileConfirmPassword').value = '';
+  openAccountModal('editProfileModal');
+}
+
+async function openAccountSettingsModal() {
+  clearAlert(document.getElementById('settingsAlert'));
+  const session = window.__session || {};
+  const data = await Api.profile();
+  const prefs = data.success ? data.profile.preferences || {} : getUserPreferences();
+  const office = session.role || '';
+  const hint = document.getElementById('settingsOfficeHint');
+  if (hint) hint.textContent = `Customization for ${session.role_label || 'your office'}.`;
+
+  document.getElementById('settingsNotifyFilter').value = prefs.notify_filter === 'new' ? 'new' : 'all';
+  document.getElementById('settingsRequestingFields').classList.toggle('hidden', office !== 'requesting');
+  document.getElementById('settingsBudgetFields').classList.toggle('hidden', office !== 'budget');
+  document.getElementById('settingsNotesFields').classList.toggle('hidden', office === 'requesting' || !office);
+  document.getElementById('settingsDefaultTitle').value = prefs.default_title || '';
+  document.getElementById('settingsDefaultDescription').value = prefs.default_description || '';
+  document.getElementById('settingsDefaultBudgetType').value = prefs.default_budget_type || '';
+  document.getElementById('settingsDefaultNotes').value = prefs.default_notes || '';
+  openAccountModal('accountSettingsModal');
+}
+
+function bindUserMenu(session) {
   const btn = document.getElementById('userMenuBtn');
   const menu = document.getElementById('userMenu');
-  if (!btn || !menu || btn.dataset.bound === '1') return;
+  if (!btn || !menu) return;
+
+  ensureAccountModals();
+
+  if (btn.dataset.bound === '1') return;
   btn.dataset.bound = '1';
 
   btn.addEventListener('click', (e) => {
@@ -226,10 +430,75 @@ function bindUserMenu() {
     closeNotifMenu();
   });
 
+  menu.addEventListener('click', (e) => e.stopPropagation());
+
+  menu.querySelector('[data-account-action="profile"]')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    menu.classList.add('hidden');
+    btn.setAttribute('aria-expanded', 'false');
+    openEditProfileModal();
+  });
+
+  menu.querySelector('[data-account-action="settings"]')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    menu.classList.add('hidden');
+    btn.setAttribute('aria-expanded', 'false');
+    openAccountSettingsModal();
+  });
+
   menu.querySelector('[data-logout]')?.addEventListener('click', async (e) => {
     e.preventDefault();
     await Api.logout();
     window.location.href = 'login.html';
+  });
+
+  document.querySelectorAll('[data-close-account]').forEach((el) => {
+    el.addEventListener('click', () => closeAccountModal(el.dataset.closeAccount));
+  });
+
+  document.getElementById('editProfileModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'editProfileModal') closeAccountModal('editProfileModal');
+  });
+  document.getElementById('accountSettingsModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'accountSettingsModal') closeAccountModal('accountSettingsModal');
+  });
+
+  document.getElementById('editProfileForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const alertBox = document.getElementById('profileAlert');
+    clearAlert(alertBox);
+    const result = await Api.updateProfile({
+      username: document.getElementById('profileUsername').value.trim(),
+      display_name: document.getElementById('profileDisplayName').value.trim(),
+      email: document.getElementById('profileEmail').value.trim(),
+      password: document.getElementById('profilePassword').value,
+      confirm_password: document.getElementById('profileConfirmPassword').value,
+    });
+    if (!result.success) {
+      showAlert(alertBox, result.message);
+      return;
+    }
+    applyProfileToSession(result.profile);
+    closeAccountModal('editProfileModal');
+  });
+
+  document.getElementById('accountSettingsForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const alertBox = document.getElementById('settingsAlert');
+    clearAlert(alertBox);
+    const result = await Api.updateSettings({
+      notify_filter: document.getElementById('settingsNotifyFilter').value,
+      default_title: document.getElementById('settingsDefaultTitle').value.trim(),
+      default_description: document.getElementById('settingsDefaultDescription').value.trim(),
+      default_budget_type: document.getElementById('settingsDefaultBudgetType').value.trim(),
+      default_notes: document.getElementById('settingsDefaultNotes').value.trim(),
+    });
+    if (!result.success) {
+      showAlert(alertBox, result.message);
+      return;
+    }
+    applyProfileToSession(result.profile);
+    closeAccountModal('accountSettingsModal');
   });
 }
 

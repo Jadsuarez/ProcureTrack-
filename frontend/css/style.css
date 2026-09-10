@@ -502,6 +502,12 @@ a:hover {
   color: var(--primary);
 }
 
+.user-menu-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.25rem 0.4rem;
+}
+
 .top-navbar-search {
   display: flex;
   align-items: center;

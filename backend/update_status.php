@@ -95,7 +95,7 @@ try {
     }
 
     $requestId = (int) $row['id'];
-    $updatedBy = roleLabel($role);
+    $updatedBy = currentActorLabel();
 
     if ($role === 'budget') {
         $update = $pdo->prepare(

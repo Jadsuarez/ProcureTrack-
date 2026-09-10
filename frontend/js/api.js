@@ -188,6 +188,34 @@ const Api = {
     return res.json();
   },
 
+  async profile() {
+    const res = await fetch(`${API_BASE}/profile.php`, {
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    return res.json();
+  },
+
+  async updateProfile(data) {
+    const res = await fetch(`${API_BASE}/profile.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'profile', ...data }),
+    });
+    return res.json();
+  },
+
+  async updateSettings(data) {
+    const res = await fetch(`${API_BASE}/profile.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'settings', ...data }),
+    });
+    return res.json();
+  },
+
   async updateStatus(data) {
     const res = await fetch(`${API_BASE}/update_status.php`, {
       method: 'POST',

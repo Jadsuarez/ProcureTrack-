@@ -273,6 +273,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('ors').value = req.ors || '';
         document.getElementById('budget_type').value = req.budget_type || '';
       }
+
+      const prefs = typeof getUserPreferences === 'function' ? getUserPreferences() : {};
+      const notesEl = document.getElementById('notes');
+      if (notesEl && !notesEl.value && prefs.default_notes) {
+        notesEl.value = prefs.default_notes;
+      }
+      if (session.role === 'budget') {
+        const budgetTypeEl = document.getElementById('budget_type');
+        if (budgetTypeEl && !req.budget_type && prefs.default_budget_type) {
+          budgetTypeEl.value = prefs.default_budget_type;
+        }
+      }
     }
   }
 

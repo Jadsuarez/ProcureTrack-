@@ -17,6 +17,7 @@ function getConnection(): PDO
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
         ensureOfficeFundAllocationColumn($pdo);
+        ensureUserProfileColumns($pdo);
         ensureRequestFundingColumns($pdo);
         ensureSignatoryTables($pdo);
         ensureSignatoryAuditTables($pdo);
@@ -125,6 +126,59 @@ function ensureSignatoryTables(PDO $pdo): void
     if (!in_array('assigned_office', $columns, true)) {
         $pdo->exec('ALTER TABLE request_signatories ADD COLUMN assigned_office VARCHAR(30) DEFAULT NULL AFTER document_location');
     }
+}
+
+function ensureUserProfileColumns(PDO $pdo): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+    $checked = true;
+
+    try {
+        $columns = $pdo->query('SHOW COLUMNS FROM users')->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException $e) {
+        return;
+    }
+
+    foreach ([
+        'display_name' => 'VARCHAR(100) DEFAULT NULL',
+        'email' => 'VARCHAR(150) DEFAULT NULL',
+        'preferences' => 'TEXT DEFAULT NULL',
+    ] as $name => $definition) {
+        if (!in_array($name, $columns, true)) {
+            try {
+                $pdo->exec("ALTER TABLE users ADD COLUMN $name $definition");
+            } catch (PDOException $e) {
+                if (($e->errorInfo[1] ?? null) !== 1060) {
+                    throw $e;
+                }
+            }
+        }
+    }
+}
+
+function decodeUserPreferences(mixed $json): array
+{
+    if (!is_string($json) || trim($json) === '') {
+        return [];
+    }
+    $data = json_decode($json, true);
+    return is_array($data) ? $data : [];
+}
+
+function currentActorLabel(): string
+{
+    $name = trim((string) ($_SESSION['display_name'] ?? ''));
+    if ($name !== '') {
+        return substr($name, 0, 50);
+    }
+    $username = trim((string) ($_SESSION['username'] ?? ''));
+    if ($username !== '') {
+        return substr($username, 0, 50);
+    }
+    return roleLabel(currentRole());
 }
 
 function ensureRequestFundingColumns(PDO $pdo): void

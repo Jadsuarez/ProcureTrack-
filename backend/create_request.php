@@ -78,7 +78,7 @@ try {
         jsonResponse(['success' => false, 'message' => 'Insufficient available funds for this request.'], 400);
     }
 
-    $updatedBy = roleLabel('requesting');
+    $updatedBy = currentActorLabel();
     $insert = $pdo->prepare(
         'INSERT INTO requests (tracking_number, title, description, status, updated_by, request_amount, funding_office)
          VALUES (?, ?, ?, ?, ?, ?, ?)'

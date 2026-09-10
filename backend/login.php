@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $pdo = getConnection();
         $stmt = $pdo->prepare(
-            'SELECT id, username, password_hash, office FROM users WHERE username = ? LIMIT 1'
+            'SELECT id, username, password_hash, office, display_name, email, preferences FROM users WHERE username = ? LIMIT 1'
         );
         $stmt->execute([$username]);
         $user = $stmt->fetch();
@@ -38,12 +38,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['username'] = $user['username'];
         $_SESSION['role'] = $user['office'];
         $_SESSION['role_label'] = roleLabel($user['office']);
+        $_SESSION['display_name'] = $user['display_name'] ?? '';
+        $_SESSION['email'] = $user['email'] ?? '';
+        $_SESSION['preferences'] = decodeUserPreferences($user['preferences'] ?? null);
 
         echo json_encode([
             'success' => true,
             'username' => $user['username'],
+            'display_name' => $_SESSION['display_name'],
+            'email' => $_SESSION['email'],
             'role' => $user['office'],
             'role_label' => $_SESSION['role_label'],
+            'preferences' => $_SESSION['preferences'],
         ]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => 'Database error. Ensure importdb.sql was imported.']);
@@ -52,13 +58,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'session') {
+    if (!empty($_SESSION['user_id'])) {
+        try {
+            $pdo = getConnection();
+            $stmt = $pdo->prepare(
+                'SELECT id, username, office, display_name, email, preferences FROM users WHERE id = ? LIMIT 1'
+            );
+            $stmt->execute([(int) $_SESSION['user_id']]);
+            $user = $stmt->fetch();
+            if ($user) {
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['role'] = $user['office'];
+                $_SESSION['role_label'] = roleLabel($user['office']);
+                $_SESSION['display_name'] = $user['display_name'] ?? '';
+                $_SESSION['email'] = $user['email'] ?? '';
+                $_SESSION['preferences'] = decodeUserPreferences($user['preferences'] ?? null);
+            }
+        } catch (PDOException $e) {
+            // keep existing session values
+        }
+    }
+
     echo json_encode([
         'success' => true,
         'logged_in' => !empty($_SESSION['role']),
         'user_id' => $_SESSION['user_id'] ?? null,
         'username' => $_SESSION['username'] ?? null,
+        'display_name' => $_SESSION['display_name'] ?? '',
+        'email' => $_SESSION['email'] ?? '',
         'role' => $_SESSION['role'] ?? null,
         'role_label' => $_SESSION['role_label'] ?? null,
+        'preferences' => $_SESSION['preferences'] ?? [],
     ]);
     exit;
 }
