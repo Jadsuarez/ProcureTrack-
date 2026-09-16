@@ -1,0 +1,12 @@
+PROCUREMENT MONITORING SYSTEM
+DEFAULT LOGIN CREDENTIALS
+
+Username              Password           Office
+requesting_user       requesting123      Requesting Office
+budget_user           budget123          Budget Office
+procurement_user      procurement123     Procurement Office
+accounting_user       accounting123      Accounting Office
+cashier_user          cashier123         Cashier
+
+Login page:
+http://localhost/Caps/frontend/login.html

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>PROCUREMENT — Login</title>
+  <link rel="stylesheet" href="css/style.css?v=34">
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="../Batangas_State_Logo.png" alt="Batangas State University logo">
+      </div>
+      <h1>Login</h1>
+      <p class="subtitle">Procurement Monitoring System</p>
+
+      <div id="alertBox" class="hidden"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" placeholder="Enter username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Login</button>
+      </form>
+
+      <p class="text-muted login-hint" style="margin-top: 1.25rem; font-size: 0.85rem;">
+        Demo: <code>procurement_user</code> / <code>procurement123</code> — see howtorun.txt for all accounts.
+      </p>
+    </div>
+  </div>
+
+  <script src="js/api.js?v=22"></script>
+  <script src="js/auth.js?v=14"></script>
+</body>
+</html>

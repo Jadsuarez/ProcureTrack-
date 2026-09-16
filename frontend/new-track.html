@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Track Request — PROCUREMENT</title>
+  <link rel="stylesheet" href="css/style.css?v=36">
+</head>
+<body>
+  <main class="container">
+    <div id="alertBox" class="hidden"></div>
+    <div id="successBox" class="hidden"></div>
+
+    <div class="details-top-grid new-track-grid">
+      <div class="card">
+      <h2>New Track Request</h2>
+      <p class="text-muted">Register a new procurement item for monitoring. A <strong>Tracking ID</strong> is assigned so Budget and Procurement offices can update progress.</p>
+
+      <form id="createForm" style="margin-top: 1rem;">
+        <p class="form-section-title">General Information</p>
+        <div class="form-group">
+          <label for="title">Title <span class="text-muted">(optional)</span></label>
+          <input type="text" id="title" name="title" placeholder="Brief description of the request">
+        </div>
+        <div class="form-group">
+          <label for="description">Description <span class="text-muted">(optional)</span></label>
+          <textarea id="description" name="description" rows="3" placeholder="Additional details…"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="request_amount">Request Amount (PHP)</label>
+          <input type="number" id="request_amount" name="request_amount" min="0.01" max="999999999999.99" step="0.01" required placeholder="0.00">
+          <small class="text-muted">This amount will be deducted from the central Budget Office allocation.</small>
+        </div>
+        <p class="form-section-title">Signatory Workflow</p>
+        <p class="text-muted">Add the required signatories for each office. The assigned office must mark its signatory Signed or Skipped before the request moves forward.</p>
+        <div id="signatoryRows" class="new-signatory-rows"></div>
+        <button type="button" class="btn btn-secondary" id="addSignatoryBtn">Add Signatory</button>
+        <div class="amount-box">
+          <div class="label">Monitoring record</div>
+          <div class="value">Tracking number generated automatically on submit</div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Create Track Request</button>
+      </form>
+      </div>
+
+      <aside class="card fund-dashboard-card" id="fundDashboardCard">
+        <div class="section-heading-row">
+          <div>
+            <h2>Fund Dashboard</h2>
+            <p class="text-muted">Updates as you enter an amount</p>
+          </div>
+          <span class="status-badge" id="fundDashboardStatus">Loading</span>
+        </div>
+        <div id="fundDashboardSummary" class="fund-dashboard-summary"></div>
+        <div id="fundDashboard" class="fund-dashboard-list">
+          <p class="text-muted">Loading fund balances…</p>
+        </div>
+      </aside>
+    </div>
+
+    <div class="card hidden" id="createdCard">
+      <h2>Track Request Created</h2>
+      <div class="detail-grid" id="createdDetails"></div>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
+        <a href="#" id="viewDetailsBtn" class="btn btn-primary">View Details &amp; Timeline</a>
+        <a href="upload.html" id="uploadDocsBtn" class="btn btn-secondary">Upload Documents</a>
+        <button type="button" id="createAnotherBtn" class="btn btn-secondary">Create Another</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>What happens next?</h3>
+      <div id="flowHint" class="multi-step-progress office-stepper">
+        <div class="progress-step active">
+          <div class="progress-step-icon">1</div>
+          <div class="progress-step-label">Office</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">2</div>
+          <div class="progress-step-label">Budget</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">3</div>
+          <div class="progress-step-label">Accounting</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">4</div>
+          <div class="progress-step-label">Procurement</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">5</div>
+          <div class="progress-step-label">PSO</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-icon">6</div>
+          <div class="progress-step-label">Cashier</div>
+        </div>
+      </div>
+      <p class="text-muted" style="margin-top: 0.75rem;">After creation, use <strong>Track Request</strong> anytime to check status, or upload supporting documents.</p>
+    </div>
+  </main>
+
+  <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
+
+  <script src="js/api.js?v=24"></script>
+  <script src="js/app.js?v=32"></script>
+  <script>
+    const officeOptions = [
+      ['requesting', 'Requesting Office'],
+      ['budget', 'Budget Office'],
+      ['accounting', 'Accounting Office'],
+      ['procurement', 'Procurement Office'],
+      ['pso', 'Property and Supply Office'],
+      ['cashier', 'Cashier'],
+    ];
+
+    let fundData = null;
+
+    function renderFundDashboard(requestedAmount = 0) {
+      const list = document.getElementById('fundDashboard');
+      const status = document.getElementById('fundDashboardStatus');
+      if (!list) return;
+      if (!fundData?.success) {
+        list.innerHTML = `<p class="text-danger">${fundData?.message || 'Unable to load fund balances.'}</p>`;
+        status.textContent = 'Unavailable';
+        status.className = 'status-badge status-danger';
+        return;
+      }
+      const amount = Number(requestedAmount) || 0;
+      const budget = Number(fundData.budget_allocation) || 0;
+      const projectedBudget = budget - amount;
+      const negative = projectedBudget < 0;
+      const summary = document.getElementById('fundDashboardSummary');
+      const usedBudget = Number(fundData.total_used) || 0;
+      const budgetBasis = Math.max(budget + usedBudget, 0);
+      const usedPercent = budgetBasis > 0
+        ? Math.min(Math.max(((usedBudget + amount) / budgetBasis) * 100, 0), 100)
+        : 0;
+      const submitButton = document.querySelector('#createForm [type="submit"]');
+      if (submitButton) submitButton.disabled = negative;
+      summary.innerHTML = `
+        <div class="fund-dashboard-remaining"><span>Remaining after request</span><strong class="${negative ? 'text-danger' : ''}">${formatPeso(projectedBudget)}</strong></div>
+        <div class="fund-progress-track"><div class="fund-progress-fill ${negative ? 'over' : ''}" style="width: ${usedPercent}%"></div></div>
+        <small class="fund-progress-label">${usedPercent.toFixed(1)}% used${amount > 0 ? ` after this request (${formatPeso(amount)})` : ''}</small>`;
+      list.innerHTML = (fundData.offices || []).map((office) => {
+        const remaining = Number(office.remaining_funds) || 0;
+        const projected = remaining - amount;
+        return `<div class="fund-dashboard-row">
+          <span><strong>${office.label}</strong><small>${office.request_count || 0} active request${Number(office.request_count) === 1 ? '' : 's'}</small></span>
+          <strong class="${projected < 0 ? 'text-danger' : ''}">${formatPeso(projected)}</strong>
+        </div>`;
+      }).join('');
+      status.textContent = negative ? 'Over budget' : 'Available';
+      status.className = `status-badge ${negative ? 'status-danger' : 'completed'}`;
+    }
+
+    function addSignatoryRow() {
+      const rows = document.getElementById('signatoryRows');
+      const row = document.createElement('div');
+      row.className = 'new-signatory-row';
+      row.innerHTML = `
+        <div class="form-group">
+          <label>Signatory name</label>
+          <input type="text" data-signatory-field="signatory_name" maxlength="150" required placeholder="e.g. Dr. Juan Dela Cruz">
+        </div>
+        <div class="form-group">
+          <label>Designation</label>
+          <input type="text" data-signatory-field="designation" maxlength="150" placeholder="e.g. Chancellor">
+        </div>
+        <div class="form-group">
+          <label>Assigned office</label>
+          <select data-signatory-field="assigned_office" required>
+            <option value="">Select office</option>
+            ${officeOptions.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Document location</label>
+          <input type="text" data-signatory-field="document_location" maxlength="255" placeholder="e.g. Dean's Office">
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary remove-signatory-btn">Remove</button>
+      `;
+      rows.appendChild(row);
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const session = await requireAuth(['requesting']);
+      if (!session) return;
+      initAppLayout(session);
+      addSignatoryRow();
+
+      try {
+        fundData = await Api.fundAvailability();
+      } catch (error) {
+        fundData = { success: false, message: 'Unable to load fund balances.' };
+      }
+      renderFundDashboard();
+
+      document.getElementById('request_amount').addEventListener('input', (event) => {
+        renderFundDashboard(event.target.value);
+      });
+
+      document.getElementById('addSignatoryBtn').addEventListener('click', addSignatoryRow);
+      document.getElementById('signatoryRows').addEventListener('click', (event) => {
+        if (!event.target.classList.contains('remove-signatory-btn')) return;
+        const rows = document.querySelectorAll('.new-signatory-row');
+        if (rows.length > 1) event.target.closest('.new-signatory-row').remove();
+      });
+
+      document.getElementById('createForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAlert(document.getElementById('alertBox'));
+        clearAlert(document.getElementById('successBox'));
+        document.getElementById('createdCard').classList.add('hidden');
+
+        const payload = {
+          title: document.getElementById('title').value.trim(),
+          description: document.getElementById('description').value.trim(),
+          request_amount: document.getElementById('request_amount').value,
+          signatories: [...document.querySelectorAll('.new-signatory-row')].map((row) => {
+            const values = {};
+            row.querySelectorAll('[data-signatory-field]').forEach((field) => {
+              values[field.dataset.signatoryField] = field.value.trim();
+            });
+            return values;
+          }),
+        };
+
+        const amount = Number(payload.request_amount) || 0;
+        const available = Number(fundData?.budget_allocation) || 0;
+        if (amount > available) {
+          showAlert(document.getElementById('alertBox'), 'This request exceeds the remaining Budget Office allocation.');
+          renderFundDashboard(amount);
+          return;
+        }
+
+        const submitButton = e.target.querySelector('[type="submit"]');
+        if (submitButton.disabled) return;
+        submitButton.disabled = true;
+        let result;
+        try {
+          result = await Api.createRequest(payload);
+        } finally {
+          submitButton.disabled = false;
+        }
+        if (!result.success) {
+          showAlert(document.getElementById('alertBox'), result.message);
+          return;
+        }
+
+        const r = result.request;
+        document.getElementById('createdDetails').innerHTML = `
+          <div class="detail-item"><div class="label">Amount Deducted</div><div class="value">${formatPeso(r.request_amount)}</div></div>
+          <div class="detail-item"><div class="label">Remaining Budget Allocation</div><div class="value">${formatPeso(r.remaining_funds)}</div></div>
+          <div class="detail-item"><div class="label">Tracking ID</div><div class="value"><strong>${r.tracking_number}</strong></div></div>
+          <div class="detail-item"><div class="label">Title</div><div class="value">${r.title || '—'}</div></div>
+          <div class="detail-item"><div class="label">Status</div><div class="value"><span class="status-badge">${r.status}</span></div></div>
+        `;
+        document.getElementById('viewDetailsBtn').href =
+          `details.html?tracking=${encodeURIComponent(r.tracking_number)}`;
+        document.getElementById('uploadDocsBtn').href =
+          `upload.html?tracking=${encodeURIComponent(r.tracking_number)}`;
+        document.getElementById('createdCard').classList.remove('hidden');
+        showAlert(document.getElementById('successBox'), result.message, 'success');
+        e.target.reset();
+        document.getElementById('signatoryRows').innerHTML = '';
+        addSignatoryRow();
+        fundData = await Api.fundAvailability();
+        renderFundDashboard();
+        if (typeof applyOfficePreferences === 'function') applyOfficePreferences(session);
+
+      });
+
+      document.getElementById('createAnotherBtn').addEventListener('click', () => {
+        document.getElementById('createdCard').classList.add('hidden');
+        clearAlert(document.getElementById('successBox'));
+        document.getElementById('title').focus();
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+let allocationState = {
+  canEdit: false,
+  offices: [],
+};
+
+function renderAllocationSummary(data) {
+  const isBudget = data.office_role === 'budget';
+  const office = data.offices?.[0];
+  document.getElementById('statTotalAllocated').textContent = formatPeso(data.total_allocated);
+  document.getElementById('statOfficesWithFunds').textContent = isBudget
+    ? data.offices_with_funds
+    : ((Number(office?.fund_allocation) || 0) > 0 ? 'Yes' : 'No');
+  document.getElementById('statOfficeCount').textContent = isBudget
+    ? data.office_count
+    : (office?.request_count || 0);
+  document.getElementById('totalFundsLabel').textContent = isBudget ? 'Total Available Funds' : 'My Available Funds';
+  document.getElementById('officesWithFundsLabel').textContent = isBudget ? 'Offices With Funds' : 'Balance Status';
+  document.getElementById('officeCountLabel').textContent = isBudget ? 'Registered Offices' : 'Requests Charged';
+}
+
+function renderAllocationTable(data) {
+  const body = document.getElementById('allocationTableBody');
+  const offices = data.offices || [];
+  const isBudget = data.office_role === 'budget';
+  document.getElementById('officeCodeHeader').classList.toggle('hidden', !isBudget);
+  document.getElementById('shareHeader').classList.toggle('hidden', !isBudget);
+
+  if (!offices.length) {
+    body.innerHTML = '<tr><td colspan="6" class="text-muted">No office fund record available.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = offices
+    .map((office) => {
+      const amount = office.slug === 'budget' ? Number(office.fund_allocation) || 0 : null;
+      const share = Number(office.share_pct) || 0;
+      const actions = data.can_edit && office.slug === 'budget'
+        ? `<button type="button" class="btn btn-sm btn-secondary" data-alloc-id="${office.id}">Set amount</button>`
+        : '<span class="text-muted">—</span>';
+      return `
+        <tr>
+          <td><strong>${office.label}</strong></td>
+          <td class="office-code-cell${isBudget ? '' : ' hidden'}"><code>${office.slug}</code></td>
+          <td class="share-cell${isBudget ? '' : ' hidden'}">
+            <div class="alloc-amount ${amount !== null && amount < 0 ? 'text-danger' : ''}">${amount === null ? '—' : formatPeso(amount)}</div>
+            ${amount !== null && amount < 0 ? '<small class="text-danger">Over budget</small>' : amount === 0 ? '<small class="text-muted">No remaining funds</small>' : ''}
+          </td>
+          <td>${formatPeso(office.used_amount)}<small class="text-muted">${office.request_count} request${office.request_count === 1 ? '' : 's'}</small></td>
+          <td>
+            <div class="alloc-share-meta">${share}%</div>
+            <div class="alloc-bar" aria-hidden="true">
+              <div class="alloc-bar-fill" style="width: ${Math.min(share, 100)}%"></div>
+            </div>
+          </td>
+          <td>${actions}</td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  body.querySelectorAll('[data-alloc-id]').forEach((btn) => {
+    btn.addEventListener('click', () => openAllocationModal(Number(btn.dataset.allocId)));
+  });
+}
+
+function applyAllocationData(data) {
+  allocationState.canEdit = Boolean(data.can_edit);
+  allocationState.offices = data.offices || [];
+  renderAllocationSummary(data);
+  renderAllocationTable(data);
+}
+
+function openAllocationModal(officeId) {
+  const office = allocationState.offices.find((o) => Number(o.id) === officeId);
+  if (!office) return;
+
+  document.getElementById('allocOfficeId').value = office.id;
+  document.getElementById('allocOfficeName').value = office.label;
+  document.getElementById('allocAmount').value = Number(office.budget_allocation) || 0;
+  document.getElementById('editAllocationTitle').textContent = `Allocate funds — ${office.label}`;
+
+  const dialog = document.getElementById('editAllocationModal');
+  if (dialog && typeof dialog.showModal === 'function') {
+    dialog.showModal();
+    document.body.classList.add('modal-open');
+    setTimeout(() => document.getElementById('allocAmount')?.focus(), 50);
+  }
+}
+
+function closeAllocationModal() {
+  const dialog = document.getElementById('editAllocationModal');
+  if (dialog && typeof dialog.close === 'function' && dialog.open) {
+    dialog.close();
+  }
+  document.getElementById('editAllocationForm')?.reset();
+  if (!document.querySelector('.popup-dialog[open]')) {
+    document.body.classList.remove('modal-open');
+  }
+}
+
+async function loadAllocations() {
+  const data = await Api.listAllocations();
+  if (!data.success) {
+    showAlert(document.getElementById('alertBox'), data.message || 'Failed to load allocations.');
+    document.getElementById('allocationTableBody').innerHTML =
+      `<tr><td colspan="6">${data.message || 'Failed to load allocations.'}</td></tr>`;
+    return;
+  }
+
+  applyAllocationData(data);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const session = await requireAuth();
+  if (!session) return;
+  if (session.role !== 'budget') {
+    window.location.replace('dashboard.html');
+    return;
+  }
+
+  initAppLayout(session);
+
+  const dialog = document.getElementById('editAllocationModal');
+  if (dialog && dialog.parentElement !== document.body) {
+    document.body.appendChild(dialog);
+  }
+
+  document.querySelectorAll('[data-close-modal]').forEach((btn) => {
+    btn.addEventListener('click', closeAllocationModal);
+  });
+  document.getElementById('cancelAllocBtn')?.addEventListener('click', closeAllocationModal);
+  dialog?.addEventListener('click', (e) => {
+    if (e.target === dialog) closeAllocationModal();
+  });
+  dialog?.addEventListener('close', () => {
+    if (!document.querySelector('.popup-dialog[open]')) {
+      document.body.classList.remove('modal-open');
+    }
+  });
+
+  document.getElementById('editAllocationForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearAlert(document.getElementById('alertBox'));
+
+    const id = Number(document.getElementById('allocOfficeId').value);
+    const amount = document.getElementById('allocAmount').value;
+    const result = await Api.updateAllocation(id, amount);
+
+    if (!result.success) {
+      showAlert(document.getElementById('alertBox'), result.message);
+      return;
+    }
+
+    closeAllocationModal();
+    showAlert(document.getElementById('alertBox'), result.message, 'success');
+    applyAllocationData(result);
+  });
+
+  await loadAllocations();
+  window.addEventListener('focus', loadAllocations);
+
+  const hint = document.getElementById('allocationHint');
+  const subtitle = document.getElementById('allocationSubtitle');
+  if (allocationState.canEdit) {
+    subtitle.textContent = 'Manage available office funds after request deductions.';
+    hint.textContent = 'Set amount replaces the central Budget Office allocation. New requests automatically deduct from it.';
+  } else {
+    const office = allocationState.offices[0];
+    subtitle.textContent = office
+      ? `${office.label} request usage and remaining share of the central budget.`
+      : 'No fund allocation is assigned to this office.';
+    hint.textContent = 'Budget Office manages allocations. Request amounts are deducted automatically when requests are created.';
+  }
+});

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Dashboard — Procurement Monitoring</title>
+  <link rel="stylesheet" href="css/style.css?v=34">
+</head>
+<body>
+  <main class="container-wide">
+    <div id="alertBox" class="hidden"></div>
+
+    <div class="card">
+      <h2 id="dashboardHeading">Dashboard</h2>
+      <p class="text-muted" id="dashboardSubtitle">Search by Tracking ID or title to view or update monitoring status.</p>
+
+      <form id="searchForm" class="search-bar" style="margin-top: 1rem;" role="search">
+        <input type="search" id="searchInput" placeholder="Tracking ID or title" autocomplete="off" aria-label="Search by tracking ID or title">
+        <button type="submit" class="btn btn-primary" id="searchButton">Search</button>
+      </form>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-box">
+        <div class="number" id="statTotal">—</div>
+        <div class="label">Total Requests</div>
+      </div>
+      <div class="stat-box">
+        <div class="number" id="statActive">—</div>
+        <div class="label">In Progress</div>
+      </div>
+      <div class="stat-box">
+        <div class="number" id="statPending">—</div>
+        <div class="label">Returned / Cancelled</div>
+      </div>
+      <div class="stat-box">
+        <div class="number" id="statCompleted">—</div>
+        <div class="label">Completed</div>
+      </div>
+    </div>
+
+    <div class="dashboard-layout">
+    <div class="dashboard-main">
+    <div class="card">
+      <h2>Recent Requests</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tracking ID</th>
+              <th>Title</th>
+              <th>Status</th>
+              <th>Updated</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="recentTableBody">
+            <tr><td colspan="5" class="text-muted">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Status Overview</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Status</th><th>Count</th></tr>
+          </thead>
+          <tbody id="statusTableBody">
+            <tr><td colspan="2" class="text-muted">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    </div>
+    <aside class="dashboard-aside">
+      <div class="card">
+        <h2>Notifications</h2>
+        <ul class="notification-list" id="notificationList">
+          <li class="text-muted">Loading…</li>
+        </ul>
+      </div>
+    </aside>
+    </div>
+
+    <div class="card">
+      <h2>Tracking Progress</h2>
+      <div class="multi-step-progress" id="workflowProgress">
+        <div class="progress-step" id="stepRequesting">
+          <div class="progress-step-icon">1</div>
+          <div class="progress-step-label">Requesting</div>
+        </div>
+        <div class="progress-step" id="stepBudget">
+          <div class="progress-step-icon">2</div>
+          <div class="progress-step-label">Budget</div>
+        </div>
+        <div class="progress-step" id="stepAccounting">
+          <div class="progress-step-icon">3</div>
+          <div class="progress-step-label">Accounting</div>
+        </div>
+        <div class="progress-step" id="stepProcurement">
+          <div class="progress-step-icon">4</div>
+          <div class="progress-step-label">Procurement</div>
+        </div>
+        <div class="progress-step" id="stepPso">
+          <div class="progress-step-icon">5</div>
+          <div class="progress-step-label">PSO</div>
+        </div>
+        <div class="progress-step" id="stepCashier">
+          <div class="progress-step-icon">6</div>
+          <div class="progress-step-label">Cashier</div>
+        </div>
+      </div>
+      
+      <div class="progress-bar-container">
+        <div class="progress-bar-label">
+          <span>Overall Progress</span>
+          <span class="percentage" id="overallProgress">0%</span>
+        </div>
+        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+      </div>
+
+      <div class="tracking-overview">
+        <div class="tracking-step">
+          <div class="step-icon">1</div>
+          <div class="step-info">
+            <div class="step-title">Requesting Office</div>
+            <div class="step-status" id="trackingRequesting">Loading...</div>
+          </div>
+        </div>
+        <div class="tracking-step">
+          <div class="step-icon">2</div>
+          <div class="step-info">
+            <div class="step-title">Budget Office</div>
+            <div class="step-status" id="trackingBudget">Loading...</div>
+          </div>
+        </div>
+        <div class="tracking-step">
+          <div class="step-icon">3</div>
+          <div class="step-info">
+            <div class="step-title">Accounting</div>
+            <div class="step-status" id="trackingAccounting">Loading...</div>
+          </div>
+        </div>
+        <div class="tracking-step">
+          <div class="step-icon">4</div>
+          <div class="step-info">
+            <div class="step-title">Procurement</div>
+            <div class="step-status" id="trackingProcurement">Loading...</div>
+          </div>
+        </div>
+        <div class="tracking-step">
+          <div class="step-icon">5</div>
+          <div class="step-info">
+            <div class="step-title">Property and Supply</div>
+            <div class="step-status" id="trackingPso">Loading...</div>
+          </div>
+        </div>
+        <div class="tracking-step">
+          <div class="step-icon">6</div>
+          <div class="step-info">
+            <div class="step-title">Cashier</div>
+            <div class="step-status" id="trackingCashier">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="searchResultsCard" aria-live="polite">
+      <h2 id="searchResultsHeading">Search Results</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tracking ID</th>
+              <th>Title</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="searchResultsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
+
+  <script src="js/api.js?v=23"></script>
+  <script src="js/app.js?v=32"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const session = await requireAuth();
+      if (!session) return;
+
+      initAppLayout(session);
+
+      const searchForm = document.getElementById('searchForm');
+      const searchInput = document.getElementById('searchInput');
+      searchForm.closest('.card').after(document.getElementById('searchResultsCard'));
+      bindLiveRequestSearch(searchInput, searchForm, (q, data) => {
+        const card = document.getElementById('searchResultsCard');
+        const body = document.getElementById('searchResultsBody');
+        const heading = document.getElementById('searchResultsHeading');
+        const url = new URL(window.location.href);
+        if (q) url.searchParams.set('search', q);
+        else url.searchParams.delete('search');
+        window.history.replaceState({}, '', url);
+        card.classList.toggle('hidden', !q);
+        body.replaceChildren();
+        if (!q) return;
+        heading.textContent = `Search Results for "${q}"`;
+        if (!data || !data.success) {
+          const cell = body.insertRow().insertCell();
+          cell.colSpan = 4;
+          cell.textContent = !data ? 'Searching...' : data.message;
+          return;
+        }
+
+        if (!data.requests.length) {
+          body.innerHTML = '<tr><td colspan="4">No matching requests.</td></tr>';
+          return;
+        }
+
+        data.requests.forEach((request) => {
+          const row = body.insertRow();
+          row.insertCell().textContent = request.tracking_number;
+          row.insertCell().textContent = request.title || '-';
+          const badge = document.createElement('span');
+          badge.className = `status-badge ${statusBadgeClass(request.status)}`;
+          badge.textContent = request.status;
+          row.insertCell().appendChild(badge);
+          const link = document.createElement('a');
+          link.href = `details.html?tracking=${encodeURIComponent(request.tracking_number)}`;
+          link.className = 'btn btn-sm btn-primary';
+          link.textContent = 'Open';
+          row.insertCell().appendChild(link);
+        });
+      });
+
+      const initialSearch = new URLSearchParams(window.location.search).get('search');
+      if (initialSearch) {
+        searchInput.value = initialSearch;
+        searchForm.requestSubmit();
+      }
+
+
+      const subtitles = {
+        accounting: 'Financial monitoring — search by Tracking ID, update DV Processing → For Payment, attach documents.',
+        cashier: 'Payment completion monitoring — search by Tracking ID, mark Paid → Completed.',
+        budget: 'Budget pipeline monitoring — search by Tracking ID and update budget statuses.',
+        procurement: 'Procurement monitoring — search by Tracking ID and update procurement stages.',
+        pso: 'Property and supply monitoring — search by Tracking ID and update delivery and inspection status.',
+        requesting: 'Search by Tracking ID to view request status across all offices.',
+      };
+      const subtitleEl = document.getElementById('dashboardSubtitle');
+      if (subtitleEl) {
+        subtitleEl.textContent = subtitles[session.role] || subtitles.requesting;
+      }
+
+      const heading = document.getElementById('dashboardHeading');
+      if (heading) {
+        heading.textContent = session.role === 'budget' ? 'Budget Dashboard' : `${session.role_label || 'Office'} Dashboard`;
+      }
+
+      let summary;
+      try {
+        summary = await Api.summary();
+      } catch (error) {
+        summary = { success: false, message: 'Dashboard data could not be loaded.' };
+        console.error('Dashboard summary request failed:', error);
+      }
+
+      if (summary.success) {
+        document.getElementById('statTotal').textContent = summary.total;
+
+        const countFor = (statuses) =>
+          (summary.by_status || [])
+            .filter((s) => statuses.includes(s.status))
+            .reduce((sum, s) => sum + Number(s.count || 0), 0);
+
+        const completedCount = countFor(['Completed']);
+        const closedCount = countFor(['Returned', 'Cancelled']);
+        const inProgressCount = Math.max(0, Number(summary.total || 0) - completedCount - closedCount);
+
+        document.getElementById('statActive').textContent = inProgressCount;
+        document.getElementById('statCompleted').textContent = completedCount;
+        document.getElementById('statPending').textContent = closedCount;
+
+        const stageGroups = [
+          { id: 'trackingRequesting', step: 'stepRequesting', statuses: ['Registered'] },
+          { id: 'trackingBudget', step: 'stepBudget', statuses: ['Under Budget Review', 'Reviewed'] },
+          { id: 'trackingAccounting', step: 'stepAccounting', statuses: ['DV Processing', 'For Payment'] },
+          { id: 'trackingProcurement', step: 'stepProcurement', statuses: ['Canvass', 'PO'] },
+          { id: 'trackingPso', step: 'stepPso', statuses: ['Delivered', 'For Inspection', 'Accepted'] },
+          { id: 'trackingCashier', step: 'stepCashier', statuses: ['Paid'] },
+        ];
+        const stageCounts = stageGroups.map((group) => countFor(group.statuses));
+
+        stageGroups.forEach((group, index) => {
+          const countEl = document.getElementById(group.id);
+          if (countEl) countEl.textContent = `${stageCounts[index]} requests`;
+
+          const stepEl = document.getElementById(group.step);
+          if (!stepEl) return;
+          const iconEl = stepEl.querySelector('.progress-step-icon');
+          stepEl.classList.remove('completed', 'active');
+          if (stageCounts[index] > 0) {
+            stepEl.classList.add('active');
+            if (iconEl) iconEl.textContent = String(index + 1);
+          } else if (completedCount > 0 || stageCounts.slice(index + 1).some((count) => count > 0)) {
+            stepEl.classList.add('completed');
+            if (iconEl) iconEl.textContent = '✓';
+          } else if (iconEl) {
+            iconEl.textContent = String(index + 1);
+          }
+        });
+
+        const progressPercentage = Number(summary.total || 0) > 0
+          ? Math.round((completedCount / summary.total) * 100)
+          : 0;
+        document.getElementById('overallProgress').textContent = `${progressPercentage}%`;
+        document.getElementById('progressBar').style.width = `${progressPercentage}%`;
+
+        const focus = summary.focus_statuses || [];
+        const sorted = [...summary.by_status].sort((a, b) => {
+          const aFocus = focus.includes(a.status) ? 0 : 1;
+          const bFocus = focus.includes(b.status) ? 0 : 1;
+          if (aFocus !== bFocus) return aFocus - bFocus;
+          return b.count - a.count;
+        });
+
+        const statusBody = document.getElementById('statusTableBody');
+        statusBody.innerHTML = sorted.length
+          ? sorted.map((s) => {
+              const rowClass = focus.includes(s.status) ? ' class="row-focus"' : '';
+              return `<tr${rowClass}><td><span class="status-badge ${statusBadgeClass(s.status)}">${s.status}</span></td><td>${s.count}</td></tr>`;
+            }).join('')
+          : '<tr><td colspan="2">No data</td></tr>';
+
+        const recentBody = document.getElementById('recentTableBody');
+        recentBody.innerHTML = summary.recent.length
+          ? summary.recent.map((r) => `
+              <tr>
+                <td><strong>${r.tracking_number}</strong></td>
+                <td>${r.title || '—'}</td>
+                <td><span class="status-badge ${statusBadgeClass(r.status)}">${r.status}</span></td>
+                <td>${formatDate(r.updated_at)}</td>
+                <td><a href="details.html?tracking=${encodeURIComponent(r.tracking_number)}" class="btn btn-sm btn-secondary">View</a></td>
+              </tr>
+            `).join('')
+          : '<tr><td colspan="5">No requests</td></tr>';
+
+        const notif = document.getElementById('notificationList');
+        if (notif) {
+          notif.innerHTML = summary.recent.length
+            ? summary.recent.slice(0, 6).map((r) => `
+                <li>
+                  <a href="details.html?tracking=${encodeURIComponent(r.tracking_number)}"><strong>${r.tracking_number}</strong></a>
+                  is ${r.status}
+                  <span class="meta">${formatDate(r.updated_at)}</span>
+                </li>
+              `).join('')
+            : '<li class="text-muted">No recent activity.</li>';
+        }
+      } else {
+        const message = summary.message || 'Dashboard data could not be loaded.';
+        showAlert(document.getElementById('alertBox'), message);
+        document.getElementById('recentTableBody').innerHTML =
+          '<tr><td colspan="5" class="text-muted">Unable to load requests.</td></tr>';
+        document.getElementById('statusTableBody').innerHTML =
+          '<tr><td colspan="2" class="text-muted">Unable to load status data.</td></tr>';
+        document.getElementById('notificationList').innerHTML =
+          '<li class="text-muted">Unable to load notifications.</li>';
+      }
+
+    });
+  </script>
+</body>
+</html>

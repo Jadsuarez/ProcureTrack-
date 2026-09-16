@@ -1,0 +1,271 @@
+/**
+ * Office analytics — descriptive, diagnostic, predictive
+ */
+
+function renderAnalyticsKpis(containerId, items) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = items
+    .map(
+      (k) => `
+    <div class="stat-box">
+      <div class="number">${k.value}</div>
+      <div class="label">${k.label}</div>
+      ${k.hint ? `<div class="stat-hint">${k.hint}</div>` : ''}
+    </div>`
+    )
+    .join('');
+}
+
+function destroyChart(chart) {
+  if (chart) chart.destroy();
+}
+
+function buildStatusChart(canvasId, byStatus) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx || !byStatus.length) return null;
+
+  const colors = {
+    Registered: '#64748b',
+    'Under Budget Review': '#d97706',
+    Reviewed: '#ca8a04',
+    Canvass: '#7c3aed',
+    PO: '#4f46e5',
+    Delivered: '#1d4ed8',
+    'For Inspection': '#2563eb',
+    Accepted: '#1e40af',
+    'DV Processing': '#0891b2',
+    'For Payment': '#a51c30',
+    Paid: '#8a1728',
+    Completed: '#059669',
+  };
+
+  return new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: byStatus.map((s) => s.status),
+      datasets: [
+        {
+          data: byStatus.map((s) => s.count),
+          backgroundColor: byStatus.map((s) => colors[s.status] || '#94a3b8'),
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom' } },
+    },
+  });
+}
+
+function buildTrendChart(canvasId, monthlyTrend) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return null;
+
+  return new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: monthlyTrend.map((m) => m.month),
+      datasets: [
+        {
+          label: 'Updated in month',
+          data: monthlyTrend.map((m) => m.active_updates),
+          backgroundColor: 'rgba(165, 28, 48, 0.75)',
+        },
+        {
+          label: 'Completed in month',
+          data: monthlyTrend.map((m) => m.completed),
+          backgroundColor: 'rgba(5, 150, 105, 0.8)',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+    },
+  });
+}
+
+function buildStageDurationChart(canvasId, avgDays) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx || !avgDays.length) return null;
+
+  const labels = avgDays.map((s) => s.stage);
+  const values = avgDays.map((s) => s.avg_days);
+  const stageColors = {
+    registered: ['#16a34a', '#15803d'],
+    reviewed: ['#facc15', '#eab308'],
+    'under budget review': ['#dc2626', '#b91c1c'],
+  };
+  const barColors = labels.map((label) => {
+    const stage = String(label || '').replace(/\s*\(current\)\s*$/i, '').trim().toLowerCase();
+    return stageColors[stage] || ['rgba(165, 28, 48, 0.75)', '#8a1728'];
+  });
+
+  return new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Avg. days',
+          data: values,
+          backgroundColor: barColors.map((colors) => colors[0]),
+          hoverBackgroundColor: barColors.map((colors) => colors[1]),
+        },
+      ],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true } },
+    },
+  });
+}
+
+function buildForecastChart(canvasId, forecasts) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx || !forecasts.length) return null;
+
+  return new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: forecasts.map((f) => f.tracking_number),
+      datasets: [
+        {
+          label: 'Est. days to complete',
+          data: forecasts.map((f) => f.eta_days),
+          backgroundColor: forecasts.map((f) =>
+            f.at_risk ? 'rgba(165, 28, 48, 0.75)' : 'rgba(5, 150, 105, 0.75)'
+          ),
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } },
+    },
+  });
+}
+
+function buildFundUtilizationChart(canvasId, utilizationData) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return null;
+
+  // Generate sample data if not provided
+  const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+  const data = utilizationData || [65, 72, 78, 85, 82, 90, 88, 92];
+
+  return new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Fund Utilization %',
+          data: data,
+          borderColor: '#a51c30',
+          backgroundColor: 'rgba(165, 28, 48, 0.1)',
+          fill: true,
+          tension: 0.4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { 
+        y: { 
+          beginAtZero: true, 
+          max: 100,
+          ticks: { callback: (value) => value + '%' }
+        } 
+      },
+    },
+  });
+}
+
+function renderStalledTable(tbodyId, rows) {
+  const body = document.getElementById(tbodyId);
+  if (!body) return;
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="4" class="text-muted">No active requests in scope.</td></tr>';
+    return;
+  }
+  body.innerHTML = rows
+    .map(
+      (r) => `
+    <tr>
+      <td><strong>${r.tracking_number}</strong></td>
+      <td>${r.title || '—'}</td>
+      <td><span class="status-badge ${statusBadgeClass(r.status)}">${r.status}</span></td>
+      <td>${r.days_in_stage} days</td>
+    </tr>`
+    )
+    .join('');
+}
+
+function renderForecastTable(tbodyId, rows) {
+  const body = document.getElementById(tbodyId);
+  if (!body) return;
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="5" class="text-muted">No active requests to forecast.</td></tr>';
+    return;
+  }
+  body.innerHTML = rows
+    .map(
+      (f) => `
+    <tr class="${f.at_risk ? 'row-at-risk' : ''}">
+      <td><strong>${f.tracking_number}</strong></td>
+      <td>${f.title || '—'}</td>
+      <td><span class="status-badge ${statusBadgeClass(f.status)}">${f.status}</span></td>
+      <td>~${f.eta_days} days</td>
+      <td>${f.projected_completion}${f.at_risk ? ' <span class="risk-tag">At risk</span>' : ''}</td>
+    </tr>`
+    )
+    .join('');
+}
+
+function renderMissingDocsList(containerId, items) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (!items.length) {
+    el.innerHTML = '<p class="text-muted">All active requests have at least one document.</p>';
+    return;
+  }
+  el.innerHTML = `<ul class="analytics-list">${items
+    .map(
+      (r) =>
+        `<li><strong>${r.tracking_number}</strong> — ${r.title || 'Untitled'} (${r.status})</li>`
+    )
+    .join('')}</ul>`;
+}
+
+function setInsightText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+function setBottleneckText(id, bottleneck) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (!bottleneck) {
+    el.textContent = 'Not enough status history yet to identify a bottleneck.';
+    return;
+  }
+  el.innerHTML = `Slowest stage: <strong>${bottleneck.stage}</strong> (avg. ${bottleneck.avg_days} days, n=${bottleneck.samples}).`;
+}
+
+async function loadAnalytics() {
+  const params = new URLSearchParams(window.location.search);
+  const from = params.get('from') || document.getElementById('analyticsFrom')?.value || '';
+  const to = params.get('to') || document.getElementById('analyticsTo')?.value || '';
+  const data = await Api.analytics(from, to);
+  if (!data.success) {
+    showAlert(document.getElementById('alertBox'), data.message || 'Failed to load analytics.');
+    return null;
+  }
+  return data;
+}

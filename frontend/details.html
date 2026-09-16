@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request Details — PROCUREMENT</title>
+  <link rel="stylesheet" href="css/style.css?v=36">
+</head>
+<body>
+  <main class="container">
+    <div id="alertBox" class="hidden"></div>
+    <div id="successBox" class="hidden"></div>
+
+    <div class="card" id="loadingCard">
+      <p class="text-muted">Loading request details…</p>
+    </div>
+
+    <div class="hidden" id="detailsContent">
+      <div class="details-page-layout">
+        <div class="details-main">
+          <div class="card">
+          <div class="panel-header">
+          <h2 id="detailTitle">Request Details</h2>
+          <div class="header-actions print-hide">
+            <button type="button" class="btn btn-secondary" id="printDetailsBtn">Print</button>
+            <button type="button" class="btn btn-secondary hidden" id="returnRequestBtn">Return to Requesting</button>
+            <button type="button" class="btn btn-danger hidden" id="cancelRequestBtn">Cancel Request</button>
+          </div>
+        </div>
+          <div id="officeStepper" class="multi-step-progress office-stepper"></div>
+          <div class="detail-grid" id="detailGrid"></div>
+          </div>
+
+      <div class="card">
+        <h2>Status Timeline</h2>
+        <div class="timeline" id="timeline"></div>
+        </div>
+
+      <div class="card">
+        <h2>Attached Documents</h2>
+        <ul class="doc-list" id="docList">
+          <li class="text-muted">No documents attached.</li>
+        </ul>
+        <p style="margin-top: 0.75rem;">
+          <a href="#" id="uploadLink" class="btn btn-sm btn-secondary">Upload Document</a>
+        </p>
+      </div>
+
+      <div class="card" id="signatoryCard">
+        <div class="section-heading-row">
+          <div>
+            <h2>Signatory Workflow</h2>
+            <p class="text-muted">Any office can assign signatories to any office stage for this request. The assigned office marks its step Signed or Skipped. Monitoring only; no digital signatures are collected.</p>
+          </div>
+          <span class="status-badge" id="signatoryOverallStatus">No Signatories Configured</span>
+        </div>
+        <div class="signatory-summary" id="signatorySummary"></div>
+        <p class="signatory-gate-message" id="signatoryGateMessage"></p>
+        <ol class="signatory-list" id="signatoryList">
+          <li class="text-muted">No signatories configured.</li>
+        </ol>
+        <details class="signatory-history">
+          <summary>Signatory change history</summary>
+          <ul id="signatoryHistory"><li class="text-muted">No signatory changes recorded.</li></ul>
+        </details>
+        <p class="text-muted hidden" id="signatoryAccessMessage">Any office can assign a signatory to any office stage. The assigned office marks that signatory Signed or Skipped.</p>
+        <form id="signatoryForm" class="signatory-form hidden">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="signatoryName">Signatory name</label>
+              <input type="text" id="signatoryName" maxlength="150" required placeholder="e.g. Dr. Juan Dela Cruz">
+            </div>
+            <div class="form-group">
+              <label for="signatoryDesignation">Designation</label>
+              <input type="text" id="signatoryDesignation" maxlength="150" placeholder="e.g. Chancellor">
+            </div>
+            <div class="form-group">
+              <label for="signatoryDocumentLocation">Document location</label>
+              <input type="text" id="signatoryDocumentLocation" maxlength="255" placeholder="e.g. Chancellor's Office">
+            </div>
+            <div class="form-group">
+              <label for="signatoryOffice">Assigned office</label>
+              <select id="signatoryOffice" required>
+                <option value="">Select office</option>
+                <option value="requesting">Requesting Office</option>
+                <option value="budget">Budget Office</option>
+                <option value="accounting">Accounting Office</option>
+                <option value="procurement">Procurement Office</option>
+                <option value="pso">Property and Supply Office</option>
+                <option value="cashier">Cashier</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-secondary">Add Signatory</button>
+        </form>
+      </div>
+
+      <div class="card hidden" id="budgetInfoCard">
+        <h2>Budget Information (BUR / ORS)</h2>
+        <div class="detail-grid" id="budgetGrid"></div>
+      </div>
+
+      <div class="card hidden update-section" id="updateCard">
+        <h2>Update Monitoring Status</h2>
+        <p class="text-muted">Manual status update for monitoring purposes only — not an approval action.</p>
+        <form id="updateForm">
+          <input type="hidden" id="updateTracking" name="tracking_number">
+
+          <div class="form-group">
+            <label for="newStatus">New Status</label>
+            <select id="newStatus" name="status" required></select>
+          </div>
+
+          <div id="budgetFields" class="hidden">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="bur">BUR (optional)</label>
+                <input type="text" id="bur" name="bur" placeholder="BUR number">
+              </div>
+              <div class="form-group">
+                <label for="ors">ORS (optional)</label>
+                <input type="text" id="ors" name="ors" placeholder="ORS number">
+              </div>
+              <div class="form-group">
+                <label for="budget_type">Budget Type (optional)</label>
+                <input type="text" id="budget_type" name="budget_type" placeholder="e.g. MOOE">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="notes">Notes (optional)</label>
+            <textarea id="notes" name="notes" rows="2" placeholder="Monitoring notes…"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Update Status</button>
+        </form>
+      </div>
+        </div>
+
+        <aside class="card fund-dashboard-card" id="fundDashboardCard">
+          <div class="section-heading-row">
+            <div>
+              <h2>Fund Dashboard</h2>
+              <p class="text-muted">Remaining budget by office</p>
+            </div>
+            <span class="status-badge" id="fundDashboardStatus">Loading</span>
+          </div>
+          <div id="fundDashboardSummary" class="fund-dashboard-summary"></div>
+          <div id="fundDashboard" class="fund-dashboard-list">
+            <p class="text-muted">Loading fund balances…</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
+
+  <script src="js/api.js?v=24"></script>
+  <script src="js/app.js?v=32"></script>
+  <script src="js/details.js?v=23"></script>
+</body>
+</html>
