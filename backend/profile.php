@@ -32,28 +32,36 @@ function profilePayload(PDO $pdo, array $user): array
     ];
 }
 
-function sanitizeSignatoryNames(mixed $input): array
+function signatoryTemplateKeysForOffice(string $office): array
 {
-    $keys = [
-        'head_accounting',
-        'vice_chancellor_admin_finance',
-        'chancellor',
-        'vice_chancellor_academic_affairs',
-        'vice_chancellor_academic_affairs_2',
-    ];
-    if (!is_array($input)) {
-        jsonResponse(['success' => false, 'message' => 'Signatory names must be provided for all five signatory offices.'], 400);
-    }
+    return match ($office) {
+        'accounting' => ['head_accounting'],
+        'vc_admin_finance' => ['vice_chancellor_admin_finance'],
+        'chancellor' => ['chancellor'],
+        'academic_affairs' => ['vice_chancellor_academic_affairs'],
+        'requesting' => ['vice_chancellor_academic_affairs_2'],
+        default => [],
+    };
+}
 
+function sanitizeSignatoryNames(mixed $input, array $allowedKeys): array
+{
+    if (!is_array($input) || $input === []) {
+        jsonResponse(['success' => false, 'message' => 'Provide a valid signatory name for your office.'], 400);
+    }
+    foreach (array_keys($input) as $key) {
+        if (!is_string($key) || !in_array($key, $allowedKeys, true)) {
+            jsonResponse(['success' => false, 'message' => 'You can only change the permanent signatory assigned to your office.'], 403);
+        }
+    }
     $names = [];
-    foreach ($keys as $key) {
-        $rawName = $input[$key] ?? null;
+    foreach ($input as $key => $rawName) {
         if (!is_string($rawName)) {
-            jsonResponse(['success' => false, 'message' => 'Each signatory name must be text.'], 400);
+            jsonResponse(['success' => false, 'message' => 'The signatory name must be text.'], 400);
         }
         $name = trim($rawName);
         if ($name === '' || strlen($name) > 150) {
-            jsonResponse(['success' => false, 'message' => 'Each signatory name is required and must be 150 characters or less.'], 400);
+            jsonResponse(['success' => false, 'message' => 'The signatory name is required and must be 150 characters or less.'], 400);
         }
         $names[$key] = $name;
     }
@@ -142,10 +150,13 @@ try {
     if ($action === 'settings') {
         $office = $user['office'];
         $hasSignatoryNames = array_key_exists('signatory_names', $input);
-        if ($hasSignatoryNames && $office !== 'requesting') {
-            jsonResponse(['success' => false, 'message' => 'Only Requesting Office can change signatory names in Office Settings.'], 403);
+        $editableTemplateKeys = signatoryTemplateKeysForOffice($office);
+        if ($hasSignatoryNames && !$editableTemplateKeys) {
+            jsonResponse(['success' => false, 'message' => 'Your office is not assigned a permanent signatory name to change.'], 403);
         }
-        $signatoryNames = $hasSignatoryNames ? sanitizeSignatoryNames($input['signatory_names']) : [];
+        $signatoryNames = $hasSignatoryNames
+            ? sanitizeSignatoryNames($input['signatory_names'], $editableTemplateKeys)
+            : [];
         $prefs = sanitizePreferences($input, $office);
         $pdo->beginTransaction();
         $update = $pdo->prepare('UPDATE users SET preferences = ? WHERE id = ?');

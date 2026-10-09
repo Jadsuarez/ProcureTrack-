@@ -359,7 +359,7 @@ function ensureAccountModals() {
           </div>
           <div id="settingsSignatoryFields" class="hidden">
             <h3>Request signatories</h3>
-            <p class="text-muted">Names are shared with new requests. Four signatories are included by default; the second Academic Affairs signature may be marked N/A when both signatures are covered by one signer. Existing requests keep their saved signatory names.</p>
+            <p class="text-muted" id="settingsSignatoryHint">Only the permanent signatory assigned to your office can be changed here. Existing requests keep their saved signatory names.</p>
             <div id="settingsSignatoryInputs"></div>
           </div>
           <div id="settingsBudgetFields" class="hidden">
@@ -385,11 +385,20 @@ function ensureAccountModals() {
   document.body.append(...wrap.children);
 }
 
-function renderOfficeSignatorySettings(templates) {
+function renderOfficeSignatorySettings(templates, office) {
   const container = document.getElementById('settingsSignatoryInputs');
   if (!container) return;
   container.replaceChildren();
-  templates.forEach((template) => {
+  const templateKeyByOffice = {
+    accounting: 'head_accounting',
+    vc_admin_finance: 'vice_chancellor_admin_finance',
+    chancellor: 'chancellor',
+    academic_affairs: 'vice_chancellor_academic_affairs',
+    requesting: 'vice_chancellor_academic_affairs_2',
+  };
+  const templateKey = templateKeyByOffice[office];
+  const officeTemplates = templates.filter((template) => template.template_key === templateKey);
+  officeTemplates.forEach((template) => {
     const group = document.createElement('div');
     group.className = 'form-group';
     const label = document.createElement('label');
@@ -443,16 +452,21 @@ async function openAccountSettingsModal() {
 
   document.getElementById('settingsNotifyFilter').value = prefs.notify_filter === 'new' ? 'new' : 'all';
   document.getElementById('settingsRequestingFields').classList.toggle('hidden', office !== 'requesting');
-  document.getElementById('settingsSignatoryFields').classList.toggle('hidden', office !== 'requesting');
+  const canEditSignatoryName = ['requesting', 'accounting', 'vc_admin_finance', 'chancellor', 'academic_affairs'].includes(office);
+  document.getElementById('settingsSignatoryFields').classList.toggle('hidden', !canEditSignatoryName);
+  document.querySelector('#settingsSignatoryFields h3').textContent =
+    office === 'requesting' ? 'Optional Academic Affairs signatory' : 'Permanent signatory name';
+  document.getElementById('settingsSignatoryHint').textContent =
+    office === 'requesting'
+      ? 'Requesting Office can update only the optional second Academic Affairs signatory. Existing requests keep their saved signatory names.'
+      : 'Your office can update only its assigned permanent signatory name. Existing requests keep their saved signatory names.';
   document.getElementById('settingsBudgetFields').classList.toggle('hidden', office !== 'budget');
   document.getElementById('settingsNotesFields').classList.toggle('hidden', office === 'requesting' || !office);
   document.getElementById('settingsDefaultTitle').value = prefs.default_title || '';
   document.getElementById('settingsDefaultDescription').value = prefs.default_description || '';
   document.getElementById('settingsDefaultBudgetType').value = prefs.default_budget_type || '';
   document.getElementById('settingsDefaultNotes').value = prefs.default_notes || '';
-  if (office === 'requesting') {
-    renderOfficeSignatorySettings(data.profile.signatory_templates || []);
-  }
+  if (canEditSignatoryName) renderOfficeSignatorySettings(data.profile.signatory_templates || [], office);
   openAccountModal('accountSettingsModal');
 }
 
@@ -542,9 +556,10 @@ function bindUserMenu(session) {
       default_budget_type: document.getElementById('settingsDefaultBudgetType').value.trim(),
       default_notes: document.getElementById('settingsDefaultNotes').value.trim(),
     };
-    if ((window.__session || {}).role === 'requesting') {
+    if (document.getElementById('settingsSignatoryFields')?.classList.contains('hidden') === false) {
       settings.signatory_names = Object.fromEntries(
         [...document.querySelectorAll('[data-signatory-template]')]
+          .filter((input) => input instanceof HTMLInputElement)
           .map((input) => [input.dataset.signatoryTemplate, input.value.trim()])
       );
     }

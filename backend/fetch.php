@@ -157,9 +157,13 @@ try {
             $documents = $docStmt->fetchAll();
 
             $signatoryStmt = $pdo->prepare(
-                'SELECT id, template_key, signatory_name, designation, department, document_location, assigned_office, approval_order, status, signed_at, updated_by, updated_at
-                 FROM request_signatories
-                 WHERE request_id = ? ORDER BY approval_order ASC, id ASC'
+                'SELECT rs.id, rs.template_key,
+                        COALESCE(st.signatory_name, rs.signatory_name) AS signatory_name,
+                        rs.designation, rs.department, rs.document_location, rs.assigned_office,
+                        rs.approval_order, rs.status, rs.signed_at, rs.updated_by, rs.updated_at
+                 FROM request_signatories rs
+                 LEFT JOIN signatory_templates st ON st.template_key = rs.template_key
+                 WHERE rs.request_id = ? ORDER BY rs.approval_order ASC, rs.id ASC'
             );
             $signatoryStmt->execute([$request['id']]);
             $signatories = $signatoryStmt->fetchAll();
