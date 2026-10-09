@@ -88,6 +88,9 @@ DEFAULT LOGIN ACCOUNTS (stored in the users table):
   procurement_user    procurement123     Procurement Office
   accounting_user     accounting123      Accounting Office
   cashier_user        cashier123         Cashier
+  vc_admin_finance_user adminfinance123   Vice Chancellor for Administration and Finance
+  chancellor_user     chancellor123      Chancellor, BatStateU Lipa
+  academic_affairs_user academic123      Vice Chancellor for Academic Affairs, BatStateU Lipa
 
 If you already imported an older database, re-import importdb.sql in phpMyAdmin
 (fresh install) or run only the offices/users sections from that file.

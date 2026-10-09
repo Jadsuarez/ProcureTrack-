@@ -17,56 +17,57 @@ $budgetType = trim($input['budget_type'] ?? '');
 
 $role = currentRole();
 
-$budgetStatuses = ['Under Budget Review', 'Reviewed'];
-$procurementStatuses = ['Canvass', 'PO'];
-$psoStatuses = ['Delivered', 'For Inspection', 'Accepted'];
-$accountingStatuses = ['DV Processing', 'For Payment'];
-$cashierStatuses = ['Paid', 'Completed'];
-
 if ($tracking === '' || $status === '') {
     jsonResponse(['success' => false, 'message' => 'Tracking number and status are required.'], 400);
 }
 
-if ($role === 'budget' && !in_array($status, $budgetStatuses, true)) {
-    jsonResponse(['success' => false, 'message' => 'Invalid status for Budget Office.'], 400);
-}
-
-if ($role === 'procurement' && !in_array($status, $procurementStatuses, true)) {
-    jsonResponse(['success' => false, 'message' => 'Invalid status for Procurement Office.'], 400);
-}
-
-if ($role === 'pso' && !in_array($status, $psoStatuses, true)) {
-    jsonResponse(['success' => false, 'message' => 'Invalid status for Property and Supply Office.'], 400);
-}
-
-if ($role === 'accounting' && !in_array($status, $accountingStatuses, true)) {
-    jsonResponse(['success' => false, 'message' => 'Invalid status for Accounting Office.'], 400);
-}
-
-if ($role === 'cashier' && !in_array($status, $cashierStatuses, true)) {
-    jsonResponse(['success' => false, 'message' => 'Invalid status for Cashier.'], 400);
-}
-
 try {
     $pdo = getConnection();
-    $stmt = $pdo->prepare('SELECT id, status FROM requests WHERE UPPER(tracking_number) = UPPER(?)');
+    $pdo->beginTransaction();
+    $stmt = $pdo->prepare('SELECT id, status FROM requests WHERE UPPER(tracking_number) = UPPER(?) FOR UPDATE');
     $stmt->execute([$tracking]);
     $row = $stmt->fetch();
 
     if (!$row) {
+        $pdo->rollBack();
         jsonResponse(['success' => false, 'message' => 'Request not found.'], 404);
     }
 
+    if (isSignatoryOffice($role) && $row['status'] === 'Registered') {
+        $pdo->rollBack();
+        jsonResponse(['success' => false, 'message' => 'Signatory offices can mark their assigned signatures only. The Budget Office must start review after required signatures are complete.'], 409);
+    }
+
     if (isClosedStatus($row['status']) || $row['status'] === 'Completed') {
+        $pdo->rollBack();
         jsonResponse(['success' => false, 'message' => 'Closed or completed requests cannot be updated.'], 400);
     }
 
-    if (!isRequestVisibleToRole($row['status'], $role)) {
+    $nextStatus = nextStatusForOffice($role, (string) $row['status']);
+    if ($nextStatus === null || $status !== $nextStatus) {
+        $pdo->rollBack();
+        jsonResponse([
+            'success' => false,
+            'message' => $nextStatus === null
+                ? 'This request is not at a status your office can advance.'
+                : "The next valid status is \"{$nextStatus}\". Requests cannot skip or repeat workflow stages.",
+        ], 409);
+    }
+
+    if (!isRequestAccessibleToRole($pdo, $row, $role)) {
+        $pdo->rollBack();
         jsonResponse(['success' => false, 'message' => requestVisibilityMessage($role)], 403);
     }
 
-    $currentOffice = officeForStatus($row['status']);
-    $nextOffice = officeForStatus($status);
+    if ($row['status'] === 'Registered' && !requiredSignaturesComplete($pdo, (int) $row['id'])) {
+        $pdo->rollBack();
+        jsonResponse([
+            'success' => false,
+            'message' => 'Budget review is locked until all four required signatories are marked Signed.',
+        ], 409);
+    }
+
+    $currentOffice = officeForRequestSignatures($pdo, (int) $row['id'], $row['status']);
     $signatureCheck = $pdo->prepare(
         'SELECT COUNT(*) AS assigned_count,
                 SUM(status = "Pending Signature") AS pending_count
@@ -75,26 +76,11 @@ try {
     );
     $signatureCheck->execute([(int) $row['id'], $currentOffice]);
     $signatureState = $signatureCheck->fetch();
-    if ((int) $signatureState['assigned_count'] === 0) {
-        $allSignatureCheck = $pdo->prepare(
-            'SELECT COUNT(*) AS assigned_count,
-                    SUM(status = "Pending Signature") AS pending_count
-             FROM request_signatories WHERE request_id = ?'
-        );
-        $allSignatureCheck->execute([(int) $row['id']]);
-        $allSignatureState = $allSignatureCheck->fetch();
-        if ((int) $allSignatureState['assigned_count'] === 0
-            || (int) $allSignatureState['pending_count'] > 0) {
-            jsonResponse([
-                'success' => false,
-                'message' => 'Status update is blocked because required signatories are not complete.',
-            ], 409);
-        }
-    }
     if ((int) $signatureState['pending_count'] > 0) {
+        $pdo->rollBack();
         jsonResponse([
             'success' => false,
-            'message' => roleLabel($currentOffice) . ' cannot update this request until all required signatories are marked Signed or Skipped.',
+            'message' => roleLabel($currentOffice) . ' cannot update this request until its assigned signatories are complete.',
         ], 409);
     }
 
@@ -120,7 +106,11 @@ try {
     );
     $log->execute([$requestId, $status, $notes ?: null, $updatedBy]);
 
+    $pdo->commit();
     jsonResponse(['success' => true, 'message' => 'Status updated successfully.']);
 } catch (PDOException $e) {
+    if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     jsonResponse(['success' => false, 'message' => 'Database error.'], 500);
 }

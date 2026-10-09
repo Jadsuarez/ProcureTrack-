@@ -143,7 +143,14 @@ try {
     );
     $officeOrders = [];
     foreach ($signatories as $signatory) {
-        $assignedOffice = 'requesting';
+        $assignedOffice = match ($signatory['template_key']) {
+            'head_accounting' => 'accounting',
+            'vice_chancellor_admin_finance' => 'vc_admin_finance',
+            'chancellor' => 'chancellor',
+            'vice_chancellor_academic_affairs',
+            'vice_chancellor_academic_affairs_2' => 'academic_affairs',
+            default => throw new RuntimeException('Unknown required signatory template.'),
+        };
         $signatoryInsert->execute([
             $requestId,
             $signatory['template_key'],

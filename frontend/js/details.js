@@ -13,6 +13,9 @@ function renderSignatoryWorkflow(data, session, tracking) {
     requesting: 'Requesting Office',
     budget: 'Budget Office',
     accounting: 'Accounting Office',
+    vc_admin_finance: 'Vice Chancellor for Administration and Finance Office',
+    chancellor: 'Chancellor Office',
+    academic_affairs: 'Vice Chancellor for Academic Affairs Office',
     procurement: 'Procurement Office',
     pso: 'Property and Supply Office',
     cashier: 'Cashier',
@@ -46,45 +49,62 @@ function renderSignatoryWorkflow(data, session, tracking) {
     gateMessage.classList.toggle('ready', signaturesReady);
   }
 
-  const groupedRows = rows.reduce((groups, row) => {
-    const office = row.assigned_office || 'unassigned';
-    (groups[office] ||= []).push(row);
-    return groups;
-  }, {});
-  list.innerHTML = rows.length ? Object.entries(groupedRows).map(([office, officeRows]) => `
+  const requiredGroups = Object.entries(rows
+    .filter((row) => row.template_key)
+    .reduce((groups, row) => {
+      const office = row.assigned_office || 'unassigned';
+      (groups[office] ||= []).push(row);
+      return groups;
+    }, {}))
+    .map(([office, officeRows]) => [
+      office,
+      officeRows.sort((a, b) => Number(a.approval_order) - Number(b.approval_order) || Number(a.id) - Number(b.id)),
+    ])
+    .sort(([, rowsA], [, rowsB]) => Number(rowsA[0].approval_order) - Number(rowsB[0].approval_order));
+  const customRowsInOrder = rows
+    .filter((row) => !row.template_key)
+    .sort((a, b) => Number(a.approval_order) - Number(b.approval_order) || Number(a.id) - Number(b.id));
+  const orderedGroups = [
+    ...requiredGroups,
+    ...(customRowsInOrder.length ? [['additional', customRowsInOrder]] : []),
+  ];
+  const customPositions = new Map(customRowsInOrder.map((row, index) => [String(row.id), index]));
+  const sequencePositions = new Map(
+    orderedGroups.flatMap(([, officeRows]) => officeRows)
+      .map((row, index) => [String(row.id), index + 1])
+  );
+  list.innerHTML = rows.length ? orderedGroups.map(([office, officeRows]) => {
+    const customRows = officeRows.filter((row) => !row.template_key);
+    const isAdditionalGroup = office === 'additional';
+    return `
     <li class="signatory-office-group">
-      <h3>${officeLabels[office] || 'Unassigned Office'}</h3>
-      <ol>${officeRows.map((row, index) => {
-        const customRows = officeRows.filter((candidate) => !candidate.template_key);
-        const customIndex = customRows.findIndex((candidate) => candidate.id === row.id);
+      <h3>${isAdditionalGroup ? 'Additional Signatories' : officeLabels[office] || 'Unassigned Office'}</h3>
+      ${canManage && isAdditionalGroup && customRows.length === 1 ? '<p class="text-muted">Add another custom signatory to enable reordering.</p>' : ''}
+      <ol>${officeRows.map((row) => {
+        const customIndex = customPositions.get(String(row.id));
         return `
-        <li class="signatory-row">
-          <span class="signatory-order">${index + 1}</span>
+        <li class="signatory-row" data-signatory-row-id="${Number(row.id)}">
+          <span class="signatory-order" aria-label="Signing sequence ${sequencePositions.get(String(row.id))}">${sequencePositions.get(String(row.id))}</span>
           <span class="hidden" data-signatory-template="${escapeSignatoryText(row.template_key || '')}"></span>
           <div class="signatory-info">
             <strong>${escapeSignatoryText(row.signatory_name)}</strong>
             <span>${escapeSignatoryText(row.designation || 'Signatory')}</span>
-            ${row.department ? `<span>Office: ${escapeSignatoryText(row.department)}</span>` : ''}
+            ${row.department ? `<span>Office: ${escapeSignatoryText(row.department)}</span>` : !row.template_key ? `<span>Assigned office: ${escapeSignatoryText(officeLabels[row.assigned_office] || row.assigned_office || 'Unassigned')}</span>` : ''}
             ${row.document_location ? `<span>Document: ${escapeSignatoryText(row.document_location)}</span>` : ''}
             <span>${row.status === 'Signed' && row.signed_at ? `Signed: ${formatDate(row.signed_at)}` : `Last changed: ${formatDate(row.updated_at || row.signed_at)}`}</span>
           </div>
           <span class="status-badge ${row.status === 'Signed' ? 'completed' : ''}">${escapeSignatoryText(row.status)}</span>
           ${canManage || row.assigned_office === session.role ? `<div class="signatory-actions">
-            ${row.status === 'Pending Signature' && row.assigned_office === currentOffice && (canManage || row.assigned_office === session.role) ? '<button type="button" class="btn btn-sm btn-primary" data-signatory-action="Signed">Mark Signed</button><button type="button" class="btn btn-sm btn-secondary" data-signatory-action="Skipped">Skip</button>' : ''}
-            ${canManage ? `<select aria-label="Change signatory status" data-signatory-status="${row.id}">
-              <option value="" selected>Change status</option>
-              <option value="Pending Signature">Pending Signature</option>
-              <option value="Signed">Signed</option>
-              <option value="Skipped">Skipped</option>
-            </select>` : ''}
-            ${canManage && !row.template_key ? `<button type="button" class="btn btn-sm btn-secondary" data-signatory-move="up" data-signatory-id="${row.id}" ${customIndex === 0 ? 'disabled' : ''}>Up</button>
-            <button type="button" class="btn btn-sm btn-secondary" data-signatory-move="down" data-signatory-id="${row.id}" ${customIndex === customRows.length - 1 ? 'disabled' : ''}>Down</button>
+            ${row.status === 'Pending Signature' && row.assigned_office === currentOffice && (row.template_key ? session.role === row.assigned_office : (canManage || row.assigned_office === session.role)) ? `<button type="button" class="btn btn-sm btn-primary" data-signatory-action="Signed" data-signatory-id="${Number(row.id)}">Mark Signed</button>` : ''}
+            ${canManage && !row.template_key ? `<button type="button" class="btn btn-sm btn-secondary" data-signatory-move="up" data-signatory-id="${row.id}" title="${customRows.length === 1 ? 'Add another custom signatory to enable reordering.' : customIndex === 0 ? 'This signatory is already first.' : 'Move signatory up'}" ${customRows.length === 1 || customIndex === 0 ? 'disabled' : ''}>Up</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-signatory-move="down" data-signatory-id="${row.id}" title="${customRows.length === 1 ? 'Add another custom signatory to enable reordering.' : customIndex === customRows.length - 1 ? 'This signatory is already last.' : 'Move signatory down'}" ${customRows.length === 1 || customIndex === customRows.length - 1 ? 'disabled' : ''}>Down</button>
             <button type="button" class="btn btn-sm btn-secondary" data-signatory-delete="${row.id}">Remove</button>` : ''}
           </div>` : ''}
         </li>
       `; }).join('')}</ol>
     </li>
-  `).join('') : '<li class="text-muted">No signatories configured.</li>';
+  `;
+  }).join('') : '<li class="text-muted">No signatories configured.</li>';
 
   const history = data.signatory_history || [];
   const historyEl = document.getElementById('signatoryHistory');
@@ -182,7 +202,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('detailTitle').textContent =
     `${req.tracking_number}${req.title ? ' — ' + req.title : ''}`;
 
-  renderOfficeStepper(req.status, 'officeStepper');
+  renderOfficeStepper(req.status, 'officeStepper', data.signatories || [], data.signatory_summary?.current_office);
 
   document.getElementById('detailGrid').innerHTML = `
     <div class="detail-item"><div class="label">Tracking ID</div><div class="value">${req.tracking_number}</div></div>
@@ -293,50 +313,77 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('signatoryList')?.addEventListener('click', async (e) => {
-    const button = e.target.closest('button');
+    const button = e.target instanceof Element ? e.target.closest('button') : null;
     if (!button || button.disabled) return;
     let payload = null;
     const id = Number(button.dataset.signatoryId || button.dataset.signatoryDelete);
     if (button.dataset.signatoryAction) {
+      if (!Number.isSafeInteger(id) || id <= 0) {
+        showAlert(document.getElementById('alertBox'), 'Could not identify the signatory to update. Reload the request and try again.');
+        return;
+      }
       payload = { action: 'set_status', id, status: button.dataset.signatoryAction };
     } else if (button.dataset.signatoryDelete) {
       payload = { action: 'delete', id };
     } else if (button.dataset.signatoryMove) {
-      const current = [...button.closest('.signatory-office-group').querySelectorAll('.signatory-row')]
-        .filter((row) => !row.querySelector('[data-signatory-template]')?.dataset.signatoryTemplate)
-        .map((row) => Number(row.querySelector('[data-signatory-id]')?.dataset.signatoryId));
+      const currentRow = button.closest('.signatory-row');
+      const current = [...document.querySelectorAll('.signatory-row')]
+        .filter((row) => row.hasAttribute('data-signatory-row-id')
+          && !row.querySelector('[data-signatory-template]')?.dataset.signatoryTemplate)
+        .map((row) => Number(row.dataset.signatoryRowId));
       const position = current.indexOf(id);
       const swapWith = button.dataset.signatoryMove === 'up' ? position - 1 : position + 1;
-      if (position < 0 || swapWith < 0 || swapWith >= current.length) return;
+      if (!currentRow || !Number.isSafeInteger(id) || id <= 0
+        || position < 0 || swapWith < 0 || swapWith >= current.length) return;
       [current[position], current[swapWith]] = [current[swapWith], current[position]];
       payload = { action: 'reorder', order: current };
     }
     if (!payload) return;
-    const result = await Api.updateSignatories({ ...payload, tracking_number: tracking });
-    if (result.success) {
-      if (payload.action === 'set_status') window.location.reload();
-      else await refreshSignatoryWorkflow(tracking, session);
-    } else {
-      showAlert(document.getElementById('alertBox'), result.message);
+    button.disabled = true;
+    clearAlert(document.getElementById('alertBox'));
+    try {
+      const result = await Api.updateSignatories({ ...payload, tracking_number: tracking });
+      if (result.success) {
+        if (payload.action === 'set_status') {
+          const currentRow = button.closest('.signatory-row');
+          const isRequiredSigner = Boolean(
+            currentRow?.querySelector('[data-signatory-template]')?.dataset.signatoryTemplate
+          );
+          const nextSigner = (result.signatories || [])
+            .filter((signatory) => signatory.template_key && signatory.status === 'Pending Signature')
+            .sort((a, b) => Number(a.approval_order) - Number(b.approval_order))[0];
+          const nextOffice = nextSigner?.assigned_office || 'budget';
+          if (isRequiredSigner && nextOffice !== session.role) {
+            const nextOfficeLabel = nextSigner?.department || 'Budget Office';
+            showAlert(
+              document.getElementById('successBox'),
+              `Signature recorded. The request is now with ${escapeSignatoryText(nextOfficeLabel)}. Returning to your office queue…`,
+              'success'
+            );
+            setTimeout(() => {
+              window.location.href = 'status.html';
+            }, 1200);
+          } else {
+            window.location.reload();
+          }
+        } else {
+          await refreshSignatoryWorkflow(tracking, session);
+        }
+      } else {
+        showAlert(document.getElementById('alertBox'), result.message || 'Unable to update signatory workflow.');
+        button.disabled = false;
+      }
+    } catch (error) {
+      showAlert(document.getElementById('alertBox'), 'Unable to reach the server. Check your connection and try again.');
+      button.disabled = false;
     }
-  });
-
-  document.getElementById('signatoryList')?.addEventListener('change', async (e) => {
-    const select = e.target.closest('[data-signatory-status]');
-    if (!select || !select.value) return;
-    const result = await Api.updateSignatories({
-      action: 'set_status', tracking_number: tracking,
-      id: Number(select.dataset.signatoryStatus), status: select.value,
-    });
-    if (result.success) window.location.reload();
-    else showAlert(document.getElementById('alertBox'), result.message);
   });
 
   const canUpdate = ['budget', 'procurement', 'pso', 'accounting', 'cashier'].includes(session.role);
   const closedRequest = ['Returned', 'Cancelled', 'Completed'].includes(req.status);
   const currentSignaturesReady = Boolean(data.signatory_summary?.ready_for_status_update);
-  if (canUpdate && currentSignaturesReady && !closedRequest) {
-    const opts = await Api.statusOptions();
+  if (canUpdate && !(session.role === 'accounting' && req.status === 'Registered') && currentSignaturesReady && !closedRequest) {
+    const opts = await Api.statusOptions(req.status);
     if (opts.success && opts.options.length) {
       const updateCard = document.getElementById('updateCard');
       updateCard.classList.remove('hidden');

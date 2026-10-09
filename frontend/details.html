@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Request Details — PROCUREMENT</title>
-  <link rel="stylesheet" href="css/style.css?v=36">
+  <link rel="stylesheet" href="css/style.css?v=39">
 </head>
 <body>
   <main class="container">
@@ -28,6 +28,8 @@
           </div>
         </div>
           <div id="officeStepper" class="multi-step-progress office-stepper"></div>
+        <div id="signatoryStepper" class="signatory-stepper" aria-label="Signatory progress"></div>
+        <p id="officeStepperLocation" class="office-stepper-location" aria-live="polite"></p>
           <div class="detail-grid" id="detailGrid"></div>
           </div>
 
@@ -50,7 +52,7 @@
         <div class="section-heading-row">
           <div>
             <h2>Signatory Workflow</h2>
-            <p class="text-muted">There are five signatory positions: three permanent offices and two Vice Chancellors for Academic Affairs. The fifth may be set to N/A when one signer covers both Academic Affairs signatures. You can continue adding and managing other signatories for this request. The Requesting Office records each as Signed or Skipped. Monitoring only; no digital signatures are collected.</p>
+            <p class="text-muted">Required signatures are routed in order: Head of Accounting, Vice Chancellor for Administration and Finance, Chancellor, then Vice Chancellor for Academic Affairs. Budget review stays locked until all required signatures are Signed. The optional fifth position may be omitted when one Vice Chancellor covers both Academic Affairs signatures. Other signatories can still be added and managed as before. Monitoring only; no digital signatures are collected.</p>
           </div>
           <span class="status-badge" id="signatoryOverallStatus">No Signatories Configured</span>
         </div>
@@ -88,6 +90,9 @@
                 <option value="procurement">Procurement Office</option>
                 <option value="pso">Property and Supply Office</option>
                 <option value="cashier">Cashier</option>
+                <option value="vc_admin_finance">Vice Chancellor for Administration and Finance Office</option>
+                <option value="chancellor">Chancellor Office</option>
+                <option value="academic_affairs">Vice Chancellor for Academic Affairs Office</option>
               </select>
             </div>
           </div>
@@ -157,8 +162,8 @@
 
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
-  <script src="js/api.js?v=24"></script>
+  <script src="js/api.js?v=27"></script>
   <script src="js/app.js?v=33"></script>
-  <script src="js/details.js?v=25"></script>
+  <script src="js/details.js?v=31"></script>
 </body>
 </html>

@@ -7,6 +7,9 @@ budget_user           budget123          Budget Office
 procurement_user      procurement123     Procurement Office
 accounting_user       accounting123      Accounting Office
 cashier_user          cashier123         Cashier
+vc_admin_finance_user  adminfinance123    Office of the Vice Chancellor for Administration and Finance
+chancellor_user        chancellor123      Office of the Chancellor, BatStateU Lipa
+academic_affairs_user  academic123        Office of the Vice Chancellor for Academic Affairs, BatStateU Lipa
 
 Login page:
 http://localhost/Caps/frontend/login.html

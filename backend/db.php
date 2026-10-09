@@ -25,6 +25,7 @@ function getConnection(): PDO
         ensureSignatoryAuditTables($pdo);
         ensureLegacyStatusMigration($pdo);
         ensureExistingFundDeductions($pdo);
+        ensureRequiredSignatoryRouting($pdo);
     }
     return $pdo;
 }
@@ -78,6 +79,92 @@ function ensureExistingFundDeductions(PDO $pdo): void
     } catch (PDOException $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
         throw $e;
+    }
+}
+
+function ensureRequiredSignatoryRouting(PDO $pdo): void
+{
+    $check = $pdo->prepare('SELECT 1 FROM system_migrations WHERE migration_key = ?');
+    $check->execute(['route_required_signatories']);
+    if ($check->fetchColumn()) {
+        return;
+    }
+
+    $officeByTemplate = [
+        'head_accounting' => 'accounting',
+        'vice_chancellor_admin_finance' => 'vc_admin_finance',
+        'chancellor' => 'chancellor',
+        'vice_chancellor_academic_affairs' => 'academic_affairs',
+        'vice_chancellor_academic_affairs_2' => 'academic_affairs',
+    ];
+    $orderByTemplate = [
+        'head_accounting' => 1,
+        'vice_chancellor_admin_finance' => 2,
+        'chancellor' => 3,
+        'vice_chancellor_academic_affairs' => 4,
+        'vice_chancellor_academic_affairs_2' => 5,
+    ];
+
+    $pdo->beginTransaction();
+    try {
+        $update = $pdo->prepare(
+            'UPDATE request_signatories
+             SET assigned_office = ?, approval_order = ?
+             WHERE template_key = ?'
+        );
+        foreach ($officeByTemplate as $templateKey => $office) {
+            $update->execute([$office, $orderByTemplate[$templateKey], $templateKey]);
+        }
+
+        $missing = $pdo->query(
+            "SELECT r.id AS request_id, r.updated_by, t.template_key, t.signatory_name,
+                    t.designation, t.department, t.approval_order
+             FROM requests r
+             CROSS JOIN signatory_templates t
+             WHERE r.status = 'Registered'
+               AND t.is_required = 1
+               AND NOT EXISTS (
+                   SELECT 1 FROM request_signatories s
+                   WHERE s.request_id = r.id AND s.template_key = t.template_key
+               )
+             ORDER BY r.id, t.approval_order"
+        )->fetchAll();
+        $insert = $pdo->prepare(
+            'INSERT INTO request_signatories
+             (request_id, template_key, signatory_name, designation, department, assigned_office, approval_order, status, updated_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, "Pending Signature", ?)'
+        );
+        $log = $pdo->prepare(
+            'INSERT INTO request_signatory_logs
+             (request_id, signatory_id, assigned_office, action, status, updated_by)
+             VALUES (?, ?, ?, "Added", "Pending Signature", "System")'
+        );
+        foreach ($missing as $signatory) {
+            $office = $officeByTemplate[$signatory['template_key']] ?? null;
+            if ($office === null) {
+                throw new RuntimeException('Unknown required signatory template during routing migration.');
+            }
+            $insert->execute([
+                (int) $signatory['request_id'],
+                $signatory['template_key'],
+                $signatory['signatory_name'],
+                $signatory['designation'],
+                $signatory['department'],
+                $office,
+                (int) $signatory['approval_order'],
+                $signatory['updated_by'] ?: 'System',
+            ]);
+            $log->execute([(int) $signatory['request_id'], (int) $pdo->lastInsertId(), $office]);
+        }
+
+        $mark = $pdo->prepare('INSERT INTO system_migrations (migration_key) VALUES (?)');
+        $mark->execute(['route_required_signatories']);
+        $pdo->commit();
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $error;
     }
 }
 
@@ -283,14 +370,21 @@ function ensureRequestFundingColumns(PDO $pdo): void
 
 function ensureSystemOffices(PDO $pdo): void
 {
-    try {
-        $pdo->exec(
-            "INSERT IGNORE INTO offices (slug, label, is_system, created_by, fund_allocation)
-             VALUES ('pso', 'Property and Supply Office', 1, 'system', 0)"
-        );
-    } catch (PDOException $e) {
-        // offices table may not exist yet
-    }
+    $pdo->exec(
+        "INSERT IGNORE INTO offices (slug, label, is_system, created_by, fund_allocation)
+         VALUES
+            ('pso', 'Property and Supply Office', 1, 'system', 0),
+            ('vc_admin_finance', 'Office of the Vice Chancellor for Administration and Finance', 1, 'system', 0),
+            ('chancellor', 'Office of the Chancellor, BatStateU Lipa', 1, 'system', 0),
+            ('academic_affairs', 'Office of the Vice Chancellor for Academic Affairs, BatStateU Lipa', 1, 'system', 0)"
+    );
+    $pdo->exec(
+        "INSERT IGNORE INTO users (username, password_hash, office, created_by)
+         VALUES
+            ('vc_admin_finance_user', '\$2y\$10\$sDFSq4d.H.1Rvh6NWFaYju/gWuqY1DGyygGoKnQk8RJcQFWHNMsE.', 'vc_admin_finance', 'system'),
+            ('chancellor_user', '\$2y\$10\$iBRKXmuuuhoV60EX7vssleWFVltRzRQtyB/GX94zDP7wlfIfaGcVO', 'chancellor', 'system'),
+            ('academic_affairs_user', '\$2y\$10\$IRoEwwoXNAPWT0wnv7UUXOP8K3VWgLBO2o2JAMW7opTAfU74OYEVi', 'academic_affairs', 'system')"
+    );
 }
 
 function isClosedStatus(string $status): bool
@@ -371,6 +465,9 @@ function defaultOfficeRows(): array
         ['id' => 0, 'slug' => 'accounting', 'label' => 'Accounting Office', 'is_system' => 1],
         ['id' => 0, 'slug' => 'pso', 'label' => 'Property and Supply Office', 'is_system' => 1],
         ['id' => 0, 'slug' => 'cashier', 'label' => 'Cashier', 'is_system' => 1],
+        ['id' => 0, 'slug' => 'vc_admin_finance', 'label' => 'Office of the Vice Chancellor for Administration and Finance', 'is_system' => 1],
+        ['id' => 0, 'slug' => 'chancellor', 'label' => 'Office of the Chancellor, BatStateU Lipa', 'is_system' => 1],
+        ['id' => 0, 'slug' => 'academic_affairs', 'label' => 'Office of the Vice Chancellor for Academic Affairs, BatStateU Lipa', 'is_system' => 1],
     ];
 }
 

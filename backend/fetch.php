@@ -17,9 +17,9 @@ try {
     switch ($action) {
         case 'summary':
             $allRequests = $pdo->query(
-                'SELECT tracking_number, title, status, updated_at, created_at FROM requests'
+                'SELECT id, tracking_number, title, status, updated_at, created_at FROM requests'
             )->fetchAll();
-            $visible = filterRequestsForRole($allRequests, $role);
+            $visible = filterRequestsForRole($allRequests, $role, $pdo);
 
             $byStatusMap = [];
             foreach ($visible as $r) {
@@ -35,11 +35,11 @@ try {
             $recent = array_slice($visible, 0, 8);
 
             $focusStatuses = match ($role) {
-                'accounting' => ['DV Processing', 'For Payment'],
-                'cashier' => ['For Payment', 'Paid', 'Completed'],
+                'accounting' => ['Reviewed', 'DV Processing', 'For Payment'],
+                'cashier' => ['Accepted', 'Paid', 'Completed'],
                 'budget' => ['Registered', 'Under Budget Review', 'Reviewed'],
-                'procurement' => ['Reviewed', 'Canvass', 'PO'],
-                'pso' => ['Delivered', 'For Inspection', 'Accepted'],
+                'procurement' => array_merge(getFlowSteps(), ['Returned', 'Cancelled']),
+                'pso' => ['PO', 'Delivered', 'For Inspection', 'Accepted'],
                 default => [],
             };
 
@@ -62,7 +62,7 @@ try {
             $exactStmt = $pdo->prepare('SELECT * FROM requests WHERE UPPER(tracking_number) = UPPER(?)');
             $exactStmt->execute([$tracking]);
             $exact = $exactStmt->fetch();
-            if ($exact && !isRequestVisibleToRole($exact['status'], $role)) {
+            if ($exact && !isRequestAccessibleToRole($pdo, $exact, $role)) {
                 jsonResponse(['success' => false, 'message' => requestVisibilityMessage($role)], 403);
             }
 
@@ -70,7 +70,7 @@ try {
                 'SELECT * FROM requests WHERE UPPER(tracking_number) LIKE UPPER(?) OR UPPER(title) LIKE UPPER(?) ORDER BY tracking_number'
             );
             $stmt->execute(['%' . $tracking . '%', '%' . $tracking . '%']);
-            $requests = filterRequestsForRole($stmt->fetchAll(), $role);
+            $requests = filterRequestsForRole($stmt->fetchAll(), $role, $pdo);
             jsonResponse(['success' => true, 'requests' => $requests]);
             break;
 
@@ -80,11 +80,11 @@ try {
                 jsonResponse(['success' => false, 'message' => 'Invalid status for this office.'], 400);
             }
             $statusStmt = $pdo->prepare(
-                'SELECT tracking_number, title, status, updated_at, created_at
+                'SELECT id, tracking_number, title, status, updated_at, created_at
                  FROM requests WHERE status = ? ORDER BY updated_at DESC, tracking_number ASC'
             );
             $statusStmt->execute([$status]);
-            $requests = filterRequestsForRole($statusStmt->fetchAll(), $role);
+            $requests = filterRequestsForRole($statusStmt->fetchAll(), $role, $pdo);
             jsonResponse([
                 'success' => true,
                 'status' => $status,
@@ -113,10 +113,10 @@ try {
 
         case 'office_requests':
             $officeStmt = $pdo->query(
-                'SELECT tracking_number, title, status, request_amount, created_at, updated_at
+                'SELECT id, tracking_number, title, status, request_amount, created_at, updated_at
                  FROM requests ORDER BY updated_at DESC, tracking_number ASC'
             );
-            $officeRequests = filterRequestsForRole($officeStmt->fetchAll(), $role);
+            $officeRequests = filterRequestsForRole($officeStmt->fetchAll(), $role, $pdo);
             jsonResponse([
                 'success' => true,
                 'office_label' => roleLabel($role),
@@ -138,7 +138,7 @@ try {
                 jsonResponse(['success' => false, 'message' => 'Request not found.'], 404);
             }
 
-            if (!isRequestVisibleToRole($request['status'], $role)) {
+            if (!isRequestAccessibleToRole($pdo, $request, $role)) {
                 jsonResponse(['success' => false, 'message' => requestVisibilityMessage($role)], 403);
             }
 
@@ -170,16 +170,15 @@ try {
             $signatoryHistory = $signatoryLogStmt->execute([$request['id']]) ? $signatoryLogStmt->fetchAll() : [];
             $signedCount = count(array_filter($signatories, fn($s) => $s['status'] === 'Signed'));
             $remainingCount = count(array_filter($signatories, fn($s) => $s['status'] === 'Pending Signature'));
-            $currentOffice = officeForStatus($request['status']);
+            $currentOffice = officeForRequestSignatures($pdo, (int) $request['id'], $request['status']);
             $currentOfficeRows = array_values(array_filter(
                 $signatories,
                 fn($signatory) => $signatory['assigned_office'] === $currentOffice
             ));
             $allSignaturesResolved = $signatories
                 && $remainingCount === 0;
-            $currentOfficeReady = $currentOfficeRows
-                ? count(array_filter($currentOfficeRows, fn($s) => $s['status'] === 'Pending Signature')) === 0
-                : $allSignaturesResolved;
+            $currentOfficeReady = !$currentOfficeRows
+                || count(array_filter($currentOfficeRows, fn($s) => $s['status'] === 'Pending Signature')) === 0;
             $currentSignatory = null;
             foreach ($signatories as $signatory) {
                 if ($signatory['assigned_office'] === $currentOffice
@@ -228,7 +227,7 @@ try {
             $notificationLimit = $role === 'procurement' ? '' : ' LIMIT 120';
             $logStmt = $pdo->query(
                 'SELECT sl.id, sl.status, sl.notes, sl.updated_by, sl.created_at,
-                        r.tracking_number, r.title, r.status AS current_status
+                        r.id AS request_id, r.tracking_number, r.title, r.status AS current_status
                  FROM status_logs sl
                  INNER JOIN requests r ON r.id = sl.request_id
                  ORDER BY sl.created_at DESC, sl.id DESC' . $notificationLimit
@@ -248,9 +247,11 @@ try {
                 $isNext = $role === $adj['next'];
                 $isPrev = $role === $adj['previous'];
 
-                if ($isNew && $role === 'procurement') {
+                if ($isNew && isSignatoryOffice($role)) {
+                    $message = "New request {$tracking} is waiting for required signatures at " . roleLabel($role) . '.';
+                } elseif ($isNew && $role === 'procurement') {
                     $message = "New request {$tracking} was submitted by Requesting Office.";
-                    if (!isRequestVisibleToRole($row['current_status'], $role)) {
+                    if (!isRequestAccessibleToRole($pdo, ['id' => $row['request_id'], 'status' => $row['current_status']], $role)) {
                         $message .= ' Awaiting Budget review.';
                     }
                 } elseif ($isNew && $isNext && !$isPrev) {
@@ -269,7 +270,7 @@ try {
                     'title' => $row['title'],
                     'status' => $status,
                     'message' => $message,
-                    'can_view' => isRequestVisibleToRole($row['current_status'], $role),
+                    'can_view' => isRequestAccessibleToRole($pdo, ['id' => $row['request_id'], 'status' => $row['current_status']], $role),
                     'kind' => $isNext && !$isPrev ? 'incoming' : 'update',
                     'created_at' => $row['created_at'],
                 ];
@@ -283,14 +284,9 @@ try {
             break;
 
         case 'status_options':
-            $options = match ($role) {
-                'budget' => ['Under Budget Review', 'Reviewed'],
-                'procurement' => ['Canvass', 'PO'],
-                'pso' => ['Delivered', 'For Inspection', 'Accepted'],
-                'accounting' => ['DV Processing', 'For Payment'],
-                'cashier' => ['Paid', 'Completed'],
-                default => [],
-            };
+            $currentStatus = trim($_GET['current_status'] ?? '');
+            $nextStatus = nextStatusForOffice($role, $currentStatus);
+            $options = $nextStatus === null ? [] : [$nextStatus];
             jsonResponse(['success' => true, 'options' => $options, 'role' => $role]);
             break;
 

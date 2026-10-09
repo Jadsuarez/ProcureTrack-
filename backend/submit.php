@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'lookup'
         if (!$row) {
             jsonResponse(['success' => false, 'message' => 'Tracking number not found.'], 404);
         }
-        if (!isRequestVisibleToRole($row['status'], $_SESSION['role'])) {
+        if (!isRequestAccessibleToRole($pdo, $row, $_SESSION['role'])) {
             jsonResponse(['success' => false, 'message' => requestVisibilityMessage($_SESSION['role'])], 403);
         }
         jsonResponse(['success' => true, 'request' => $row]);
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $pdo = getConnection();
                 $stmt = $pdo->prepare(
-                    'SELECT d.id, d.file_path, r.status
+                    'SELECT d.id, d.file_path, r.id AS request_id, r.status
                      FROM documents d
                      INNER JOIN requests r ON r.id = d.request_id
                      WHERE d.id = ?'
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$doc) {
                     jsonResponse(['success' => false, 'message' => 'Document not found.'], 404);
                 }
-                if (!isRequestVisibleToRole($doc['status'], $role)) {
+                if (!isRequestAccessibleToRole($pdo, ['id' => $doc['request_id'], 'status' => $doc['status']], $role)) {
                     jsonResponse(['success' => false, 'message' => requestVisibilityMessage($role)], 403);
                 }
                 $pdo->prepare('DELETE FROM documents WHERE id = ?')->execute([$docId]);
@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$row) {
             jsonResponse(['success' => false, 'message' => 'Tracking number not found.'], 404);
         }
-        if (!isRequestVisibleToRole($row['status'], $_SESSION['role'])) {
+        if (!isRequestAccessibleToRole($pdo, $row, $_SESSION['role'])) {
             jsonResponse(['success' => false, 'message' => requestVisibilityMessage($_SESSION['role'])], 403);
         }
 

@@ -41,6 +41,21 @@ const NAV_BY_ROLE = {
     { href: 'track.html', label: 'Track Request', icon: 'track' },
     { href: 'upload.html', label: 'Upload Documents', icon: 'upload' },
   ],
+  vc_admin_finance: [
+    { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+    { href: 'status.html', label: 'Signatures to Complete', icon: 'track' },
+    { href: 'track.html', label: 'Track Request', icon: 'track' },
+  ],
+  chancellor: [
+    { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+    { href: 'status.html', label: 'Signatures to Complete', icon: 'track' },
+    { href: 'track.html', label: 'Track Request', icon: 'track' },
+  ],
+  academic_affairs: [
+    { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+    { href: 'status.html', label: 'Signatures to Complete', icon: 'track' },
+    { href: 'track.html', label: 'Track Request', icon: 'track' },
+  ],
   pso: [
     { href: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
     { href: 'status.html', label: 'Office Requests', icon: 'track' },
@@ -938,6 +953,9 @@ function normalizeRole(role) {
     'budget office': 'budget',
     'procurement office': 'procurement',
     'accounting office': 'accounting',
+    'office of the vice chancellor for administration and finance': 'vc_admin_finance',
+    'office of the chancellor, batstateu lipa': 'chancellor',
+    'office of the vice chancellor for academic affairs, batstateu lipa': 'academic_affairs',
   };
   return aliases[r] || r;
 }

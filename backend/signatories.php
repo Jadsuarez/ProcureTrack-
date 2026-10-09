@@ -26,7 +26,14 @@ function findRequestForSignatories(PDO $pdo, string $tracking): array
     if (!$request) {
         jsonResponse(['success' => false, 'message' => 'Request not found.'], 404);
     }
-    if (!isRequestVisibleToRole($request['status'], currentRole())) {
+    if (!isRequestAccessibleToRole($pdo, $request, currentRole())) {
+        if ($request['status'] === 'Registered' && isSignatoryOffice(currentRole())) {
+            $currentOffice = officeForRequestSignatures($pdo, (int) $request['id'], $request['status']);
+            jsonResponse([
+                'success' => false,
+                'message' => 'This request is currently waiting for ' . roleLabel($currentOffice) . '. A signatory office can mark its signature only when that office is next.',
+            ], 409);
+        }
         jsonResponse(['success' => false, 'message' => requestVisibilityMessage(currentRole())], 403);
     }
     return $request;
@@ -44,7 +51,7 @@ function signatoryRows(PDO $pdo, int $requestId): array
 
 function validAssignedOffice(string $office): bool
 {
-    return in_array($office, ['requesting', 'budget', 'accounting', 'procurement', 'pso', 'cashier'], true);
+    return in_array($office, ['requesting', 'budget', 'accounting', 'procurement', 'pso', 'cashier', 'vc_admin_finance', 'chancellor', 'academic_affairs'], true);
 }
 
 function logSignatoryChange(PDO $pdo, int $requestId, ?int $signatoryId, ?string $office, string $action, ?string $status, string $actor): void
@@ -71,6 +78,9 @@ if (!in_array($action, ['add', 'update', 'delete', 'reorder', 'set_status'], tru
 }
 
 $isAdmin = in_array($role, ['requesting', 'procurement'], true);
+if (in_array($action, ['add', 'update', 'delete', 'reorder'], true) && !$isAdmin) {
+    jsonResponse(['success' => false, 'message' => 'Only Requesting Office or Procurement can manage custom signatories.'], 403);
+}
 
 try {
     $pdo->beginTransaction();
@@ -89,11 +99,9 @@ try {
                (request_id, signatory_name, designation, document_location, assigned_office, approval_order, status, updated_by)
                VALUES (?, ?, ?, ?, ?, ?, "Pending Signature", ?)'
         );
-        $officeOrders = array_map(
-            fn($row) => (int) $row['approval_order'],
-            array_filter($rows, fn($row) => $row['assigned_office'] === $assignedOffice)
-        );
-        $nextOrder = $officeOrders ? max($officeOrders) + 1 : 1;
+        $nextOrder = $rows
+            ? max(array_map(fn($row) => (int) $row['approval_order'], $rows)) + 1
+            : 1;
         $insert->execute([$requestId, $name, $designation ?: null, $documentLocation ?: null, $assignedOffice, $nextOrder, $actor]);
         logSignatoryChange($pdo, $requestId, (int) $pdo->lastInsertId(), $assignedOffice, 'Added', 'Pending Signature', $actor);
     } elseif ($action === 'update') {
@@ -136,16 +144,14 @@ try {
         logSignatoryChange($pdo, $requestId, $id, $deletedRow['assigned_office'] ?? null, 'Removed', $deletedRow['status'] ?? null, $actor);
     } elseif ($action === 'reorder') {
         $order = $input['order'] ?? [];
+        if (!is_array($order) || $order === [] || count($order) !== count(array_unique(array_map('intval', $order)))) {
+            jsonResponse(['success' => false, 'message' => 'Select a valid order for the additional signatories.'], 400);
+        }
         $orderIds = array_map('intval', $order);
         $orderRows = array_filter($rows, fn($row) => in_array((int) $row['id'], $orderIds, true));
-        $offices = array_unique(array_map(fn($row) => $row['assigned_office'], $orderRows));
-        if (count($offices) !== 1 || count(array_filter($orderRows, fn($row) => !empty($row['template_key']))) > 0) {
-            jsonResponse(['success' => false, 'message' => 'Signatories can only be reordered within the same office.'], 400);
-        }
-        $office = reset($offices);
         $officeSignatories = array_filter(
             $rows,
-            fn($row) => $row['assigned_office'] === $office && empty($row['template_key'])
+            fn($row) => empty($row['template_key'])
         );
         $existingIds = array_map(fn($row) => (int) $row['id'], $orderRows);
         $submittedIds = array_map('intval', $order);
@@ -160,17 +166,24 @@ try {
         $update = $pdo->prepare(
             'UPDATE request_signatories SET approval_order = ?, updated_by = ? WHERE id = ? AND request_id = ?'
         );
-        $fixedCount = count(array_filter(
-            $rows,
-            fn($row) => $row['assigned_office'] === $office && !empty($row['template_key'])
-        ));
+        $fixedOrders = array_map(
+            fn($row) => (int) $row['approval_order'],
+            array_filter(
+                $rows,
+                fn($row) => !empty($row['template_key'])
+            )
+        );
+        $firstCustomOrder = $fixedOrders ? max($fixedOrders) + 1 : 1;
         foreach ($submittedIds as $position => $id) {
-            $update->execute([$fixedCount + $position + 1, $actor, $id, $requestId]);
+            $update->execute([$firstCustomOrder + $position, $actor, $id, $requestId]);
         }
-        logSignatoryChange($pdo, $requestId, null, $office, 'Reordered', null, $actor);
+        logSignatoryChange($pdo, $requestId, null, null, 'Reordered', null, $actor);
     } elseif ($action === 'set_status') {
         $id = (int) ($input['id'] ?? 0);
         $status = trim($input['status'] ?? '');
+        if ($id <= 0) {
+            jsonResponse(['success' => false, 'message' => 'A valid signatory ID is required.'], 400);
+        }
         if (!in_array($status, ['Pending Signature', 'Signed', 'Skipped'], true)) {
             jsonResponse(['success' => false, 'message' => 'Invalid signatory status.'], 400);
         }
@@ -184,12 +197,18 @@ try {
         if (!$target) {
             jsonResponse(['success' => false, 'message' => 'Signatory not found.'], 404);
         }
+        if (!empty($target['template_key']) && $status !== 'Signed') {
+            jsonResponse(['success' => false, 'message' => 'Required signatories can only be marked Signed.'], 400);
+        }
+        if (!empty($target['template_key']) && $role !== $target['assigned_office']) {
+            jsonResponse(['success' => false, 'message' => 'Only the assigned signatory office account can record this required signature.'], 403);
+        }
         $isAdmin = in_array($role, ['requesting', 'procurement'], true);
         if (!$isAdmin && ($target['assigned_office'] !== $role || $target['status'] !== 'Pending Signature')) {
             jsonResponse(['success' => false, 'message' => 'Only the assigned office can update this signatory.'], 403);
         }
         if (!$isAdmin) {
-            $currentOffice = officeForStatus($request['status']);
+            $currentOffice = officeForRequestSignatures($pdo, $requestId, $request['status']);
             $current = null;
             foreach ($rows as $row) {
                 if ($row['assigned_office'] === $currentOffice && $row['status'] === 'Pending Signature') {

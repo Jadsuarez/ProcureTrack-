@@ -48,6 +48,11 @@ try {
         jsonResponse(['success' => false, 'message' => 'Request not found.'], 404);
     }
 
+    if (!isRequestAccessibleToRole($pdo, $row, $role)) {
+        $pdo->rollBack();
+        jsonResponse(['success' => false, 'message' => requestVisibilityMessage($role)], 403);
+    }
+
     if (isClosedStatus($row['status']) || $row['status'] === 'Completed') {
         $pdo->rollBack();
         jsonResponse(['success' => false, 'message' => 'This request can no longer be cancelled or returned.'], 400);

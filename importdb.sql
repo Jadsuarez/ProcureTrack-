@@ -2,7 +2,7 @@
 -- Import via phpMyAdmin or: mysql -u root < importdb.sql
 --
 -- Creates: offices (with fund_allocation), users, requests, status_logs, documents
--- Seeds:   5 system offices with sample fund allocations, 5 login accounts, sample tracking PR-0001–PR-0006, and six months of mock Lipa Campus requests
+-- Seeds:   9 system offices, 8 login accounts, sample tracking PR-0001–PR-0006, and six months of mock Lipa Campus requests
 
 CREATE DATABASE IF NOT EXISTS procurement_monitoring
   CHARACTER SET utf8mb4
@@ -27,7 +27,10 @@ INSERT IGNORE INTO offices (slug, label, is_system, created_by, fund_allocation)
 ('procurement', 'Procurement Office', 1, 'system', 0.00),
 ('accounting', 'Accounting Office', 1, 'system', 0.00),
 ('pso', 'Property and Supply Office', 1, 'system', 0.00),
-('cashier', 'Cashier', 1, 'system', 0.00);
+('cashier', 'Cashier', 1, 'system', 0.00),
+('vc_admin_finance', 'Office of the Vice Chancellor for Administration and Finance', 1, 'system', 0.00),
+('chancellor', 'Office of the Chancellor, BatStateU Lipa', 1, 'system', 0.00),
+('academic_affairs', 'Office of the Vice Chancellor for Academic Affairs, BatStateU Lipa', 1, 'system', 0.00);
 
 UPDATE offices SET fund_allocation = 0 WHERE slug <> 'budget';
 
@@ -50,7 +53,10 @@ INSERT INTO users (username, password_hash, office, created_by) VALUES
 ('budget_user', '$2y$10$tVchF91xzKgzG1T/eM3OnetLESLwliFYycU3jqGlu5/tRDPaI0YLK', 'budget', 'system'),
 ('procurement_user', '$2y$10$JPNmPLbP329e6OFwbv0Qour18/TsEsclGH.zWa.kYe0Phv973Jtbi', 'procurement', 'system'),
 ('accounting_user', '$2y$10$6hM6pG4eabnbzg.Xmndf7OuhbY4EWaP2OcF4XWylm00Otp9UDT8z2', 'accounting', 'system'),
-('cashier_user', '$2y$10$GbVe3da3AKH37vecHjx/D.iJquKVZDrbWMMQiJnBFtnE8.GXlmwMe', 'cashier', 'system');
+('cashier_user', '$2y$10$GbVe3da3AKH37vecHjx/D.iJquKVZDrbWMMQiJnBFtnE8.GXlmwMe', 'cashier', 'system'),
+('vc_admin_finance_user', '$2y$10$sDFSq4d.H.1Rvh6NWFaYju/gWuqY1DGyygGoKnQk8RJcQFWHNMsE.', 'vc_admin_finance', 'system'),
+('chancellor_user', '$2y$10$iBRKXmuuuhoV60EX7vssleWFVltRzRQtyB/GX94zDP7wlfIfaGcVO', 'chancellor', 'system'),
+('academic_affairs_user', '$2y$10$IRoEwwoXNAPWT0wnv7UUXOP8K3VWgLBO2o2JAMW7opTAfU74OYEVi', 'academic_affairs', 'system');
 
 -- Main requests table (pre-seeded; no creation via UI)
 CREATE TABLE IF NOT EXISTS requests (
@@ -206,6 +212,29 @@ VALUES
 ('PR-J2604', 'BS Electrical Engineering Renewable Energy Trainer', 'Renewable energy training equipment and laboratory accessories for electrical engineering activities.', 486900.00, 'requesting', 'BUR-2026-072', 'ORS-2026-142', 'Capital Outlay', 'Accepted', 'Mock transaction accepted by PSO.', 'PSO', '2026-07-22 14:20:00', '2026-08-20 15:10:00'),
 ('PR-A2603', 'BS Mechanical Engineering Computer-Aided Design Licenses', 'Temporary software licenses and training resources for mechanical engineering design activities.', 219600.00, 'requesting', 'BUR-2026-081', 'ORS-2026-151', 'MOOE', 'Canvass', 'Mock canvassing transaction.', 'Procurement Office', '2026-08-05 08:50:00', '2026-08-13 11:00:00'),
 ('PR-A2604', 'BS Computer Science Student Project Equipment', 'Microcontroller kits, sensors, and project components for computer science student development activities.', 118750.00, 'requesting', NULL, NULL, NULL, 'Registered', 'Mock newly registered request.', 'Requesting Office', '2026-08-26 10:25:00', '2026-08-26 10:25:00');
+
+-- Snapshot the fixed signatories for demo requests; active Registered requests still need signatures.
+INSERT INTO request_signatories
+  (request_id, template_key, signatory_name, designation, department, assigned_office, approval_order, status, signed_at, updated_by)
+SELECT
+  r.id,
+  t.template_key,
+  t.signatory_name,
+  t.designation,
+  t.department,
+  CASE t.template_key
+    WHEN 'head_accounting' THEN 'accounting'
+    WHEN 'vice_chancellor_admin_finance' THEN 'vc_admin_finance'
+    WHEN 'chancellor' THEN 'chancellor'
+    WHEN 'vice_chancellor_academic_affairs' THEN 'academic_affairs'
+  END,
+  t.approval_order,
+  CASE WHEN r.status = 'Registered' THEN 'Pending Signature' ELSE 'Signed' END,
+  CASE WHEN r.status = 'Registered' THEN NULL ELSE r.updated_at END,
+  CASE WHEN r.status = 'Registered' THEN 'system' ELSE r.updated_by END
+FROM requests r
+CROSS JOIN signatory_templates t
+WHERE t.is_required = 1;
 
 -- Reduce available funds for the fictional mock requests above.
 UPDATE offices o

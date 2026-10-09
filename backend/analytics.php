@@ -27,22 +27,21 @@ const FLOW_STEPS = [
     'Registered',
     'Under Budget Review',
     'Reviewed',
+    'DV Processing',
+    'For Payment',
     'Canvass',
     'PO',
     'Delivered',
     'For Inspection',
     'Accepted',
-    'DV Processing',
-    'For Payment',
     'Paid',
     'Completed',
 ];
 
 const BUDGET_STATUSES = ['Registered', 'Under Budget Review', 'Reviewed'];
-const PROCUREMENT_STATUSES = ['Reviewed', 'Canvass', 'PO'];
-const PSO_STATUSES = ['Delivered', 'For Inspection', 'Accepted'];
-const ACCOUNTING_STATUSES = ['DV Processing', 'For Payment'];
-const CASHIER_STATUSES = ['For Payment', 'Paid', 'Completed'];
+const PSO_STATUSES = ['PO', 'Delivered', 'For Inspection', 'Accepted'];
+const ACCOUNTING_STATUSES = ['Reviewed', 'DV Processing', 'For Payment'];
+const CASHIER_STATUSES = ['Accepted', 'Paid', 'Completed'];
 
 function daysBetween(?string $start, ?string $end): float
 {
@@ -71,29 +70,29 @@ function officeScope(string $role): array
         ],
         'procurement' => [
             'label' => 'Procurement Office',
-            'statuses' => PROCUREMENT_STATUSES,
-            'focus_stages' => ['Reviewed', 'Canvass', 'PO'],
+            'statuses' => array_merge(FLOW_STEPS, ['Returned', 'Cancelled']),
+            'focus_stages' => FLOW_STEPS,
             'queue_status' => 'Canvass',
             'handoff_status' => 'PO',
         ],
         'pso' => [
             'label' => 'Property and Supply Office',
             'statuses' => PSO_STATUSES,
-            'focus_stages' => ['Delivered', 'For Inspection', 'Accepted'],
+            'focus_stages' => PSO_STATUSES,
             'queue_status' => 'Delivered',
             'handoff_status' => 'Accepted',
         ],
         'accounting' => [
             'label' => 'Accounting Office',
             'statuses' => ACCOUNTING_STATUSES,
-            'focus_stages' => ['DV Processing', 'For Payment'],
+            'focus_stages' => ACCOUNTING_STATUSES,
             'queue_status' => 'DV Processing',
             'handoff_status' => 'For Payment',
         ],
         'cashier' => [
             'label' => 'Cashier',
             'statuses' => CASHIER_STATUSES,
-            'focus_stages' => ['For Payment', 'Paid', 'Completed'],
+            'focus_stages' => CASHIER_STATUSES,
             'queue_status' => 'Paid',
             'handoff_status' => 'Completed',
         ],
@@ -246,9 +245,9 @@ try {
     // --- Diagnostic ---
     $stageFilter = match ($role) {
         'budget' => ['Registered', 'Under Budget Review', 'Reviewed'],
-        'procurement' => ['Reviewed', 'Canvass', 'PO'],
+        'procurement' => FLOW_STEPS,
         'pso' => ['Delivered', 'For Inspection', 'Accepted'],
-        'accounting' => ['DV Processing', 'For Payment'],
+        'accounting' => ACCOUNTING_STATUSES,
         'cashier' => ['For Payment', 'Paid', 'Completed'],
         default => FLOW_STEPS,
     };

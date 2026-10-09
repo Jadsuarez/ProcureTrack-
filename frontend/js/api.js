@@ -181,8 +181,8 @@ const Api = {
     return res.json();
   },
 
-  async statusOptions() {
-    const res = await fetch(`${API_BASE}/fetch.php?action=status_options`, {
+  async statusOptions(currentStatus) {
+    const res = await fetch(`${API_BASE}/fetch.php?action=status_options&current_status=${encodeURIComponent(currentStatus)}`, {
       credentials: 'include',
     });
     return res.json();
@@ -391,21 +391,121 @@ function officeIndexForStatus(status) {
   return OFFICE_STEPS.findIndex((s) => s.statuses.includes(status));
 }
 
-function renderOfficeStepper(currentStatus, containerId) {
+function renderOfficeStepper(currentStatus, containerId, signatories = [], currentSignatoryOffice = null) {
   const container = document.getElementById(containerId);
   if (!container) return;
   const idx = officeIndexForStatus(currentStatus);
+  const officeByStep = ['requesting', 'budget', 'accounting', 'procurement', 'pso', 'cashier'];
+  const officeLabels = [
+    'Requesting Office',
+    'Budget Office',
+    'Accounting Office',
+    'Procurement Office',
+    'Property and Supply Office',
+    'Cashier',
+  ];
+  const signatoryOfficeLabels = {
+    accounting: 'Accounting Office',
+    vc_admin_finance: 'Vice Chancellor for Administration and Finance Office',
+    chancellor: 'Chancellor Office',
+    academic_affairs: 'Vice Chancellor for Academic Affairs Office',
+  };
+  const hasRequiredSignatories = currentStatus === 'Registered'
+    && signatories.some((signatory) => Boolean(signatory.template_key));
   container.classList.add('multi-step-progress', 'office-stepper');
   container.innerHTML = OFFICE_STEPS.map((step, i) => {
     let state = '';
     if (idx >= 0 && i < idx) state = 'completed';
     else if (i === idx) state = 'active';
     const icon = state === 'completed' ? '✓' : String(i + 1);
+    const officeSignatories = signatories.filter((signatory) => signatory.assigned_office === officeByStep[i]);
+    const resolvedSignatories = officeSignatories.filter(
+      (signatory) => ['Signed', 'Skipped'].includes(signatory.status)
+    ).length;
+    const signatureProgress = officeSignatories.length
+      ? `<span class="progress-step-signatures">${resolvedSignatories}/${officeSignatories.length} complete</span>`
+      : '';
     return `<div class="progress-step ${state}">
       <div class="progress-step-icon">${icon}</div>
       <div class="progress-step-label">${step.label}</div>
+      ${signatureProgress}
     </div>`;
   }).join('');
+
+  const signatoryStepper = document.getElementById('signatoryStepper');
+  if (signatoryStepper) {
+    const activeSignatoryOffice = hasRequiredSignatories
+      ? currentSignatoryOffice
+      : (idx >= 0 ? officeByStep[idx] : null);
+    const activeOfficeSignatories = activeSignatoryOffice
+      ? signatories.filter((signatory) => signatory.assigned_office === activeSignatoryOffice
+        && (!hasRequiredSignatories || Boolean(signatory.template_key)))
+      : [];
+    signatoryStepper.classList.toggle('hidden', activeOfficeSignatories.length === 0);
+    if (activeOfficeSignatories.length) {
+      signatoryStepper.innerHTML = `
+        <h3>${hasRequiredSignatories ? `Required signatures before Budget review — ${signatoryOfficeLabels[activeSignatoryOffice] || activeSignatoryOffice}` : `Signatures at ${officeLabels[idx]}`}</h3>
+        <ol>
+          ${activeOfficeSignatories.map((signatory, position) => {
+            const state = signatory.status === 'Signed' || signatory.status === 'Skipped'
+              ? 'completed'
+              : 'active';
+            const icon = state === 'completed' ? '✓' : String(position + 1);
+            const title = signatory.designation || 'Signatory';
+            const status = signatory.status === 'Skipped' ? 'N/A' : signatory.status;
+            return `<li class="signatory-progress-step ${state}">
+              <span class="signatory-progress-icon">${icon}</span>
+              <strong>${escapeProgressText(title)}</strong>
+              <span>${escapeProgressText(signatory.signatory_name)}</span>
+              <small>${escapeProgressText(status)}</small>
+            </li>`;
+          }).join('')}
+        </ol>`;
+    } else {
+      signatoryStepper.replaceChildren();
+    }
+  }
+
+  const location = document.getElementById(`${containerId}Location`);
+  if (!location) return;
+  if (hasRequiredSignatories) {
+    const pendingNames = signatories
+      .filter((signatory) => signatory.template_key && signatory.assigned_office === currentSignatoryOffice && signatory.status === 'Pending Signature')
+      .map((signatory) => signatory.signatory_name);
+    location.textContent = currentSignatoryOffice === 'budget'
+      ? 'All required signatures are complete. The Budget Office can now begin review.'
+      : `Request is waiting for the ${signatoryOfficeLabels[currentSignatoryOffice] || currentSignatoryOffice} account to sign${pendingNames.length ? `: ${pendingNames.join(', ')}` : ''}. Budget review is locked until then.`;
+    return;
+  }
+  const currentOffice = idx >= 0 ? officeByStep[idx] : null;
+  const officeLabel = idx >= 0 ? officeLabels[idx] : null;
+  const pendingNames = currentOffice
+    ? signatories
+      .filter((signatory) => signatory.assigned_office === currentOffice && signatory.status === 'Pending Signature')
+      .map((signatory) => signatory.signatory_name)
+    : [];
+  if (officeLabel && pendingNames.length) {
+    location.textContent = `Document is at ${officeLabel} for signature: ${pendingNames.join(', ')}.`;
+  } else if (officeLabel) {
+    const hasOfficeSignatories = signatories.some((signatory) => signatory.assigned_office === currentOffice);
+    location.textContent = hasOfficeSignatories
+      ? `Signatures at ${officeLabel} are complete; awaiting the office status update.`
+      : `Document is currently at ${officeLabel}.`;
+  } else if (['Cancelled', 'Returned'].includes(currentStatus)) {
+    location.textContent = `Document returned to Requesting Office (${currentStatus}).`;
+  } else {
+    location.textContent = 'Document workflow is complete.';
+  }
+}
+
+function escapeProgressText(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[char]);
 }
 
 function renderFlowDiagram(currentStatus, containerId) {

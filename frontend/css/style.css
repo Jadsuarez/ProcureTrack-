@@ -1929,6 +1929,100 @@ code {
   font-size: 0.78rem;
 }
 
+.progress-step-signatures {
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.65rem;
+  text-align: center;
+}
+
+.signatory-stepper {
+  margin: 0.5rem 0 1rem;
+}
+
+.signatory-stepper h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.signatory-stepper ol {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0 0 0.4rem;
+  overflow-x: auto;
+  list-style: none;
+}
+
+.signatory-progress-step {
+  display: flex;
+  flex: 1 0 130px;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  max-width: 190px;
+  padding: 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--light-bg);
+  text-align: center;
+  font-size: 0.72rem;
+}
+
+.signatory-progress-step strong {
+  color: var(--text);
+}
+
+.signatory-progress-step > span:not(.signatory-progress-icon) {
+  color: var(--muted);
+}
+
+.signatory-progress-step small {
+  color: var(--muted);
+}
+
+.signatory-progress-icon {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.signatory-progress-step.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(165, 28, 48, 0.1);
+}
+
+.signatory-progress-step.active .signatory-progress-icon {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.signatory-progress-step.completed .signatory-progress-icon {
+  border-color: var(--success);
+  background: var(--success);
+  color: white;
+}
+
+.progress-step.active .progress-step-signatures,
+.progress-step.completed .progress-step-signatures {
+  color: var(--primary);
+}
+
+.office-stepper-location {
+  margin: -0.75rem 0 1rem;
+  padding: 0.65rem 0.8rem;
+  border-left: 3px solid var(--primary);
+  background: var(--light-bg);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
 .progress-step.completed .progress-step-label,
 .progress-step.active .progress-step-label {
   color: var(--primary);
