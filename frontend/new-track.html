@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Track Request — PROCUREMENT</title>
-  <link rel="stylesheet" href="css/style.css?v=36">
+  <link rel="stylesheet" href="css/style.css?v=37">
 </head>
 <body>
   <main class="container">
@@ -32,7 +32,19 @@
           <small class="text-muted">This amount will be deducted from the central Budget Office allocation.</small>
         </div>
         <p class="form-section-title">Signatory Workflow</p>
-        <p class="text-muted">Add the required signatories for each office. The assigned office must mark its signatory Signed or Skipped before the request moves forward.</p>
+        <p class="text-muted">There are five signatory positions: three permanent signatories and two Vice Chancellors for Academic Affairs. The fourth is included by default; include the fifth for a separate signature, or choose N/A if one signer covers both Academic Affairs signatures.</p>
+        <ol id="requiredSignatories" class="new-signatory-rows">
+          <li class="text-muted">Loading office signatory settings…</li>
+        </ol>
+        <div class="form-group">
+          <label for="academicSignatoryChoice">Vice Chancellor for Academic Affairs, BatStateU Lipa</label>
+          <select id="academicSignatoryChoice">
+            <option value="na">N/A</option>
+            <option value="include">Include as a separate fifth signatory</option>
+          </select>
+        </div>
+        <p class="form-section-title">Additional Signatories</p>
+        <p class="text-muted">Add any other signatories for this request as before.</p>
         <div id="signatoryRows" class="new-signatory-rows"></div>
         <button type="button" class="btn btn-secondary" id="addSignatoryBtn">Add Signatory</button>
         <div class="amount-box">
@@ -103,7 +115,7 @@
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
   <script src="js/api.js?v=24"></script>
-  <script src="js/app.js?v=32"></script>
+  <script src="js/app.js?v=33"></script>
   <script>
     const officeOptions = [
       ['requesting', 'Requesting Office'],
@@ -113,8 +125,8 @@
       ['pso', 'Property and Supply Office'],
       ['cashier', 'Cashier'],
     ];
-
     let fundData = null;
+    let signatorySettingsReady = false;
 
     function renderFundDashboard(requestedAmount = 0) {
       const list = document.getElementById('fundDashboard');
@@ -154,6 +166,27 @@
       status.className = `status-badge ${negative ? 'status-danger' : 'completed'}`;
     }
 
+    function renderRequiredSignatories(templates) {
+      const list = document.getElementById('requiredSignatories');
+      list.replaceChildren();
+      templates.filter((template) => Number(template.is_required) === 1).forEach((template) => {
+        const item = document.createElement('li');
+        const name = document.createElement('strong');
+        const details = document.createElement('small');
+        name.textContent = template.signatory_name;
+        details.textContent = `${template.designation} — ${template.department}`;
+        item.append(name, details);
+        list.append(item);
+      });
+      const optional = templates.find((template) => template.template_key === 'vice_chancellor_academic_affairs_2');
+      if (optional) {
+        document.querySelector('label[for="academicSignatoryChoice"]').textContent =
+          `${optional.designation} (optional separate signature)`;
+        document.querySelector('#academicSignatoryChoice option[value="include"]').textContent =
+          `Include ${optional.signatory_name} as a separate fifth signatory`;
+      }
+    }
+
     function addSignatoryRow() {
       const rows = document.getElementById('signatoryRows');
       const row = document.createElement('div');
@@ -165,7 +198,7 @@
         </div>
         <div class="form-group">
           <label>Designation</label>
-          <input type="text" data-signatory-field="designation" maxlength="150" placeholder="e.g. Chancellor">
+          <input type="text" data-signatory-field="designation" maxlength="150" placeholder="e.g. Director">
         </div>
         <div class="form-group">
           <label>Assigned office</label>
@@ -187,7 +220,16 @@
       const session = await requireAuth(['requesting']);
       if (!session) return;
       initAppLayout(session);
-      addSignatoryRow();
+      const profile = await Api.profile();
+      const templates = profile.success ? profile.profile.signatory_templates || [] : [];
+      const requiredTemplates = templates.filter((template) => Number(template.is_required) === 1);
+      if (requiredTemplates.length === 4 && templates.length === 5) {
+        renderRequiredSignatories(templates);
+        signatorySettingsReady = true;
+      } else {
+        document.getElementById('requiredSignatories').textContent =
+          profile.message || 'Signatory settings are unavailable. Contact the system administrator.';
+      }
 
       try {
         fundData = await Api.fundAvailability();
@@ -200,6 +242,7 @@
         renderFundDashboard(event.target.value);
       });
 
+      addSignatoryRow();
       document.getElementById('addSignatoryBtn').addEventListener('click', addSignatoryRow);
       document.getElementById('signatoryRows').addEventListener('click', (event) => {
         if (!event.target.classList.contains('remove-signatory-btn')) return;
@@ -212,11 +255,16 @@
         clearAlert(document.getElementById('alertBox'));
         clearAlert(document.getElementById('successBox'));
         document.getElementById('createdCard').classList.add('hidden');
+        if (!signatorySettingsReady) {
+          showAlert(document.getElementById('alertBox'), 'Required signatory settings are unavailable.');
+          return;
+        }
 
         const payload = {
           title: document.getElementById('title').value.trim(),
           description: document.getElementById('description').value.trim(),
           request_amount: document.getElementById('request_amount').value,
+          include_academic_signatory: document.getElementById('academicSignatoryChoice').value === 'include',
           signatories: [...document.querySelectorAll('.new-signatory-row')].map((row) => {
             const values = {};
             row.querySelectorAll('[data-signatory-field]').forEach((field) => {
@@ -263,7 +311,7 @@
         document.getElementById('createdCard').classList.remove('hidden');
         showAlert(document.getElementById('successBox'), result.message, 'success');
         e.target.reset();
-        document.getElementById('signatoryRows').innerHTML = '';
+        document.getElementById('signatoryRows').replaceChildren();
         addSignatoryRow();
         fundData = await Api.fundAvailability();
         renderFundDashboard();

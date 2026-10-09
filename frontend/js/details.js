@@ -1,3 +1,13 @@
+function escapeSignatoryText(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[char]);
+}
+
 function renderSignatoryWorkflow(data, session, tracking) {
   const officeLabels = {
     requesting: 'Requesting Office',
@@ -24,10 +34,10 @@ function renderSignatoryWorkflow(data, session, tracking) {
   overallEl.textContent = summary.overall_status || 'No Signatories Configured';
   overallEl.className = `status-badge ${summary.overall_status === 'Signatures Complete' ? 'completed' : ''}`;
   summaryEl.innerHTML = `
-    <div><span class="label">Current signatory</span><strong>${summary.current ? `${summary.current.signatory_name}${summary.current.designation ? ` (${summary.current.designation})` : ''}` : 'None'}</strong></div>
+    <div><span class="label">Current signatory</span><strong>${summary.current ? `${escapeSignatoryText(summary.current.signatory_name)}${summary.current.designation ? ` (${escapeSignatoryText(summary.current.designation)})` : ''}` : 'None'}</strong></div>
     <div><span class="label">Completed</span><strong>${summary.completed || 0}</strong></div>
     <div><span class="label">Remaining</span><strong>${summary.remaining || 0}</strong></div>
-    <div><span class="label">Request status</span><strong>${data.request.status}</strong></div>
+    <div><span class="label">Request status</span><strong>${escapeSignatoryText(data.request.status)}</strong></div>
   `;
   if (gateMessage) {
     gateMessage.textContent = signaturesReady
@@ -44,16 +54,21 @@ function renderSignatoryWorkflow(data, session, tracking) {
   list.innerHTML = rows.length ? Object.entries(groupedRows).map(([office, officeRows]) => `
     <li class="signatory-office-group">
       <h3>${officeLabels[office] || 'Unassigned Office'}</h3>
-      <ol>${officeRows.map((row, index) => `
+      <ol>${officeRows.map((row, index) => {
+        const customRows = officeRows.filter((candidate) => !candidate.template_key);
+        const customIndex = customRows.findIndex((candidate) => candidate.id === row.id);
+        return `
         <li class="signatory-row">
           <span class="signatory-order">${index + 1}</span>
+          <span class="hidden" data-signatory-template="${escapeSignatoryText(row.template_key || '')}"></span>
           <div class="signatory-info">
-            <strong>${row.signatory_name}</strong>
-            <span>${row.designation || 'Signatory'}</span>
-            <span>Document: ${row.document_location || 'Not specified'}</span>
+            <strong>${escapeSignatoryText(row.signatory_name)}</strong>
+            <span>${escapeSignatoryText(row.designation || 'Signatory')}</span>
+            ${row.department ? `<span>Office: ${escapeSignatoryText(row.department)}</span>` : ''}
+            ${row.document_location ? `<span>Document: ${escapeSignatoryText(row.document_location)}</span>` : ''}
             <span>${row.status === 'Signed' && row.signed_at ? `Signed: ${formatDate(row.signed_at)}` : `Last changed: ${formatDate(row.updated_at || row.signed_at)}`}</span>
           </div>
-          <span class="status-badge ${row.status === 'Signed' ? 'completed' : ''}">${row.status}</span>
+          <span class="status-badge ${row.status === 'Signed' ? 'completed' : ''}">${escapeSignatoryText(row.status)}</span>
           ${canManage || row.assigned_office === session.role ? `<div class="signatory-actions">
             ${row.status === 'Pending Signature' && row.assigned_office === currentOffice && (canManage || row.assigned_office === session.role) ? '<button type="button" class="btn btn-sm btn-primary" data-signatory-action="Signed">Mark Signed</button><button type="button" class="btn btn-sm btn-secondary" data-signatory-action="Skipped">Skip</button>' : ''}
             ${canManage ? `<select aria-label="Change signatory status" data-signatory-status="${row.id}">
@@ -62,12 +77,12 @@ function renderSignatoryWorkflow(data, session, tracking) {
               <option value="Signed">Signed</option>
               <option value="Skipped">Skipped</option>
             </select>` : ''}
-            ${canManage ? `<button type="button" class="btn btn-sm btn-secondary" data-signatory-move="up" data-signatory-id="${row.id}" ${index === 0 ? 'disabled' : ''}>Up</button>
-            <button type="button" class="btn btn-sm btn-secondary" data-signatory-move="down" data-signatory-id="${row.id}" ${index === officeRows.length - 1 ? 'disabled' : ''}>Down</button>
+            ${canManage && !row.template_key ? `<button type="button" class="btn btn-sm btn-secondary" data-signatory-move="up" data-signatory-id="${row.id}" ${customIndex === 0 ? 'disabled' : ''}>Up</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-signatory-move="down" data-signatory-id="${row.id}" ${customIndex === customRows.length - 1 ? 'disabled' : ''}>Down</button>
             <button type="button" class="btn btn-sm btn-secondary" data-signatory-delete="${row.id}">Remove</button>` : ''}
           </div>` : ''}
         </li>
-      `).join('')}</ol>
+      `; }).join('')}</ol>
     </li>
   `).join('') : '<li class="text-muted">No signatories configured.</li>';
 
@@ -288,6 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       payload = { action: 'delete', id };
     } else if (button.dataset.signatoryMove) {
       const current = [...button.closest('.signatory-office-group').querySelectorAll('.signatory-row')]
+        .filter((row) => !row.querySelector('[data-signatory-template]')?.dataset.signatoryTemplate)
         .map((row) => Number(row.querySelector('[data-signatory-id]')?.dataset.signatoryId));
       const position = current.indexOf(id);
       const swapWith = button.dataset.signatoryMove === 'up' ? position - 1 : position + 1;

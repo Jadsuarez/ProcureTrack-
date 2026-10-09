@@ -40,22 +40,30 @@ if (!is_scalar($amount) || !preg_match('/^\d{1,13}(\.\d{1,2})?$/', (string) $amo
     jsonResponse(['success' => false, 'message' => 'Enter a positive request amount with at most two decimal places.'], 400);
 }
 $fundingOffice = currentRole();
-$signatories = $input['signatories'] ?? [];
-if (!is_array($signatories) || count($signatories) < 1) {
-    jsonResponse(['success' => false, 'message' => 'Add at least one required signatory before creating the request.'], 400);
+$includeAcademicSignatory = $input['include_academic_signatory'] ?? false;
+if (!is_bool($includeAcademicSignatory)) {
+    jsonResponse(['success' => false, 'message' => 'Choose whether to include the optional Academic Affairs signatory.'], 400);
 }
+$additionalSignatories = $input['signatories'] ?? [];
 $validSignatoryOffices = ['requesting', 'budget', 'accounting', 'procurement', 'pso', 'cashier'];
-foreach ($signatories as $signatory) {
-    if (!is_array($signatory)) {
+if (!is_array($additionalSignatories)) {
+    jsonResponse(['success' => false, 'message' => 'Invalid additional signatory data.'], 400);
+}
+foreach ($additionalSignatories as $signatory) {
+    if (!is_array($signatory)
+        || !is_string($signatory['signatory_name'] ?? null)
+        || !is_string($signatory['designation'] ?? '')
+        || !is_string($signatory['document_location'] ?? '')
+        || !is_string($signatory['assigned_office'] ?? null)) {
         jsonResponse(['success' => false, 'message' => 'Invalid signatory data.'], 400);
     }
-    $name = trim($signatory['signatory_name'] ?? '');
+    $name = trim($signatory['signatory_name']);
     $designation = trim($signatory['designation'] ?? '');
     $documentLocation = trim($signatory['document_location'] ?? '');
-    $assignedOffice = trim($signatory['assigned_office'] ?? '');
+    $assignedOffice = trim($signatory['assigned_office']);
     if ($name === '' || strlen($name) > 150 || strlen($designation) > 150
         || strlen($documentLocation) > 255 || !in_array($assignedOffice, $validSignatoryOffices, true)) {
-        jsonResponse(['success' => false, 'message' => 'Each signatory needs a name and valid assigned office.'], 400);
+        jsonResponse(['success' => false, 'message' => 'Each additional signatory needs a name and valid assigned office.'], 400);
     }
 }
 
@@ -67,6 +75,25 @@ try {
     if (!$fund->fetch()) {
         $pdo->rollBack();
         jsonResponse(['success' => false, 'message' => 'Funding office not found.'], 400);
+    }
+    $templateQuery = $pdo->prepare(
+        'SELECT template_key, signatory_name, designation, department, approval_order, is_required
+         FROM signatory_templates
+         WHERE is_required = 1 OR (? = 1 AND template_key = "vice_chancellor_academic_affairs_2")
+         ORDER BY approval_order'
+    );
+    $templateQuery->execute([$includeAcademicSignatory ? 1 : 0]);
+    $signatories = $templateQuery->fetchAll();
+    $requiredCount = count(array_filter($signatories, fn($signatory) => (int) $signatory['is_required'] === 1));
+    if ($requiredCount !== 4 || count($signatories) !== ($includeAcademicSignatory ? 5 : 4)) {
+        $pdo->rollBack();
+        jsonResponse(['success' => false, 'message' => 'The required signatory settings are incomplete. Contact the system administrator.'], 500);
+    }
+    foreach ($signatories as $signatory) {
+        if (trim($signatory['signatory_name']) === '') {
+            $pdo->rollBack();
+            jsonResponse(['success' => false, 'message' => 'A signatory name is missing from Office Settings.'], 500);
+        }
     }
     $tracking = suggestNextTracking($pdo);
 
@@ -106,23 +133,42 @@ try {
 
     $signatoryInsert = $pdo->prepare(
         'INSERT INTO request_signatories
-         (request_id, signatory_name, designation, document_location, assigned_office, approval_order, status, updated_by)
-         VALUES (?, ?, ?, ?, ?, ?, "Pending Signature", ?)'
+         (request_id, template_key, signatory_name, designation, department, assigned_office, approval_order, status, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, "Pending Signature", ?)'
     );
-    $officeOrders = [];
     $signatoryLog = $pdo->prepare(
         'INSERT INTO request_signatory_logs
          (request_id, signatory_id, assigned_office, action, status, updated_by)
          VALUES (?, ?, ?, "Added", "Pending Signature", ?)'
     );
+    $officeOrders = [];
     foreach ($signatories as $signatory) {
+        $assignedOffice = 'requesting';
+        $signatoryInsert->execute([
+            $requestId,
+            $signatory['template_key'],
+            $signatory['signatory_name'],
+            $signatory['designation'],
+            $signatory['department'],
+            $assignedOffice,
+            (int) $signatory['approval_order'],
+            $updatedBy,
+        ]);
+        $officeOrders[$assignedOffice] = max(
+            $officeOrders[$assignedOffice] ?? 0,
+            (int) $signatory['approval_order']
+        );
+        $signatoryLog->execute([$requestId, (int) $pdo->lastInsertId(), $assignedOffice, $updatedBy]);
+    }
+    foreach ($additionalSignatories as $signatory) {
         $assignedOffice = trim($signatory['assigned_office']);
         $officeOrders[$assignedOffice] = ($officeOrders[$assignedOffice] ?? 0) + 1;
         $signatoryInsert->execute([
             $requestId,
+            null,
             trim($signatory['signatory_name']),
             trim($signatory['designation'] ?? '') ?: null,
-            trim($signatory['document_location'] ?? '') ?: null,
+            null,
             $assignedOffice,
             $officeOrders[$assignedOffice],
             $updatedBy,

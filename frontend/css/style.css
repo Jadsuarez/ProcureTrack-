@@ -881,6 +881,17 @@ a:hover {
   margin: 0.75rem 0;
 }
 
+.new-signatory-rows > li {
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--light-bg);
+}
+
+.new-signatory-rows > li strong,
+.new-signatory-rows > li small {
+  display: block;
+}
+
 .new-signatory-row {
   display: grid;
   grid-template-columns: 1.2fr 1fr 1fr 1.2fr auto;

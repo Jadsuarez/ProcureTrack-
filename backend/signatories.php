@@ -35,7 +35,7 @@ function findRequestForSignatories(PDO $pdo, string $tracking): array
 function signatoryRows(PDO $pdo, int $requestId): array
 {
     $stmt = $pdo->prepare(
-        'SELECT id, signatory_name, designation, document_location, assigned_office, approval_order, status, signed_at, updated_by, updated_at
+        'SELECT id, template_key, signatory_name, designation, department, document_location, assigned_office, approval_order, status, signed_at, updated_by, updated_at
          FROM request_signatories WHERE request_id = ? ORDER BY approval_order ASC, id ASC'
     );
     $stmt->execute([$requestId]);
@@ -89,11 +89,22 @@ try {
                (request_id, signatory_name, designation, document_location, assigned_office, approval_order, status, updated_by)
                VALUES (?, ?, ?, ?, ?, ?, "Pending Signature", ?)'
         );
-        $officeCount = count(array_filter($rows, fn($row) => $row['assigned_office'] === $assignedOffice));
-        $insert->execute([$requestId, $name, $designation ?: null, $documentLocation ?: null, $assignedOffice, $officeCount + 1, $actor]);
+        $officeOrders = array_map(
+            fn($row) => (int) $row['approval_order'],
+            array_filter($rows, fn($row) => $row['assigned_office'] === $assignedOffice)
+        );
+        $nextOrder = $officeOrders ? max($officeOrders) + 1 : 1;
+        $insert->execute([$requestId, $name, $designation ?: null, $documentLocation ?: null, $assignedOffice, $nextOrder, $actor]);
         logSignatoryChange($pdo, $requestId, (int) $pdo->lastInsertId(), $assignedOffice, 'Added', 'Pending Signature', $actor);
     } elseif ($action === 'update') {
         $id = (int) ($input['id'] ?? 0);
+        $target = array_values(array_filter($rows, fn($row) => (int) $row['id'] === $id))[0] ?? null;
+        if (!$target) {
+            jsonResponse(['success' => false, 'message' => 'Signatory not found.'], 404);
+        }
+        if (!empty($target['template_key'])) {
+            jsonResponse(['success' => false, 'message' => 'Signatory names can only be changed in Office Settings.'], 403);
+        }
         $name = trim($input['signatory_name'] ?? '');
         $designation = trim($input['designation'] ?? '');
         $documentLocation = trim($input['document_location'] ?? '');
@@ -112,6 +123,12 @@ try {
         $deleteSql = 'DELETE FROM request_signatories WHERE id = ? AND request_id = ?';
         $delete = $pdo->prepare($deleteSql);
         $deletedRow = array_values(array_filter($rows, fn($row) => (int) $row['id'] === $id))[0] ?? null;
+        if (!$deletedRow) {
+            jsonResponse(['success' => false, 'message' => 'Signatory not found.'], 404);
+        }
+        if (!empty($deletedRow['template_key'])) {
+            jsonResponse(['success' => false, 'message' => 'Required signatories cannot be removed from a request.'], 403);
+        }
         $delete->execute([$id, $requestId]);
         if ($delete->rowCount() !== 1) {
             jsonResponse(['success' => false, 'message' => 'Signatory not found.'], 404);
@@ -122,24 +139,35 @@ try {
         $orderIds = array_map('intval', $order);
         $orderRows = array_filter($rows, fn($row) => in_array((int) $row['id'], $orderIds, true));
         $offices = array_unique(array_map(fn($row) => $row['assigned_office'], $orderRows));
-        if (count($offices) !== 1) {
+        if (count($offices) !== 1 || count(array_filter($orderRows, fn($row) => !empty($row['template_key']))) > 0) {
             jsonResponse(['success' => false, 'message' => 'Signatories can only be reordered within the same office.'], 400);
         }
+        $office = reset($offices);
+        $officeSignatories = array_filter(
+            $rows,
+            fn($row) => $row['assigned_office'] === $office && empty($row['template_key'])
+        );
         $existingIds = array_map(fn($row) => (int) $row['id'], $orderRows);
         $submittedIds = array_map('intval', $order);
         sort($existingIds);
         $sortedSubmitted = $submittedIds;
         sort($sortedSubmitted);
-        if ($existingIds !== $sortedSubmitted) {
+        $allOfficeCustomIds = array_map(fn($row) => (int) $row['id'], $officeSignatories);
+        sort($allOfficeCustomIds);
+        if ($existingIds !== $sortedSubmitted || $sortedSubmitted !== $allOfficeCustomIds) {
             jsonResponse(['success' => false, 'message' => 'Invalid signatory order.'], 400);
         }
         $update = $pdo->prepare(
             'UPDATE request_signatories SET approval_order = ?, updated_by = ? WHERE id = ? AND request_id = ?'
         );
+        $fixedCount = count(array_filter(
+            $rows,
+            fn($row) => $row['assigned_office'] === $office && !empty($row['template_key'])
+        ));
         foreach ($submittedIds as $position => $id) {
-            $update->execute([$position + 1, $actor, $id, $requestId]);
+            $update->execute([$fixedCount + $position + 1, $actor, $id, $requestId]);
         }
-        logSignatoryChange($pdo, $requestId, null, $offices[0], 'Reordered', null, $actor);
+        logSignatoryChange($pdo, $requestId, null, $office, 'Reordered', null, $actor);
     } elseif ($action === 'set_status') {
         $id = (int) ($input['id'] ?? 0);
         $status = trim($input['status'] ?? '');

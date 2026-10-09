@@ -342,6 +342,11 @@ function ensureAccountModals() {
               <textarea id="settingsDefaultDescription" rows="3" maxlength="1000" placeholder="Used on New Track"></textarea>
             </div>
           </div>
+          <div id="settingsSignatoryFields" class="hidden">
+            <h3>Request signatories</h3>
+            <p class="text-muted">Names are shared with new requests. Four signatories are included by default; the second Academic Affairs signature may be marked N/A when both signatures are covered by one signer. Existing requests keep their saved signatory names.</p>
+            <div id="settingsSignatoryInputs"></div>
+          </div>
           <div id="settingsBudgetFields" class="hidden">
             <div class="form-group">
               <label for="settingsDefaultBudgetType">Default budget type</label>
@@ -365,6 +370,31 @@ function ensureAccountModals() {
   document.body.append(...wrap.children);
 }
 
+function renderOfficeSignatorySettings(templates) {
+  const container = document.getElementById('settingsSignatoryInputs');
+  if (!container) return;
+  container.replaceChildren();
+  templates.forEach((template) => {
+    const group = document.createElement('div');
+    group.className = 'form-group';
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    const department = document.createElement('small');
+    input.type = 'text';
+    input.maxLength = 150;
+    input.required = true;
+    input.value = template.signatory_name || '';
+    input.dataset.signatoryTemplate = template.template_key;
+    label.textContent = `${template.designation}${Number(template.is_required) === 1 ? ' (Required)' : ' (Optional)'}`;
+    input.id = `settingsSignatory-${template.template_key}`;
+    label.htmlFor = input.id;
+    department.className = 'text-muted';
+    department.textContent = `Office: ${template.department}`;
+    group.append(label, input, department);
+    container.append(group);
+  });
+}
+
 async function openEditProfileModal() {
   clearAlert(document.getElementById('profileAlert'));
   const data = await Api.profile();
@@ -386,19 +416,28 @@ async function openAccountSettingsModal() {
   clearAlert(document.getElementById('settingsAlert'));
   const session = window.__session || {};
   const data = await Api.profile();
-  const prefs = data.success ? data.profile.preferences || {} : getUserPreferences();
+  if (!data.success) {
+    showAlert(document.getElementById('settingsAlert'), data.message || 'Unable to load settings.');
+    openAccountModal('accountSettingsModal');
+    return;
+  }
+  const prefs = data.profile.preferences || {};
   const office = session.role || '';
   const hint = document.getElementById('settingsOfficeHint');
   if (hint) hint.textContent = `Customization for ${session.role_label || 'your office'}.`;
 
   document.getElementById('settingsNotifyFilter').value = prefs.notify_filter === 'new' ? 'new' : 'all';
   document.getElementById('settingsRequestingFields').classList.toggle('hidden', office !== 'requesting');
+  document.getElementById('settingsSignatoryFields').classList.toggle('hidden', office !== 'requesting');
   document.getElementById('settingsBudgetFields').classList.toggle('hidden', office !== 'budget');
   document.getElementById('settingsNotesFields').classList.toggle('hidden', office === 'requesting' || !office);
   document.getElementById('settingsDefaultTitle').value = prefs.default_title || '';
   document.getElementById('settingsDefaultDescription').value = prefs.default_description || '';
   document.getElementById('settingsDefaultBudgetType').value = prefs.default_budget_type || '';
   document.getElementById('settingsDefaultNotes').value = prefs.default_notes || '';
+  if (office === 'requesting') {
+    renderOfficeSignatorySettings(data.profile.signatory_templates || []);
+  }
   openAccountModal('accountSettingsModal');
 }
 
@@ -481,13 +520,20 @@ function bindUserMenu(session) {
     e.preventDefault();
     const alertBox = document.getElementById('settingsAlert');
     clearAlert(alertBox);
-    const result = await Api.updateSettings({
+    const settings = {
       notify_filter: document.getElementById('settingsNotifyFilter').value,
       default_title: document.getElementById('settingsDefaultTitle').value.trim(),
       default_description: document.getElementById('settingsDefaultDescription').value.trim(),
       default_budget_type: document.getElementById('settingsDefaultBudgetType').value.trim(),
       default_notes: document.getElementById('settingsDefaultNotes').value.trim(),
-    });
+    };
+    if ((window.__session || {}).role === 'requesting') {
+      settings.signatory_names = Object.fromEntries(
+        [...document.querySelectorAll('[data-signatory-template]')]
+          .map((input) => [input.dataset.signatoryTemplate, input.value.trim()])
+      );
+    }
+    const result = await Api.updateSettings(settings);
     if (!result.success) {
       showAlert(alertBox, result.message);
       return;

@@ -97,8 +97,10 @@ CREATE TABLE IF NOT EXISTS documents (
 CREATE TABLE IF NOT EXISTS request_signatories (
   id INT AUTO_INCREMENT PRIMARY KEY,
   request_id INT NOT NULL,
+  template_key VARCHAR(50) DEFAULT NULL,
   signatory_name VARCHAR(150) NOT NULL,
   designation VARCHAR(150) DEFAULT NULL,
+  department VARCHAR(150) DEFAULT NULL,
   document_location VARCHAR(255) DEFAULT NULL,
   assigned_office VARCHAR(30) DEFAULT NULL,
   approval_order INT NOT NULL DEFAULT 1,
@@ -110,6 +112,25 @@ CREATE TABLE IF NOT EXISTS request_signatories (
   FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE,
   INDEX idx_request_signatories_order (request_id, approval_order, id)
 ) ENGINE=InnoDB;
+
+-- Fixed signatory offices; names are editable from Requesting Office Settings.
+CREATE TABLE IF NOT EXISTS signatory_templates (
+  template_key VARCHAR(50) PRIMARY KEY,
+  signatory_name VARCHAR(150) NOT NULL,
+  designation VARCHAR(150) NOT NULL,
+  department VARCHAR(150) NOT NULL,
+  approval_order INT NOT NULL,
+  is_required TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO signatory_templates
+  (template_key, signatory_name, designation, department, approval_order, is_required)
+VALUES
+  ('head_accounting', 'Maria Elena Santos', 'Head, Accounting, BatstateU Lipa', 'Accounting Office, BatstateU Lipa', 1, 1),
+  ('vice_chancellor_admin_finance', 'Jose Miguel Reyes', 'Vice Chancellor for Administration and Finance', 'Office of the Vice Chancellor for Administration and Finance, BatStateU Lipa', 2, 1),
+  ('chancellor', 'Alberto Cruz', 'Chancellor, BatStateU Lipa', 'Office of the Chancellor, BatStateU Lipa', 3, 1),
+  ('vice_chancellor_academic_affairs', 'Patricia Anne Mendoza', 'Vice Chancellor for Academic Affairs, BatStateU Lipa', 'Office of the Vice Chancellor for Academic Affairs, BatStateU Lipa', 4, 1),
+  ('vice_chancellor_academic_affairs_2', 'Ramon Luis Bautista', 'Vice Chancellor for Academic Affairs, BatStateU Lipa', 'Office of the Vice Chancellor for Academic Affairs, BatStateU Lipa', 5, 0);
 
 -- Signatory monitoring history (no digital signatures are stored)
 CREATE TABLE IF NOT EXISTS request_signatory_logs (

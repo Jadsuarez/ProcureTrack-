@@ -157,7 +157,7 @@ try {
             $documents = $docStmt->fetchAll();
 
             $signatoryStmt = $pdo->prepare(
-                'SELECT id, signatory_name, designation, document_location, assigned_office, approval_order, status, signed_at, updated_by, updated_at
+                'SELECT id, template_key, signatory_name, designation, department, document_location, assigned_office, approval_order, status, signed_at, updated_by, updated_at
                  FROM request_signatories
                  WHERE request_id = ? ORDER BY approval_order ASC, id ASC'
             );

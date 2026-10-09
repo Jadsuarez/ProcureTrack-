@@ -11,12 +11,15 @@ if (empty($_SESSION['role']) || empty($_SESSION['user_id'])) {
 
 $pdo = getConnection();
 $userId = (int) $_SESSION['user_id'];
-$role = (string) $_SESSION['role'];
 
-function profilePayload(array $user): array
+function profilePayload(PDO $pdo, array $user): array
 {
     $office = $user['office'];
     $prefs = decodeUserPreferences($user['preferences'] ?? null);
+    $templates = $pdo->query(
+        'SELECT template_key, signatory_name, designation, department, approval_order, is_required
+         FROM signatory_templates ORDER BY approval_order'
+    )->fetchAll();
     return [
         'id' => (int) $user['id'],
         'username' => $user['username'],
@@ -25,7 +28,36 @@ function profilePayload(array $user): array
         'office' => $office,
         'office_label' => roleLabel($office),
         'preferences' => $prefs,
+        'signatory_templates' => $templates,
     ];
+}
+
+function sanitizeSignatoryNames(mixed $input): array
+{
+    $keys = [
+        'head_accounting',
+        'vice_chancellor_admin_finance',
+        'chancellor',
+        'vice_chancellor_academic_affairs',
+        'vice_chancellor_academic_affairs_2',
+    ];
+    if (!is_array($input)) {
+        jsonResponse(['success' => false, 'message' => 'Signatory names must be provided for all five signatory offices.'], 400);
+    }
+
+    $names = [];
+    foreach ($keys as $key) {
+        $rawName = $input[$key] ?? null;
+        if (!is_string($rawName)) {
+            jsonResponse(['success' => false, 'message' => 'Each signatory name must be text.'], 400);
+        }
+        $name = trim($rawName);
+        if ($name === '' || strlen($name) > 150) {
+            jsonResponse(['success' => false, 'message' => 'Each signatory name is required and must be 150 characters or less.'], 400);
+        }
+        $names[$key] = $name;
+    }
+    return $names;
 }
 
 function loadCurrentUser(PDO $pdo, int $userId): ?array
@@ -93,7 +125,7 @@ try {
             jsonResponse(['success' => false, 'message' => 'Account not found.'], 404);
         }
         applyUserToSession($user);
-        jsonResponse(['success' => true, 'profile' => profilePayload($user)]);
+        jsonResponse(['success' => true, 'profile' => profilePayload($pdo, $user)]);
     }
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -108,15 +140,29 @@ try {
     }
 
     if ($action === 'settings') {
-        $prefs = sanitizePreferences($input, $role);
+        $office = $user['office'];
+        $hasSignatoryNames = array_key_exists('signatory_names', $input);
+        if ($hasSignatoryNames && $office !== 'requesting') {
+            jsonResponse(['success' => false, 'message' => 'Only Requesting Office can change signatory names in Office Settings.'], 403);
+        }
+        $signatoryNames = $hasSignatoryNames ? sanitizeSignatoryNames($input['signatory_names']) : [];
+        $prefs = sanitizePreferences($input, $office);
+        $pdo->beginTransaction();
         $update = $pdo->prepare('UPDATE users SET preferences = ? WHERE id = ?');
         $update->execute([json_encode($prefs, JSON_UNESCAPED_UNICODE), $userId]);
+        if ($hasSignatoryNames) {
+            $updateName = $pdo->prepare('UPDATE signatory_templates SET signatory_name = ? WHERE template_key = ?');
+            foreach ($signatoryNames as $key => $name) {
+                $updateName->execute([$name, $key]);
+            }
+        }
+        $pdo->commit();
         $user = loadCurrentUser($pdo, $userId);
         applyUserToSession($user);
         jsonResponse([
             'success' => true,
             'message' => 'Settings saved.',
-            'profile' => profilePayload($user),
+            'profile' => profilePayload($pdo, $user),
         ]);
     }
 
@@ -172,8 +218,9 @@ try {
     jsonResponse([
         'success' => true,
         'message' => 'Profile updated.',
-        'profile' => profilePayload($user),
+        'profile' => profilePayload($pdo, $user),
     ]);
 } catch (PDOException $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
     jsonResponse(['success' => false, 'message' => 'Database error.'], 500);
 }

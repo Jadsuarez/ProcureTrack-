@@ -21,6 +21,7 @@ function getConnection(): PDO
         ensureRequestFundingColumns($pdo);
         ensureSystemOffices($pdo);
         ensureSignatoryTables($pdo);
+        ensureSignatoryTemplates($pdo);
         ensureSignatoryAuditTables($pdo);
         ensureLegacyStatusMigration($pdo);
         ensureExistingFundDeductions($pdo);
@@ -107,8 +108,10 @@ function ensureSignatoryTables(PDO $pdo): void
         'CREATE TABLE IF NOT EXISTS request_signatories (
             id INT AUTO_INCREMENT PRIMARY KEY,
             request_id INT NOT NULL,
+            template_key VARCHAR(50) DEFAULT NULL,
             signatory_name VARCHAR(150) NOT NULL,
             designation VARCHAR(150) DEFAULT NULL,
+            department VARCHAR(150) DEFAULT NULL,
             assigned_office VARCHAR(30) DEFAULT NULL,
             approval_order INT NOT NULL DEFAULT 1,
             status VARCHAR(30) NOT NULL DEFAULT "Pending Signature",
@@ -127,6 +130,84 @@ function ensureSignatoryTables(PDO $pdo): void
     if (!in_array('assigned_office', $columns, true)) {
         $pdo->exec('ALTER TABLE request_signatories ADD COLUMN assigned_office VARCHAR(30) DEFAULT NULL AFTER document_location');
     }
+    if (!in_array('template_key', $columns, true)) {
+        $pdo->exec('ALTER TABLE request_signatories ADD COLUMN template_key VARCHAR(50) DEFAULT NULL AFTER request_id');
+    }
+    if (!in_array('department', $columns, true)) {
+        $pdo->exec('ALTER TABLE request_signatories ADD COLUMN department VARCHAR(150) DEFAULT NULL AFTER designation');
+    }
+}
+
+function ensureSignatoryTemplates(PDO $pdo): void
+{
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS signatory_templates (
+            template_key VARCHAR(50) PRIMARY KEY,
+            signatory_name VARCHAR(150) NOT NULL,
+            designation VARCHAR(150) NOT NULL,
+            department VARCHAR(150) NOT NULL,
+            approval_order INT NOT NULL,
+            is_required TINYINT(1) NOT NULL DEFAULT 1
+        ) ENGINE=InnoDB'
+    );
+    $insert = $pdo->prepare(
+        'INSERT IGNORE INTO signatory_templates
+         (template_key, signatory_name, designation, department, approval_order, is_required)
+         VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    $templates = [
+        ['head_accounting', 'Maria Elena Santos', 'Head, Accounting, BatstateU Lipa', 'Accounting Office, BatstateU Lipa', 1, 1],
+        ['vice_chancellor_admin_finance', 'Jose Miguel Reyes', 'Vice Chancellor for Administration and Finance', 'Office of the Vice Chancellor for Administration and Finance, BatStateU Lipa', 2, 1],
+        ['chancellor', 'Alberto Cruz', 'Chancellor, BatStateU Lipa', 'Office of the Chancellor, BatStateU Lipa', 3, 1],
+        ['vice_chancellor_academic_affairs', 'Patricia Anne Mendoza', 'Vice Chancellor for Academic Affairs, BatStateU Lipa', 'Office of the Vice Chancellor for Academic Affairs, BatStateU Lipa', 4, 1],
+        ['vice_chancellor_academic_affairs_2', 'Ramon Luis Bautista', 'Vice Chancellor for Academic Affairs, BatStateU Lipa', 'Office of the Vice Chancellor for Academic Affairs, BatStateU Lipa', 5, 0],
+    ];
+    foreach ($templates as $template) {
+        $insert->execute($template);
+    }
+    $pdo->exec(
+        "UPDATE signatory_templates SET
+            designation = CASE template_key
+                WHEN 'head_accounting' THEN 'Head, Accounting, BatstateU Lipa'
+                WHEN 'vice_chancellor_admin_finance' THEN 'Vice Chancellor for Administration and Finance'
+                WHEN 'chancellor' THEN 'Chancellor, BatStateU Lipa'
+                WHEN 'vice_chancellor_academic_affairs' THEN 'Vice Chancellor for Academic Affairs, BatStateU Lipa'
+                WHEN 'vice_chancellor_academic_affairs_2' THEN 'Vice Chancellor for Academic Affairs, BatStateU Lipa'
+                ELSE designation END,
+            department = CASE template_key
+                WHEN 'head_accounting' THEN 'Accounting Office, BatstateU Lipa'
+                WHEN 'vice_chancellor_admin_finance' THEN 'Office of the Vice Chancellor for Administration and Finance, BatStateU Lipa'
+                WHEN 'chancellor' THEN 'Office of the Chancellor, BatStateU Lipa'
+                WHEN 'vice_chancellor_academic_affairs' THEN 'Office of the Vice Chancellor for Academic Affairs, BatStateU Lipa'
+                WHEN 'vice_chancellor_academic_affairs_2' THEN 'Office of the Vice Chancellor for Academic Affairs, BatStateU Lipa'
+                ELSE department END,
+            approval_order = CASE template_key
+                WHEN 'head_accounting' THEN 1
+                WHEN 'vice_chancellor_admin_finance' THEN 2
+                WHEN 'chancellor' THEN 3
+                WHEN 'vice_chancellor_academic_affairs' THEN 4
+                WHEN 'vice_chancellor_academic_affairs_2' THEN 5
+                ELSE approval_order END,
+            is_required = CASE template_key
+                WHEN 'head_accounting' THEN 1
+                WHEN 'vice_chancellor_admin_finance' THEN 1
+                WHEN 'chancellor' THEN 1
+                WHEN 'vice_chancellor_academic_affairs' THEN 1
+                WHEN 'vice_chancellor_academic_affairs_2' THEN 0
+                ELSE is_required END"
+    );
+    $pdo->exec(
+        "UPDATE signatory_templates SET signatory_name = CASE template_key
+            WHEN 'head_accounting' THEN 'Maria Elena Santos'
+            WHEN 'vice_chancellor_admin_finance' THEN 'Jose Miguel Reyes'
+            WHEN 'chancellor' THEN 'Alberto Cruz'
+            WHEN 'vice_chancellor_academic_affairs' THEN 'Patricia Anne Mendoza'
+            ELSE signatory_name END
+         WHERE (template_key = 'head_accounting' AND signatory_name = 'Ms. Accounting Head')
+            OR (template_key = 'vice_chancellor_admin_finance' AND signatory_name = 'Vice Chancellor for Administration and Finance')
+            OR (template_key = 'chancellor' AND signatory_name = 'Chancellor, BatStateU Lipa')
+            OR (template_key = 'vice_chancellor_academic_affairs' AND signatory_name = 'Vice Chancellor for Academic Affairs, BatStateU Lipa')"
+    );
 }
 
 function ensureUserProfileColumns(PDO $pdo): void
