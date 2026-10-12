@@ -213,15 +213,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     <div class="detail-item"><div class="label">Last Updated</div><div class="value">${formatDate(req.updated_at)}</div></div>
   `;
 
-  if (req.bur || req.ors || req.budget_type) {
-    document.getElementById('budgetInfoCard').classList.remove('hidden');
-    document.getElementById('budgetGrid').innerHTML = `
-      <div class="detail-item"><div class="label">BUR</div><div class="value">${req.bur || '—'}</div></div>
-      <div class="detail-item"><div class="label">ORS</div><div class="value">${req.ors || '—'}</div></div>
-      <div class="detail-item"><div class="label">Budget Type</div><div class="value">${req.budget_type || '—'}</div></div>
-    `;
-  }
-
   const timeline = document.getElementById('timeline');
   timeline.innerHTML = data.timeline.length
     ? data.timeline
@@ -272,7 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       else showAlert(document.getElementById('alertBox'), result.message);
     });
   }
-  if (returnBtn && session.role === 'budget' && ['Registered', 'Under Budget Review', 'Reviewed'].includes(req.status)) {
+  if (returnBtn && session.role === 'budget' && ['Registered', 'Under Budget Review'].includes(req.status)) {
     returnBtn.classList.remove('hidden');
     returnBtn.addEventListener('click', async () => {
       if (!confirm('Return this request to Requesting Office and restore funds?')) return;
@@ -394,10 +385,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         opts.options.map((o) => `<option value="${o}">${o}</option>`).join('');
 
       const hint = updateCard.querySelector('.text-muted');
-      if (session.role === 'accounting') {
+      if (session.role === 'budget') {
         if (hint) {
           hint.textContent =
-            'Update financial monitoring status before Procurement (DV Processing → For Payment). Upload supporting documents separately — no payment processing.';
+            `Budget statuses move one step at a time (Registered → Under Budget Review → Reviewed). Current status: ${req.status}. Select "${opts.options[0]}" now; refresh this request afterward to see the next status.`;
+        }
+      } else if (session.role === 'accounting') {
+        if (hint) {
+          hint.textContent =
+            'Complete Accounting review by setting the status to Review. The request will then move to Procurement as Canvass.';
         }
       } else if (session.role === 'cashier') {
         if (hint) {
@@ -416,23 +412,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
 
-      if (session.role === 'budget') {
-        document.getElementById('budgetFields').classList.remove('hidden');
-        document.getElementById('bur').value = req.bur || '';
-        document.getElementById('ors').value = req.ors || '';
-        document.getElementById('budget_type').value = req.budget_type || '';
-      }
-
       const prefs = typeof getUserPreferences === 'function' ? getUserPreferences() : {};
       const notesEl = document.getElementById('notes');
       if (notesEl && !notesEl.value && prefs.default_notes) {
         notesEl.value = prefs.default_notes;
-      }
-      if (session.role === 'budget') {
-        const budgetTypeEl = document.getElementById('budget_type');
-        if (budgetTypeEl && !req.budget_type && prefs.default_budget_type) {
-          budgetTypeEl.value = prefs.default_budget_type;
-        }
       }
     }
   }
@@ -447,12 +430,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       status: document.getElementById('newStatus').value,
       notes: document.getElementById('notes').value,
     };
-
-    if (session.role === 'budget') {
-      payload.bur = document.getElementById('bur').value;
-      payload.ors = document.getElementById('ors').value;
-      payload.budget_type = document.getElementById('budget_type').value;
-    }
 
     const result = await Api.updateStatus(payload);
     if (result.success) {

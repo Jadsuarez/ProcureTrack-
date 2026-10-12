@@ -160,7 +160,7 @@ INSERT INTO requests (tracking_number, title, description, status, updated_by) V
 ('PR-0003', 'Training Materials', 'Books and modules for staff development', 'Reviewed', 'budget'),
 ('PR-0004', 'Furniture Purchase', 'Desks and chairs for new wing', 'Canvass', 'procurement'),
 ('PR-0005', 'Vehicle Maintenance', 'Annual fleet service contract', 'Completed', 'Cashier'),
-('PR-0006', 'Laboratory Supplies', 'Reagents and consumables for science lab', 'For Payment', 'Accounting Office');
+('PR-0006', 'Laboratory Supplies', 'Reagents and consumables for science lab', 'Canvass', 'Procurement Office');
 
 INSERT INTO status_logs (request_id, status, updated_by, notes) VALUES
 (1, 'Registered', 'system', 'Request recorded in system'),
@@ -178,8 +178,7 @@ INSERT INTO status_logs (request_id, status, updated_by, notes) VALUES
 (5, 'Reviewed', 'budget', NULL),
 (5, 'Canvass', 'procurement', NULL),
 (5, 'PO', 'Procurement Office', 'Purchase order issued'),
-(5, 'DV Processing', 'Accounting Office', 'Disbursement voucher in process'),
-(5, 'For Payment', 'Accounting Office', 'Ready for payment monitoring'),
+(5, 'Review', 'Accounting Office', 'Accounting review in process'),
 (5, 'Paid', 'Cashier', 'Marked as paid (monitoring)'),
 (5, 'Completed', 'Cashier', 'Transaction finished'),
 (6, 'Registered', 'system', NULL),
@@ -187,8 +186,8 @@ INSERT INTO status_logs (request_id, status, updated_by, notes) VALUES
 (6, 'Reviewed', 'Budget Office', NULL),
 (6, 'Canvass', 'Procurement Office', NULL),
 (6, 'PO', 'Procurement Office', 'Purchase order issued'),
-(6, 'DV Processing', 'Accounting Office', NULL),
-(6, 'For Payment', 'Accounting Office', 'Awaiting cashier handoff');
+(6, 'Review', 'Accounting Office', NULL),
+(6, 'Canvass', 'Procurement Office', 'Awaiting procurement canvass');
 
 UPDATE requests SET bur = 'BUR-2024-001', ors = 'ORS-2024-050', budget_type = 'MOOE' WHERE tracking_number = 'PR-0003';
 UPDATE requests SET bur = 'BUR-2024-002', ors = 'ORS-2024-051', budget_type = 'Capital Outlay' WHERE tracking_number = 'PR-0004';
@@ -204,7 +203,7 @@ VALUES
 ('PR-M2602', 'BS Civil Engineering Surveying Instruments', 'Surveying instruments and field accessories for civil engineering laboratory and fieldwork.', 438500.00, 'requesting', 'BUR-2026-032', 'ORS-2026-102', 'Capital Outlay', 'For Inspection', 'Mock transaction awaiting inspection.', 'PSO', '2026-03-18 10:15:00', '2026-04-02 14:00:00'),
 ('PR-A2601', 'BS Computer Science Development Workstations', 'Desktop workstations and peripherals for computer science programming and software development activities.', 612000.00, 'requesting', 'BUR-2026-041', 'ORS-2026-111', 'Capital Outlay', 'Canvass', 'Mock canvassing transaction.', 'Procurement Office', '2026-04-02 08:45:00', '2026-04-10 11:20:00'),
 ('PR-A2602', 'BS Electrical Engineering Test Equipment', 'Digital multimeters, oscilloscopes, and regulated power supplies for electrical engineering laboratories.', 357750.00, 'requesting', 'BUR-2026-042', 'ORS-2026-112', 'Capital Outlay', 'Completed', 'Mock completed transaction.', 'Cashier', '2026-04-21 13:10:00', '2026-05-27 16:00:00'),
-('PR-M2603', 'BS Mechanical Engineering Machine Shop Tools', 'Machine shop tools, measuring instruments, and safety equipment for mechanical engineering instruction.', 524300.00, 'requesting', 'BUR-2026-051', 'ORS-2026-121', 'Capital Outlay', 'DV Processing', 'Mock disbursement voucher monitoring.', 'Accounting Office', '2026-05-06 09:30:00', '2026-06-04 10:00:00'),
+('PR-M2603', 'BS Mechanical Engineering Machine Shop Tools', 'Machine shop tools, measuring instruments, and safety equipment for mechanical engineering instruction.', 524300.00, 'requesting', 'BUR-2026-051', 'ORS-2026-121', 'Capital Outlay', 'Review', 'Mock accounting review monitoring.', 'Accounting Office', '2026-05-06 09:30:00', '2026-06-04 10:00:00'),
 ('PR-M2604', 'BS Accountancy Instructional Materials', 'Accounting textbooks, practice sets, and instructional materials for accountancy courses.', 96500.00, 'requesting', 'BUR-2026-052', 'ORS-2026-122', 'MOOE', 'Reviewed', 'Mock budget-reviewed transaction.', 'Budget Office', '2026-05-19 11:00:00', '2026-05-25 09:15:00'),
 ('PR-J2601', 'BS Business Administration Entrepreneurship Supplies', 'Training materials and workshop supplies for business administration entrepreneurship activities.', 142800.00, 'requesting', 'BUR-2026-061', 'ORS-2026-131', 'MOOE', 'PO', 'Mock purchase order monitoring.', 'Procurement Office', '2026-06-03 08:30:00', '2026-06-18 14:45:00'),
 ('PR-J2602', 'BS Information Technology Server Room Cooling', 'Dedicated cooling equipment and monitoring devices for the information technology server room.', 198400.00, 'requesting', 'BUR-2026-062', 'ORS-2026-132', 'Capital Outlay', 'Paid', 'Mock paid transaction awaiting final completion marking.', 'Cashier', '2026-06-24 10:40:00', '2026-07-31 13:00:00'),
@@ -271,9 +270,8 @@ SELECT id, 'For Inspection', 'PSO', 'Mock inspection started.', '2026-03-27 13:3
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
 SELECT id, 'Accepted', 'PSO', 'Mock inspection accepted.', '2026-04-01 09:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
-SELECT id, 'DV Processing', 'Accounting Office', 'Mock disbursement voucher processing.', '2026-04-03 11:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
+SELECT id, 'Review', 'Accounting Office', 'Mock accounting review in process.', '2026-04-03 11:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
-SELECT id, 'For Payment', 'Accounting Office', 'Mock payment handoff.', '2026-04-05 14:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
 SELECT id, 'Paid', 'Cashier', 'Mock payment recorded.', '2026-04-08 10:00:00' FROM requests WHERE tracking_number = 'PR-M2601';
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
@@ -320,9 +318,8 @@ SELECT id, 'For Inspection', 'PSO', 'Mock inspection completed.', '2026-05-15 13
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
 SELECT id, 'Accepted', 'PSO', 'Mock inspection accepted.', '2026-05-18 10:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
-SELECT id, 'DV Processing', 'Accounting Office', 'Mock disbursement voucher processing.', '2026-05-20 11:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
+SELECT id, 'Review', 'Accounting Office', 'Mock accounting review in process.', '2026-05-20 11:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
-SELECT id, 'For Payment', 'Accounting Office', 'Mock payment handoff.', '2026-05-22 14:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
 SELECT id, 'Paid', 'Cashier', 'Mock payment recorded.', '2026-05-25 10:00:00' FROM requests WHERE tracking_number = 'PR-A2602';
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
@@ -345,7 +342,7 @@ SELECT id, 'For Inspection', 'PSO', 'Mock inspection completed.', '2026-06-01 13
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
 SELECT id, 'Accepted', 'PSO', 'Mock inspection accepted.', '2026-06-02 09:00:00' FROM requests WHERE tracking_number = 'PR-M2603';
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
-SELECT id, 'DV Processing', 'Accounting Office', 'Mock disbursement voucher in process.', '2026-06-04 10:00:00' FROM requests WHERE tracking_number = 'PR-M2603';
+SELECT id, 'Review', 'Accounting Office', 'Mock accounting review in process.', '2026-06-04 10:00:00' FROM requests WHERE tracking_number = 'PR-M2603';
 
 INSERT INTO status_logs (request_id, status, updated_by, notes, created_at)
 SELECT id, 'Registered', 'Requesting Office', 'Mock request recorded.', created_at FROM requests WHERE tracking_number = 'PR-M2604';

@@ -115,14 +115,6 @@ function sanitizePreferences(array $input, string $office): array
         $prefs['default_description'] = $description;
     }
 
-    if ($office === 'budget') {
-        $budgetType = trim((string) ($input['default_budget_type'] ?? ''));
-        if (strlen($budgetType) > 100) {
-            jsonResponse(['success' => false, 'message' => 'Default budget type is too long.'], 400);
-        }
-        $prefs['default_budget_type'] = $budgetType;
-    }
-
     return $prefs;
 }
 

@@ -362,12 +362,6 @@ function ensureAccountModals() {
             <p class="text-muted" id="settingsSignatoryHint">Only the permanent signatory assigned to your office can be changed here. Existing requests keep their saved signatory names.</p>
             <div id="settingsSignatoryInputs"></div>
           </div>
-          <div id="settingsBudgetFields" class="hidden">
-            <div class="form-group">
-              <label for="settingsDefaultBudgetType">Default budget type</label>
-              <input type="text" id="settingsDefaultBudgetType" maxlength="100" placeholder="e.g. MOOE">
-            </div>
-          </div>
           <div id="settingsNotesFields" class="hidden">
             <div class="form-group">
               <label for="settingsDefaultNotes">Default status notes</label>
@@ -460,11 +454,9 @@ async function openAccountSettingsModal() {
     office === 'requesting'
       ? 'Requesting Office can update only the optional second Academic Affairs signatory. Existing requests keep their saved signatory names.'
       : 'Your office can update only its assigned permanent signatory name. Existing requests keep their saved signatory names.';
-  document.getElementById('settingsBudgetFields').classList.toggle('hidden', office !== 'budget');
   document.getElementById('settingsNotesFields').classList.toggle('hidden', office === 'requesting' || !office);
   document.getElementById('settingsDefaultTitle').value = prefs.default_title || '';
   document.getElementById('settingsDefaultDescription').value = prefs.default_description || '';
-  document.getElementById('settingsDefaultBudgetType').value = prefs.default_budget_type || '';
   document.getElementById('settingsDefaultNotes').value = prefs.default_notes || '';
   if (canEditSignatoryName) renderOfficeSignatorySettings(data.profile.signatory_templates || [], office);
   openAccountModal('accountSettingsModal');
@@ -553,7 +545,6 @@ function bindUserMenu(session) {
       notify_filter: document.getElementById('settingsNotifyFilter').value,
       default_title: document.getElementById('settingsDefaultTitle').value.trim(),
       default_description: document.getElementById('settingsDefaultDescription').value.trim(),
-      default_budget_type: document.getElementById('settingsDefaultBudgetType').value.trim(),
       default_notes: document.getElementById('settingsDefaultNotes').value.trim(),
     };
     if (document.getElementById('settingsSignatoryFields')?.classList.contains('hidden') === false) {

@@ -44,7 +44,7 @@
           </select>
         </div>
         <p class="form-section-title">Additional Signatories</p>
-        <p class="text-muted">Add any other signatories for this request as before.</p>
+        <p class="text-muted">Optional. Add a signatory only if this request needs one.</p>
         <div id="signatoryRows" class="new-signatory-rows"></div>
         <button type="button" class="btn btn-secondary" id="addSignatoryBtn">Add Signatory</button>
         <div class="amount-box">
@@ -114,8 +114,8 @@
 
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
-  <script src="js/api.js?v=24"></script>
-  <script src="js/app.js?v=33"></script>
+  <script src="js/api.js?v=32"></script>
+  <script src="js/app.js?v=34"></script>
   <script>
     const officeOptions = [
       ['requesting', 'Requesting Office'],
@@ -242,12 +242,10 @@
         renderFundDashboard(event.target.value);
       });
 
-      addSignatoryRow();
       document.getElementById('addSignatoryBtn').addEventListener('click', addSignatoryRow);
       document.getElementById('signatoryRows').addEventListener('click', (event) => {
         if (!event.target.classList.contains('remove-signatory-btn')) return;
-        const rows = document.querySelectorAll('.new-signatory-row');
-        if (rows.length > 1) event.target.closest('.new-signatory-row').remove();
+        event.target.closest('.new-signatory-row').remove();
       });
 
       document.getElementById('createForm').addEventListener('submit', async (e) => {
@@ -312,7 +310,6 @@
         showAlert(document.getElementById('successBox'), result.message, 'success');
         e.target.reset();
         document.getElementById('signatoryRows').replaceChildren();
-        addSignatoryRow();
         fundData = await Api.fundAvailability();
         renderFundDashboard();
         if (typeof applyOfficePreferences === 'function') applyOfficePreferences(session);

@@ -180,6 +180,9 @@ function ensureLegacyStatusMigration(PDO $pdo): void
         'Abstract of Canvass' => 'PO',
         'For Bidding' => 'PO',
         'Bidding Award' => 'Delivered',
+        'DV Processing' => 'Review',
+        'Under Accounting Review' => 'Review',
+        'For Payment' => 'Canvass',
     ];
     foreach ($statusMap as $legacy => $replacement) {
         $stmt = $pdo->prepare('UPDATE requests SET status = ? WHERE status = ?');

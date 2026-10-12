@@ -27,8 +27,7 @@ const FLOW_STEPS = [
     'Registered',
     'Under Budget Review',
     'Reviewed',
-    'DV Processing',
-    'For Payment',
+    'Review',
     'Canvass',
     'PO',
     'Delivered',
@@ -38,9 +37,9 @@ const FLOW_STEPS = [
     'Completed',
 ];
 
-const BUDGET_STATUSES = ['Registered', 'Under Budget Review', 'Reviewed'];
+const BUDGET_STATUSES = ['Registered', 'Under Budget Review'];
 const PSO_STATUSES = ['PO', 'Delivered', 'For Inspection', 'Accepted'];
-const ACCOUNTING_STATUSES = ['Reviewed', 'DV Processing', 'For Payment'];
+const ACCOUNTING_STATUSES = ['Reviewed', 'Review'];
 const CASHIER_STATUSES = ['Accepted', 'Paid', 'Completed'];
 
 function daysBetween(?string $start, ?string $end): float
@@ -64,7 +63,7 @@ function officeScope(string $role): array
         'budget' => [
             'label' => 'Budget Office',
             'statuses' => BUDGET_STATUSES,
-            'focus_stages' => ['Registered', 'Under Budget Review', 'Reviewed'],
+            'focus_stages' => ['Registered', 'Under Budget Review'],
             'queue_status' => 'Under Budget Review',
             'handoff_status' => 'Reviewed',
         ],
@@ -86,8 +85,8 @@ function officeScope(string $role): array
             'label' => 'Accounting Office',
             'statuses' => ACCOUNTING_STATUSES,
             'focus_stages' => ACCOUNTING_STATUSES,
-            'queue_status' => 'DV Processing',
-            'handoff_status' => 'For Payment',
+            'queue_status' => 'Reviewed',
+            'handoff_status' => 'Canvass',
         ],
         'cashier' => [
             'label' => 'Cashier',
@@ -248,7 +247,7 @@ try {
         'procurement' => FLOW_STEPS,
         'pso' => ['Delivered', 'For Inspection', 'Accepted'],
         'accounting' => ACCOUNTING_STATUSES,
-        'cashier' => ['For Payment', 'Paid', 'Completed'],
+        'cashier' => ['Paid', 'Completed'],
         default => FLOW_STEPS,
     };
     $avgStageDays = avgDaysPerStage($pdo, $stageFilter);
@@ -304,14 +303,14 @@ try {
         $accepted = $statusCounts['Accepted'] ?? 0;
         $backlogRatio = $inQueue > 0 ? round($accepted / $inQueue, 2) : ($accepted > 0 ? (float) $accepted : 0);
     } elseif ($role === 'accounting') {
-        $dv = $statusCounts['DV Processing'] ?? 0;
-        $forPayment = $statusCounts['For Payment'] ?? 0;
-        $backlogRatio = $dv > 0 ? round($forPayment / $dv, 2) : ($forPayment > 0 ? (float) $forPayment : 0);
+        $backlogRatio = null;
     } elseif ($role === 'cashier') {
         $paid = $statusCounts['Paid'] ?? 0;
         $completed = $statusCounts['Completed'] ?? 0;
-        $forPayment = $statusCounts['For Payment'] ?? 0;
-        $backlogRatio = $forPayment > 0 ? round(($paid + $completed) / $forPayment, 2) : (($paid + $completed) > 0 ? (float) ($paid + $completed) : 0);
+        $accepted = $statusCounts['Accepted'] ?? 0;
+        $backlogRatio = $accepted > 0
+            ? round(($paid + $completed) / $accepted, 2)
+            : (($paid + $completed) > 0 ? (float) ($paid + $completed) : 0);
     } else {
         $registered = $statusCounts['Registered'] ?? 0;
         $inProgress = $totalScoped - $completedCount - $registered;
@@ -337,19 +336,18 @@ try {
         $key = str_replace(' (current)', '', $row['stage']);
         $globalAvgByStage[$key] = $row['avg_days'];
     }
-    foreach (['Registered', 'Under Budget Review', 'Reviewed', 'Canvass', 'PO', 'Delivered', 'For Inspection', 'Accepted', 'DV Processing', 'For Payment', 'Paid'] as $st) {
+    foreach (['Registered', 'Under Budget Review', 'Reviewed', 'Review', 'Canvass', 'PO', 'Delivered', 'For Inspection', 'Accepted', 'Paid'] as $st) {
         if (!isset($globalAvgByStage[$st])) {
             $globalAvgByStage[$st] = match ($st) {
                 'Registered' => 2.0,
                 'Under Budget Review' => 5.0,
                 'Reviewed' => 3.0,
+                'Review' => 3.0,
                 'Canvass' => 7.0,
                 'PO' => 5.0,
                 'Delivered' => 3.0,
                 'For Inspection' => 4.0,
                 'Accepted' => 2.0,
-                'DV Processing' => 4.0,
-                'For Payment' => 3.0,
                 'Paid' => 2.0,
                 default => 3.0,
             };
@@ -423,16 +421,16 @@ try {
         ],
         'pso' => [
             'descriptive' => 'Summarizes requests in the property and supply pipeline from delivery through inspection to acceptance.',
-            'diagnostic' => 'Identifies average time per PSO stage and requests stuck longest before accounting handoff.',
+            'diagnostic' => 'Identifies average time per PSO stage and requests stuck longest before cashier handoff.',
             'predictive' => 'Estimates when active requests may reach accepted status based on typical delivery and inspection times.',
         ],
         'accounting' => [
-            'descriptive' => 'Summarizes requests in the financial pipeline from accepted through DV processing to for payment.',
-            'diagnostic' => 'Identifies average time in DV and payment-prep stages and requests stuck longest before handoff.',
-            'predictive' => 'Estimates when active requests may reach for payment based on typical accounting stage durations.',
+            'descriptive' => 'Summarizes requests reviewed after Budget and handed off to Procurement.',
+            'diagnostic' => 'Identifies average time in Accounting review and requests stuck longest before Procurement handoff.',
+            'predictive' => 'Estimates when active requests may reach Procurement based on typical Accounting review times.',
         ],
         'cashier' => [
-            'descriptive' => 'Shows payment-stage volumes from for payment through paid to completed transactions.',
+            'descriptive' => 'Shows payment-monitoring volumes from accepted through paid to completed requests.',
             'diagnostic' => 'Highlights cashier queue wait times and requests awaiting final completion marking.',
             'predictive' => 'Projects when open payment items may be marked completed from historical paid-to-finished times.',
         ],

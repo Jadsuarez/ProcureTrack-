@@ -10,8 +10,7 @@ function getFlowSteps(): array
         'Registered',
         'Under Budget Review',
         'Reviewed',
-        'DV Processing',
-        'For Payment',
+        'Review',
         'Canvass',
         'PO',
         'Delivered',
@@ -31,10 +30,10 @@ function workflowStageIndex(string $status): int
 function statusesForOffice(string $role): array
 {
     return match ($role) {
-        'budget' => ['Registered', 'Under Budget Review', 'Reviewed', 'Returned'],
+        'budget' => ['Registered', 'Under Budget Review', 'Returned'],
         'procurement' => array_merge(getFlowSteps(), ['Returned', 'Cancelled']),
         'pso' => ['PO', 'Delivered', 'For Inspection', 'Accepted'],
-        'accounting' => ['Reviewed', 'DV Processing', 'For Payment'],
+        'accounting' => ['Reviewed', 'Review'],
         'cashier' => ['Accepted', 'Paid', 'Completed'],
         'vc_admin_finance', 'chancellor', 'academic_affairs' => ['Registered'],
         'requesting' => array_merge(getFlowSteps(), ['Returned', 'Cancelled']),
@@ -50,11 +49,10 @@ function nextStatusForOffice(string $role, string $currentStatus): ?string
             'Under Budget Review' => 'Reviewed',
         ],
         'accounting' => [
-            'Reviewed' => 'DV Processing',
-            'DV Processing' => 'For Payment',
+            'Reviewed' => 'Review',
+            'Review' => 'Canvass',
         ],
         'procurement' => [
-            'For Payment' => 'Canvass',
             'Canvass' => 'PO',
         ],
         'pso' => [
@@ -69,6 +67,15 @@ function nextStatusForOffice(string $role, string $currentStatus): ?string
     ];
 
     return $transitions[$role][$currentStatus] ?? null;
+}
+
+function statusToPersistForOfficeUpdate(string $role, string $currentStatus, string $requestedStatus): string
+{
+    if ($role === 'accounting' && $currentStatus === 'Reviewed' && $requestedStatus === 'Review') {
+        return 'Canvass';
+    }
+
+    return $requestedStatus;
 }
 
 function requiredSignaturesComplete(PDO $pdo, int $requestId): bool
@@ -143,8 +150,8 @@ function officeForStatus(string $status): string
 {
     return match ($status) {
         'Registered' => 'requesting',
-        'Under Budget Review', 'Reviewed' => 'budget',
-        'DV Processing', 'For Payment' => 'accounting',
+        'Under Budget Review' => 'budget',
+        'Reviewed', 'Review' => 'accounting',
         'Canvass', 'PO' => 'procurement',
         'Delivered', 'For Inspection', 'Accepted' => 'pso',
         'Paid', 'Completed' => 'cashier',

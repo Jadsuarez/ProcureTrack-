@@ -35,7 +35,7 @@ try {
             $recent = array_slice($visible, 0, 8);
 
             $focusStatuses = match ($role) {
-                'accounting' => ['Reviewed', 'DV Processing', 'For Payment'],
+                'accounting' => ['Reviewed', 'Review'],
                 'cashier' => ['Accepted', 'Paid', 'Completed'],
                 'budget' => ['Registered', 'Under Budget Review', 'Reviewed'],
                 'procurement' => array_merge(getFlowSteps(), ['Returned', 'Cancelled']),

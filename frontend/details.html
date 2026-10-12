@@ -100,11 +100,6 @@
         </form>
       </div>
 
-      <div class="card hidden" id="budgetInfoCard">
-        <h2>Budget Information (BUR / ORS)</h2>
-        <div class="detail-grid" id="budgetGrid"></div>
-      </div>
-
       <div class="card hidden update-section" id="updateCard">
         <h2>Update Monitoring Status</h2>
         <p class="text-muted">Manual status update for monitoring purposes only — not an approval action.</p>
@@ -114,23 +109,6 @@
           <div class="form-group">
             <label for="newStatus">New Status</label>
             <select id="newStatus" name="status" required></select>
-          </div>
-
-          <div id="budgetFields" class="hidden">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="bur">BUR (optional)</label>
-                <input type="text" id="bur" name="bur" placeholder="BUR number">
-              </div>
-              <div class="form-group">
-                <label for="ors">ORS (optional)</label>
-                <input type="text" id="ors" name="ors" placeholder="ORS number">
-              </div>
-              <div class="form-group">
-                <label for="budget_type">Budget Type (optional)</label>
-                <input type="text" id="budget_type" name="budget_type" placeholder="e.g. MOOE">
-              </div>
-            </div>
           </div>
 
           <div class="form-group">
@@ -162,8 +140,8 @@
 
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
-  <script src="js/api.js?v=27"></script>
-  <script src="js/app.js?v=33"></script>
-  <script src="js/details.js?v=31"></script>
+  <script src="js/api.js?v=32"></script>
+  <script src="js/app.js?v=34"></script>
+  <script src="js/details.js?v=39"></script>
 </body>
 </html>

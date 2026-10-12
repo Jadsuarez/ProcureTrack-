@@ -11,9 +11,6 @@ $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
 $tracking = trim($input['tracking_number'] ?? '');
 $status = trim($input['status'] ?? '');
 $notes = trim($input['notes'] ?? '');
-$bur = trim($input['bur'] ?? '');
-$ors = trim($input['ors'] ?? '');
-$budgetType = trim($input['budget_type'] ?? '');
 
 $role = currentRole();
 
@@ -86,28 +83,23 @@ try {
 
     $requestId = (int) $row['id'];
     $updatedBy = currentActorLabel();
+    $savedStatus = statusToPersistForOfficeUpdate($role, (string) $row['status'], $status);
 
-    if ($role === 'budget') {
-        $update = $pdo->prepare(
-            'UPDATE requests SET status = ?, bur = COALESCE(NULLIF(?, ""), bur),
-             ors = COALESCE(NULLIF(?, ""), ors), budget_type = COALESCE(NULLIF(?, ""), budget_type),
-             notes = COALESCE(NULLIF(?, ""), notes), updated_by = ? WHERE id = ?'
-        );
-        $update->execute([$status, $bur, $ors, $budgetType, $notes, $updatedBy, $requestId]);
-    } else {
-        $update = $pdo->prepare(
-            'UPDATE requests SET status = ?, notes = COALESCE(NULLIF(?, ""), notes), updated_by = ? WHERE id = ?'
-        );
-        $update->execute([$status, $notes, $updatedBy, $requestId]);
-    }
+    $update = $pdo->prepare(
+        'UPDATE requests SET status = ?, notes = COALESCE(NULLIF(?, ""), notes), updated_by = ? WHERE id = ?'
+    );
+    $update->execute([$savedStatus, $notes, $updatedBy, $requestId]);
 
     $log = $pdo->prepare(
         'INSERT INTO status_logs (request_id, status, notes, updated_by) VALUES (?, ?, ?, ?)'
     );
-    $log->execute([$requestId, $status, $notes ?: null, $updatedBy]);
+    $log->execute([$requestId, $savedStatus, $notes ?: null, $updatedBy]);
 
     $pdo->commit();
-    jsonResponse(['success' => true, 'message' => 'Status updated successfully.']);
+    $message = $savedStatus === 'Canvass' && $status === 'Review'
+        ? 'Accounting review completed. The request is now with Procurement as Canvass.'
+        : 'Status updated successfully.';
+    jsonResponse(['success' => true, 'message' => $message]);
 } catch (PDOException $e) {
     if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
         $pdo->rollBack();

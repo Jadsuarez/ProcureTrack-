@@ -58,7 +58,7 @@ try {
         jsonResponse(['success' => false, 'message' => 'This request can no longer be cancelled or returned.'], 400);
     }
 
-    if ($action === 'return' && !in_array($row['status'], ['Registered', 'Under Budget Review', 'Reviewed'], true)) {
+    if ($action === 'return' && !in_array($row['status'], ['Registered', 'Under Budget Review'], true)) {
         $pdo->rollBack();
         jsonResponse(['success' => false, 'message' => 'Budget can only return requests that are still in the budget stage.'], 400);
     }
