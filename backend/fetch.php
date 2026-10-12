@@ -35,11 +35,11 @@ try {
             $recent = array_slice($visible, 0, 8);
 
             $focusStatuses = match ($role) {
-                'accounting' => ['Reviewed', 'Review'],
+                'accounting' => ['Reviewed'],
                 'cashier' => ['Accepted', 'Paid', 'Completed'],
                 'budget' => ['Registered', 'Under Budget Review', 'Reviewed'],
                 'procurement' => array_merge(getFlowSteps(), ['Returned', 'Cancelled']),
-                'pso' => ['PO', 'Delivered', 'For Inspection', 'Accepted'],
+                'pso' => ['PO', 'Delivered', 'For Inspection'],
                 default => [],
             };
 
@@ -366,8 +366,7 @@ try {
 
         case 'status_options':
             $currentStatus = trim($_GET['current_status'] ?? '');
-            $nextStatus = nextStatusForOffice($role, $currentStatus);
-            $options = $nextStatus === null ? [] : [$nextStatus];
+            $options = statusOptionsForOffice($role, $currentStatus);
             jsonResponse(['success' => true, 'options' => $options, 'role' => $role]);
             break;
 

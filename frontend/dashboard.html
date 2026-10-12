@@ -189,7 +189,7 @@
 
   <footer class="app-footer">PROCUREMENT — Monitoring System</footer>
 
-  <script src="js/api.js?v=32"></script>
+  <script src="js/api.js?v=34"></script>
   <script src="js/app.js?v=34"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
@@ -249,8 +249,8 @@
 
 
       const subtitles = {
-        accounting: 'Review requests after Budget review, then advance them to Procurement as Canvass.',
-        cashier: 'Payment completion monitoring — search by Tracking ID, mark Paid → Completed.',
+        accounting: 'Review requests after Budget review, then hand them to Procurement for Canvass or PO.',
+        cashier: 'Requests arrive after PSO acceptance. Mark them Paid → Completed for payment monitoring.',
         budget: 'Budget pipeline monitoring — search by Tracking ID and update budget statuses.',
         procurement: 'Procurement monitoring — search by Tracking ID and update procurement stages.',
         pso: 'Property and supply monitoring — search by Tracking ID and update delivery and inspection status.',
@@ -293,10 +293,10 @@
         const stageGroups = [
           { id: 'trackingRequesting', step: 'stepRequesting', statuses: ['Registered'] },
           { id: 'trackingBudget', step: 'stepBudget', statuses: ['Under Budget Review'] },
-          { id: 'trackingAccounting', step: 'stepAccounting', statuses: ['Reviewed', 'Review'] },
-          { id: 'trackingProcurement', step: 'stepProcurement', statuses: ['Canvass', 'PO'] },
-          { id: 'trackingPso', step: 'stepPso', statuses: ['Delivered', 'For Inspection', 'Accepted'] },
-          { id: 'trackingCashier', step: 'stepCashier', statuses: ['Paid'] },
+          { id: 'trackingAccounting', step: 'stepAccounting', statuses: ['Reviewed'] },
+          { id: 'trackingProcurement', step: 'stepProcurement', statuses: ['Review', 'Canvass', 'PO'] },
+          { id: 'trackingPso', step: 'stepPso', statuses: ['Delivered', 'For Inspection'] },
+          { id: 'trackingCashier', step: 'stepCashier', statuses: ['Accepted', 'Paid'] },
         ];
         const stageCounts = stageGroups.map((group) => countFor(group.statuses));
 

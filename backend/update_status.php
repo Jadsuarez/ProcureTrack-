@@ -40,14 +40,14 @@ try {
         jsonResponse(['success' => false, 'message' => 'Closed or completed requests cannot be updated.'], 400);
     }
 
-    $nextStatus = nextStatusForOffice($role, (string) $row['status']);
-    if ($nextStatus === null || $status !== $nextStatus) {
+    $statusOptions = statusOptionsForOffice($role, (string) $row['status']);
+    if (!in_array($status, $statusOptions, true)) {
         $pdo->rollBack();
         jsonResponse([
             'success' => false,
-            'message' => $nextStatus === null
+            'message' => $statusOptions === []
                 ? 'This request is not at a status your office can advance.'
-                : "The next valid status is \"{$nextStatus}\". Requests cannot skip or repeat workflow stages.",
+                : 'Choose one of the next valid statuses: ' . implode(' or ', $statusOptions) . '.',
         ], 409);
     }
 
@@ -64,40 +64,40 @@ try {
         ], 409);
     }
 
-    $currentOffice = officeForRequestSignatures($pdo, (int) $row['id'], $row['status']);
-    $signatureCheck = $pdo->prepare(
-        'SELECT COUNT(*) AS assigned_count,
-                SUM(status = "Pending Signature") AS pending_count
-         FROM request_signatories
-         WHERE request_id = ? AND assigned_office = ?'
-    );
-    $signatureCheck->execute([(int) $row['id'], $currentOffice]);
-    $signatureState = $signatureCheck->fetch();
-    if ((int) $signatureState['pending_count'] > 0) {
-        $pdo->rollBack();
-        jsonResponse([
-            'success' => false,
-            'message' => roleLabel($currentOffice) . ' cannot update this request until its assigned signatories are complete.',
-        ], 409);
+    if ($row['status'] === 'Registered') {
+        $currentOffice = officeForRequestSignatures($pdo, (int) $row['id'], $row['status']);
+        $signatureCheck = $pdo->prepare(
+            'SELECT SUM(status = "Pending Signature") AS pending_count
+             FROM request_signatories
+             WHERE request_id = ? AND assigned_office = ?'
+        );
+        $signatureCheck->execute([(int) $row['id'], $currentOffice]);
+        $signatureState = $signatureCheck->fetch();
+        if ((int) ($signatureState['pending_count'] ?? 0) > 0) {
+            $pdo->rollBack();
+            jsonResponse([
+                'success' => false,
+                'message' => roleLabel($currentOffice) . ' cannot update this request until its assigned signatories are complete.',
+            ], 409);
+        }
     }
 
     $requestId = (int) $row['id'];
     $updatedBy = currentActorLabel();
-    $savedStatus = statusToPersistForOfficeUpdate($role, (string) $row['status'], $status);
 
     $update = $pdo->prepare(
         'UPDATE requests SET status = ?, notes = COALESCE(NULLIF(?, ""), notes), updated_by = ? WHERE id = ?'
     );
-    $update->execute([$savedStatus, $notes, $updatedBy, $requestId]);
+    $update->execute([$status, $notes, $updatedBy, $requestId]);
 
     $log = $pdo->prepare(
         'INSERT INTO status_logs (request_id, status, notes, updated_by) VALUES (?, ?, ?, ?)'
     );
-    $log->execute([$requestId, $savedStatus, $notes ?: null, $updatedBy]);
+    $log->execute([$requestId, $status, $notes ?: null, $updatedBy]);
 
     $pdo->commit();
-    $message = $savedStatus === 'Canvass' && $status === 'Review'
-        ? 'Accounting review completed. The request is now with Procurement as Canvass.'
+    $message = $role === 'accounting' && $status === 'Review'
+        ? 'Accounting review completed. The request is now with Procurement.'
         : 'Status updated successfully.';
     jsonResponse(['success' => true, 'message' => $message]);
 } catch (PDOException $e) {

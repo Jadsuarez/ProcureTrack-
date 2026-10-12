@@ -34,7 +34,7 @@ function buildStatusChart(canvasId, byStatus) {
     PO: '#4f46e5',
     Delivered: '#1d4ed8',
     'For Inspection': '#2563eb',
-    Accepted: '#1e40af',
+    Accepted: '#8a1728',
     Paid: '#8a1728',
     Completed: '#059669',
   };

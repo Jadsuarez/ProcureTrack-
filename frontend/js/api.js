@@ -304,10 +304,10 @@ function statusBadgeClass(status) {
   if (status === 'Completed') return 'completed';
   if (['Returned', 'Cancelled'].includes(status)) return 'closed';
   if (status === 'Under Budget Review') return 'budget';
-  if (status === 'Reviewed' || status === 'Review') return 'accounting';
-  if (['Canvass', 'PO'].includes(status)) return 'procurement';
-  if (['Delivered', 'For Inspection', 'Accepted'].includes(status)) return 'pso';
-  if (status === 'Paid') return 'cashier';
+  if (status === 'Reviewed') return 'accounting';
+  if (['Review', 'Canvass', 'PO'].includes(status)) return 'procurement';
+  if (['Delivered', 'For Inspection'].includes(status)) return 'pso';
+  if (['Accepted', 'Paid'].includes(status)) return 'cashier';
   return '';
 }
 
@@ -383,10 +383,10 @@ const FLOW_STEPS = [
 const OFFICE_STEPS = [
   { label: 'Office', statuses: ['Registered'] },
   { label: 'Budget', statuses: ['Under Budget Review'] },
-  { label: 'Accounting', statuses: ['Reviewed', 'Review'] },
-  { label: 'Procurement', statuses: ['Canvass', 'PO'] },
-  { label: 'PSO', statuses: ['Delivered', 'For Inspection', 'Accepted'] },
-  { label: 'Cashier', statuses: ['Paid', 'Completed'] },
+  { label: 'Accounting', statuses: ['Reviewed'] },
+  { label: 'Procurement', statuses: ['Review', 'Canvass', 'PO'] },
+  { label: 'PSO', statuses: ['Delivered', 'For Inspection'] },
+  { label: 'Cashier', statuses: ['Accepted', 'Paid', 'Completed'] },
 ];
 
 function officeIndexForStatus(status) {

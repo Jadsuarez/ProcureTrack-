@@ -382,7 +382,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const canUpdate = ['budget', 'procurement', 'pso', 'accounting', 'cashier'].includes(session.role);
   const closedRequest = ['Returned', 'Cancelled', 'Completed'].includes(req.status);
-  const currentSignaturesReady = Boolean(data.signatory_summary?.ready_for_status_update);
+  const currentSignaturesReady = req.status !== 'Registered'
+    || Boolean(data.signatory_summary?.ready_for_status_update);
   if (canUpdate && !(session.role === 'accounting' && req.status === 'Registered') && currentSignaturesReady && !closedRequest) {
     const opts = await Api.statusOptions(req.status);
     if (opts.success && opts.options.length) {
@@ -403,7 +404,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else if (session.role === 'accounting') {
         if (hint) {
           hint.textContent =
-            'Complete Accounting review by setting the status to Review. The request will then move to Procurement as Canvass.';
+            'Complete Accounting review by setting the status to Review. Procurement can then choose Canvass or PO.';
         }
       } else if (session.role === 'cashier') {
         if (hint) {
@@ -412,13 +413,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       } else if (session.role === 'procurement') {
         if (hint) {
-          hint.textContent =
-            'Update procurement monitoring status (Canvass → PO).';
+          hint.textContent = req.status === 'Review'
+            ? 'Choose Canvass or PO to advance this request from Accounting review.'
+            : 'Update procurement monitoring status (Canvass → PO).';
         }
       } else if (session.role === 'pso') {
         if (hint) {
           hint.textContent =
-            'Update property and supply monitoring status (Delivered → For Inspection → Accepted).';
+            'Update property and supply monitoring status (Delivered → For Inspection → Accepted). Accepted requests are then sent to Cashier.';
         }
       }
 

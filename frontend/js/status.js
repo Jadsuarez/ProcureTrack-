@@ -84,13 +84,56 @@ document.addEventListener('DOMContentLoaded', async () => {
           <td><span class="status-badge ${statusBadgeClass(request.status)}">${request.status}</span></td>
           <td>${formatPeso(request.request_amount)}</td>
           <td>${formatDate(request.updated_at)}</td>
-          <td><a href="details.html?tracking=${encodeURIComponent(request.tracking_number)}" class="btn btn-sm btn-secondary">View</a></td>
+          <td>
+            <a href="details.html?tracking=${encodeURIComponent(request.tracking_number)}" class="btn btn-sm btn-secondary">View</a>
+            ${session.role === 'procurement' && ['Review', 'Canvass'].includes(request.status)
+              ? `<select aria-label="Set procurement status for ${escapeProgressText(request.tracking_number)}" data-procurement-next-status>
+                  <option value="">Choose status</option>
+                  ${request.status === 'Review' ? '<option value="Canvass">Canvass</option><option value="PO">PO</option>' : '<option value="PO">PO</option>'}
+                </select>
+                <button type="button" class="btn btn-sm btn-primary" data-procurement-update data-tracking-number="${escapeProgressText(request.tracking_number)}">Update</button>`
+              : ''}
+          </td>
         </tr>
       `).join('')
       : '<tr><td colspan="6" class="text-muted">No requests found.</td></tr>';
   }
 
   renderRequests();
+  body.addEventListener('click', async (event) => {
+    if (!(event.target instanceof Element)) return;
+    const button = event.target.closest('[data-procurement-update]');
+    if (!button) return;
+
+    const row = button.closest('tr');
+    const statusSelect = row?.querySelector('[data-procurement-next-status]');
+    const selectedStatus = statusSelect?.value || '';
+    if (!selectedStatus) {
+      showAlert(document.getElementById('alertBox'), 'Choose Canvass or PO before updating the request.');
+      return;
+    }
+
+    button.disabled = true;
+    try {
+      const result = await Api.updateStatus({
+        tracking_number: button.dataset.trackingNumber,
+        status: selectedStatus,
+        notes: '',
+      });
+      if (!result.success) {
+        showAlert(document.getElementById('alertBox'), result.message || 'Unable to update request status.');
+        button.disabled = false;
+        return;
+      }
+
+      showAlert(document.getElementById('alertBox'), result.message, 'success');
+      setTimeout(() => window.location.reload(), 700);
+    } catch (error) {
+      console.error('Procurement status update failed:', error);
+      showAlert(document.getElementById('alertBox'), 'Unable to reach the server. Check your connection and try again.');
+      button.disabled = false;
+    }
+  });
   sortSelect.addEventListener('change', () => {
     page = 1;
     renderRequests();

@@ -32,8 +32,8 @@ function statusesForOffice(string $role): array
     return match ($role) {
         'budget' => ['Registered', 'Under Budget Review', 'Returned'],
         'procurement' => array_merge(getFlowSteps(), ['Returned', 'Cancelled']),
-        'pso' => ['PO', 'Delivered', 'For Inspection', 'Accepted'],
-        'accounting' => ['Reviewed', 'Review'],
+        'pso' => ['PO', 'Delivered', 'For Inspection'],
+        'accounting' => ['Reviewed'],
         'cashier' => ['Accepted', 'Paid', 'Completed'],
         'vc_admin_finance', 'chancellor', 'academic_affairs' => ['Registered'],
         'requesting' => array_merge(getFlowSteps(), ['Returned', 'Cancelled']),
@@ -41,8 +41,12 @@ function statusesForOffice(string $role): array
     };
 }
 
-function nextStatusForOffice(string $role, string $currentStatus): ?string
+function statusOptionsForOffice(string $role, string $currentStatus): array
 {
+    if ($role === 'procurement' && $currentStatus === 'Review') {
+        return ['Canvass', 'PO'];
+    }
+
     $transitions = [
         'budget' => [
             'Registered' => 'Under Budget Review',
@@ -50,7 +54,6 @@ function nextStatusForOffice(string $role, string $currentStatus): ?string
         ],
         'accounting' => [
             'Reviewed' => 'Review',
-            'Review' => 'Canvass',
         ],
         'procurement' => [
             'Canvass' => 'PO',
@@ -66,16 +69,13 @@ function nextStatusForOffice(string $role, string $currentStatus): ?string
         ],
     ];
 
-    return $transitions[$role][$currentStatus] ?? null;
+    $nextStatus = $transitions[$role][$currentStatus] ?? null;
+    return $nextStatus === null ? [] : [$nextStatus];
 }
 
-function statusToPersistForOfficeUpdate(string $role, string $currentStatus, string $requestedStatus): string
+function nextStatusForOffice(string $role, string $currentStatus): ?string
 {
-    if ($role === 'accounting' && $currentStatus === 'Reviewed' && $requestedStatus === 'Review') {
-        return 'Canvass';
-    }
-
-    return $requestedStatus;
+    return statusOptionsForOffice($role, $currentStatus)[0] ?? null;
 }
 
 function requiredSignaturesComplete(PDO $pdo, int $requestId): bool
@@ -151,10 +151,10 @@ function officeForStatus(string $status): string
     return match ($status) {
         'Registered' => 'requesting',
         'Under Budget Review' => 'budget',
-        'Reviewed', 'Review' => 'accounting',
-        'Canvass', 'PO' => 'procurement',
-        'Delivered', 'For Inspection', 'Accepted' => 'pso',
-        'Paid', 'Completed' => 'cashier',
+        'Reviewed' => 'accounting',
+        'Review', 'Canvass', 'PO' => 'procurement',
+        'Delivered', 'For Inspection' => 'pso',
+        'Accepted', 'Paid', 'Completed' => 'cashier',
         'Returned', 'Cancelled' => 'requesting',
         default => 'requesting',
     };

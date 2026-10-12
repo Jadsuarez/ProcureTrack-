@@ -38,8 +38,8 @@ const FLOW_STEPS = [
 ];
 
 const BUDGET_STATUSES = ['Registered', 'Under Budget Review'];
-const PSO_STATUSES = ['PO', 'Delivered', 'For Inspection', 'Accepted'];
-const ACCOUNTING_STATUSES = ['Reviewed', 'Review'];
+const PSO_STATUSES = ['PO', 'Delivered', 'For Inspection'];
+const ACCOUNTING_STATUSES = ['Reviewed'];
 const CASHIER_STATUSES = ['Accepted', 'Paid', 'Completed'];
 
 function daysBetween(?string $start, ?string $end): float
@@ -71,7 +71,7 @@ function officeScope(string $role): array
             'label' => 'Procurement Office',
             'statuses' => array_merge(FLOW_STEPS, ['Returned', 'Cancelled']),
             'focus_stages' => FLOW_STEPS,
-            'queue_status' => 'Canvass',
+            'queue_status' => 'Review',
             'handoff_status' => 'PO',
         ],
         'pso' => [
@@ -86,13 +86,13 @@ function officeScope(string $role): array
             'statuses' => ACCOUNTING_STATUSES,
             'focus_stages' => ACCOUNTING_STATUSES,
             'queue_status' => 'Reviewed',
-            'handoff_status' => 'Canvass',
+            'handoff_status' => 'Review',
         ],
         'cashier' => [
             'label' => 'Cashier',
             'statuses' => CASHIER_STATUSES,
             'focus_stages' => CASHIER_STATUSES,
-            'queue_status' => 'Paid',
+            'queue_status' => 'Accepted',
             'handoff_status' => 'Completed',
         ],
         default => [
@@ -295,13 +295,11 @@ try {
         $inReview = $statusCounts['Under Budget Review'] ?? 0;
         $backlogRatio = $inReview > 0 ? round($reviewed / $inReview, 2) : ($reviewed > 0 ? (float) $reviewed : 0);
     } elseif ($role === 'procurement') {
-        $inPipeline = ($statusCounts['Canvass'] ?? 0) + ($statusCounts['PO'] ?? 0);
+        $inPipeline = ($statusCounts['Review'] ?? 0) + ($statusCounts['Canvass'] ?? 0) + ($statusCounts['PO'] ?? 0);
         $awarded = $statusCounts['PO'] ?? 0;
         $backlogRatio = $inPipeline > 0 ? round($awarded / $inPipeline, 2) : ($awarded > 0 ? (float) $awarded : 0);
     } elseif ($role === 'pso') {
-        $inQueue = ($statusCounts['Delivered'] ?? 0) + ($statusCounts['For Inspection'] ?? 0);
-        $accepted = $statusCounts['Accepted'] ?? 0;
-        $backlogRatio = $inQueue > 0 ? round($accepted / $inQueue, 2) : ($accepted > 0 ? (float) $accepted : 0);
+        $backlogRatio = null;
     } elseif ($role === 'accounting') {
         $backlogRatio = null;
     } elseif ($role === 'cashier') {
