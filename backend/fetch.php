@@ -143,11 +143,20 @@ try {
             }
 
             $logStmt = $pdo->prepare(
-                'SELECT status, notes, updated_by, created_at
+                'SELECT id, status, notes, updated_by, created_at
                  FROM status_logs WHERE request_id = ? ORDER BY created_at ASC'
             );
             $logStmt->execute([$request['id']]);
             $timeline = $logStmt->fetchAll();
+            foreach ($timeline as &$timelineItem) {
+                $timelineItem['type'] = 'status';
+                $timelineItem['office'] = officeForStatus($timelineItem['status']);
+                $timelineItem['office_label'] = roleLabel($timelineItem['office']);
+                $timelineItem['title'] = $timelineItem['status'];
+                $timelineItem['detail'] = $timelineItem['notes'];
+                $timelineItem['sort_id'] = (int) $timelineItem['id'];
+            }
+            unset($timelineItem);
 
             $docStmt = $pdo->prepare(
                 'SELECT id, file_name, file_path, uploaded_by, uploaded_at
@@ -168,10 +177,55 @@ try {
             $signatoryStmt->execute([$request['id']]);
             $signatories = $signatoryStmt->fetchAll();
             $signatoryLogStmt = $pdo->prepare(
-                'SELECT id, signatory_id, assigned_office, action, status, updated_by, created_at
-                 FROM request_signatory_logs WHERE request_id = ? ORDER BY created_at ASC, id ASC'
+                'SELECT l.id, l.signatory_id, l.assigned_office, l.action, l.status, l.updated_by, l.created_at,
+                        l.notes, rs.signatory_name, rs.designation
+                 FROM request_signatory_logs l
+                 LEFT JOIN request_signatories rs ON rs.id = l.signatory_id
+                 WHERE l.request_id = ?
+                 ORDER BY l.created_at ASC, l.id ASC'
             );
             $signatoryHistory = $signatoryLogStmt->execute([$request['id']]) ? $signatoryLogStmt->fetchAll() : [];
+            foreach ($signatoryHistory as $signatoryEvent) {
+                if (!in_array($signatoryEvent['action'], ['Signed', 'Skipped'], true)) {
+                    continue;
+                }
+                $office = $signatoryEvent['assigned_office'] ?: 'unassigned';
+                $signer = trim((string) ($signatoryEvent['signatory_name'] ?? ''));
+                $designation = trim((string) ($signatoryEvent['designation'] ?? ''));
+                $detail = $signer !== '' ? $signer : 'Signatory';
+                if ($designation !== '') {
+                    $detail .= ' (' . $designation . ')';
+                }
+                if (!empty($signatoryEvent['notes'])) {
+                    $detail .= ' — ' . $signatoryEvent['notes'];
+                }
+                $timeline[] = [
+                    'type' => 'signature',
+                    'status' => $signatoryEvent['status'] ?: $signatoryEvent['action'],
+                    'office' => $office,
+                    'office_label' => roleLabel($office),
+                    'title' => $signatoryEvent['action'] === 'Signed' ? 'Signature recorded' : 'Signature skipped',
+                    'detail' => $detail,
+                    'updated_by' => $signatoryEvent['updated_by'],
+                    'created_at' => $signatoryEvent['created_at'],
+                    'sort_id' => (int) $signatoryEvent['id'],
+                ];
+            }
+            usort($timeline, static function (array $a, array $b): int {
+                $timeOrder = strcmp((string) $a['created_at'], (string) $b['created_at']);
+                if ($timeOrder !== 0) {
+                    return $timeOrder;
+                }
+                if ($a['type'] !== $b['type']) {
+                    $statusEvent = $a['type'] === 'status' ? $a : $b;
+                    $statusBeforeSignature = $statusEvent['status'] === 'Registered';
+                    if ($statusBeforeSignature) {
+                        return $a['type'] === 'status' ? -1 : 1;
+                    }
+                    return $a['type'] === 'signature' ? -1 : 1;
+                }
+                return ((int) ($a['sort_id'] ?? 0)) <=> ((int) ($b['sort_id'] ?? 0));
+            });
             $signedCount = count(array_filter($signatories, fn($s) => $s['status'] === 'Signed'));
             $remainingCount = count(array_filter($signatories, fn($s) => $s['status'] === 'Pending Signature'));
             $currentOffice = officeForRequestSignatures($pdo, (int) $request['id'], $request['status']);
@@ -190,6 +244,22 @@ try {
                     $currentSignatory = $signatory;
                     break;
                 }
+            }
+            $latestActivityAt = $request['created_at'];
+            foreach ($timeline as $timelineItem) {
+                if (strcmp((string) $timelineItem['created_at'], (string) $latestActivityAt) > 0) {
+                    $latestActivityAt = $timelineItem['created_at'];
+                }
+            }
+            $currentLocationDetail = $request['status'];
+            if ($request['status'] === 'Registered') {
+                $currentLocationDetail = $currentSignatory
+                    ? 'Awaiting signature from ' . $currentSignatory['signatory_name']
+                    : ($currentOffice === 'budget'
+                        ? 'Required signatures are complete; awaiting Budget review'
+                        : 'Awaiting the next required signature');
+            } else {
+                $currentLocationDetail = 'Currently handling ' . $request['status'];
             }
             $officeSummary = [];
             foreach ($signatories as $signatory) {
@@ -210,6 +280,13 @@ try {
                 'success' => true,
                 'request' => $request,
                 'timeline' => $timeline,
+                'current_location' => [
+                    'office' => $currentOffice,
+                    'office_label' => roleLabel($currentOffice),
+                    'status' => $request['status'],
+                    'detail' => $currentLocationDetail,
+                    'updated_at' => $latestActivityAt,
+                ],
                 'documents' => $documents,
                 'signatories' => $signatories,
                 'signatory_history' => $signatoryHistory,

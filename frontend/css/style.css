@@ -1772,6 +1772,25 @@ code {
   margin-top: 0.5rem;
 }
 
+.timeline-current-location {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.8rem 1rem;
+  margin-top: 0.75rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+  background: var(--light-bg);
+}
+
+.timeline-current-location strong {
+  color: var(--primary);
+}
+
+.timeline-current-location small {
+  color: var(--muted);
+}
+
 .timeline::before {
   content: '';
   position: absolute;
@@ -1798,6 +1817,11 @@ code {
   background: var(--primary);
   border: 2px solid var(--card);
   box-shadow: 0 0 0 2px var(--primary);
+}
+
+.timeline-item.signature-event::before {
+  background: var(--success);
+  box-shadow: 0 0 0 2px var(--success);
 }
 
 .timeline-item:last-child {

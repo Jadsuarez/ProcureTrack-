@@ -214,19 +214,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   `;
 
   const timeline = document.getElementById('timeline');
-  timeline.innerHTML = data.timeline.length
-    ? data.timeline
-        .map(
-          (item) => `
-        <div class="timeline-item">
-          <div class="status">${item.status}</div>
-          <div class="meta">${item.updated_by || 'System'} · ${formatDate(item.created_at)}</div>
-          ${item.notes ? `<div class="note">${item.notes}</div>` : ''}
-        </div>
-      `
-        )
-        .join('')
-    : '<p class="text-muted">No status history yet.</p>';
+  const currentLocation = data.current_location;
+  const currentLocationEl = document.getElementById('currentRequestLocation');
+  if (currentLocationEl && currentLocation) {
+    currentLocationEl.innerHTML = `
+      <strong>Currently at ${escapeSignatoryText(currentLocation.office_label)}</strong>
+      <span>${escapeSignatoryText(currentLocation.detail)}</span>
+      <small>Current status: ${escapeSignatoryText(currentLocation.status)} · Last activity: ${escapeSignatoryText(formatDate(currentLocation.updated_at))}</small>`;
+  }
+  const timelineEvents = data.timeline || [];
+  timeline.innerHTML = timelineEvents.length
+    ? timelineEvents.map((item) => {
+      const isSignature = item.type === 'signature';
+      const details = item.detail
+        ? `<div class="note">${escapeSignatoryText(item.detail)}</div>`
+        : '';
+      return `
+        <div class="timeline-item ${isSignature ? 'signature-event' : 'status-event'}">
+          <div class="status">${escapeSignatoryText(item.title || item.status)}</div>
+          <div class="meta">${escapeSignatoryText(item.office_label || 'Office not recorded')} · ${escapeSignatoryText(item.updated_by || 'System')} · ${escapeSignatoryText(formatDate(item.created_at))}</div>
+          ${details}
+        </div>`;
+    }).join('')
+    : '<p class="text-muted">No workflow events recorded yet.</p>';
 
   const canRemoveDocs = ['requesting', 'procurement'].includes(session.role);
   const docList = document.getElementById('docList');
