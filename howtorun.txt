@@ -92,6 +92,36 @@ DEFAULT LOGIN ACCOUNTS (stored in the users table):
   chancellor_user     chancellor123      Chancellor, BatStateU Lipa
   academic_affairs_user academic123      Vice Chancellor for Academic Affairs, BatStateU Lipa
 
+REQUESTING OFFICE ACCOUNTS:
+  Username                              Password
+  ------------------------------------  ------------------------
+  property_supply_user                 propertysupply123
+  ovc_dev_external_affairs_user        ovcdevelopment123
+  ict_services_user                    ictservices123
+  resource_generation_user             resourcegeneration123
+  academic_affairs_user                academic123
+  college_arts_sciences_user           artsandsciences123
+  college_accountancy_biz_econ_user    accountancy123
+  college_informatics_comp_sci_user    informatics123
+  college_engineering_technology_user  engineeringtech123
+  college_teacher_education_user       teachereducation123
+  culture_arts_user                    culturearts123
+  medical_dental_user                 medicaldental123
+  laboratory_user                      laboratory123
+  library_services_user                library123
+  registration_services_user           registration123
+  registration_services_grad_user      graduation123
+  testing_admission_office_user        testingadmission123
+  national_service_training_user       nstp123
+  guidance_counseling_user              guidance123
+  student_publication_user             studentpublication123
+  on_the_job_training_user             ojt123
+  sports_development_user              sportsdevelopment123
+  sustainable_development_office_user  sustainabledevelopment123
+  action_center_user                   actioncenter123
+  extension_services_office_user       extensionservices123
+  research_office_user                 research123
+
 If you already imported an older database, re-import importdb.sql in phpMyAdmin
 (fresh install) or run only the offices/users sections from that file.
 

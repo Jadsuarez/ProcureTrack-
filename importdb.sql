@@ -2,7 +2,7 @@
 -- Import via phpMyAdmin or: mysql -u root < importdb.sql
 --
 -- Creates: offices (with fund_allocation), users, requests, status_logs, documents
--- Seeds:   9 system offices, 8 login accounts, sample tracking PR-0001–PR-0006, and six months of mock Lipa Campus requests
+-- Seeds:   33 system offices, 33 login accounts, sample tracking PR-0001–PR-0006, and six months of mock Lipa Campus requests
 
 CREATE DATABASE IF NOT EXISTS procurement_monitoring
   CHARACTER SET utf8mb4
@@ -32,6 +32,33 @@ INSERT IGNORE INTO offices (slug, label, is_system, created_by, fund_allocation)
 ('chancellor', 'Office of the Chancellor, BatStateU Lipa', 1, 'system', 0.00),
 ('academic_affairs', 'Office of the Vice Chancellor for Academic Affairs, BatStateU Lipa', 1, 'system', 0.00);
 
+-- Requesting offices (Property and Supply and Academic Affairs use existing system offices)
+INSERT IGNORE INTO offices (slug, label, is_system, created_by, fund_allocation) VALUES
+('ovc_dev_external_affairs', 'OVC for Development and External Affairs', 1, 'system', 0.00),
+('ict_services', 'ICT Services', 1, 'system', 0.00),
+('resource_generation', 'Resource Generation', 1, 'system', 0.00),
+('college_arts_sciences', 'College of Arts and Sciences', 1, 'system', 0.00),
+('college_accountancy_biz_econ', 'College of Accountancy, Business and Economics', 1, 'system', 0.00),
+('college_informatics_comp_sci', 'College of Informatics and Computing Sciences', 1, 'system', 0.00),
+('college_engineering_technology', 'College of Engineering Technology', 1, 'system', 0.00),
+('college_teacher_education', 'College of Teacher Education', 1, 'system', 0.00),
+('culture_arts', 'Culture and Arts', 1, 'system', 0.00),
+('medical_dental', 'Medical and Dental', 1, 'system', 0.00),
+('laboratory', 'Laboratory', 1, 'system', 0.00),
+('library_services', 'Library Services', 1, 'system', 0.00),
+('registration_services', 'Registration Services', 1, 'system', 0.00),
+('registration_services_grad', 'Registration Services (Graduation)', 1, 'system', 0.00),
+('testing_admission_office', 'Testing and Admission Office', 1, 'system', 0.00),
+('national_service_training', 'National Service Training Program', 1, 'system', 0.00),
+('guidance_counseling', 'Office of the Guidance and Counseling', 1, 'system', 0.00),
+('student_publication', 'Office of Student Publication', 1, 'system', 0.00),
+('on_the_job_training', 'On-the-Job Training', 1, 'system', 0.00),
+('sports_development', 'Sports and Development', 1, 'system', 0.00),
+('sustainable_development_office', 'Sustainable Development Office', 1, 'system', 0.00),
+('action_center', 'Action Center', 1, 'system', 0.00),
+('extension_services_office', 'Extension Services Office', 1, 'system', 0.00),
+('research_office', 'Research Office', 1, 'system', 0.00);
+
 UPDATE offices SET fund_allocation = 0 WHERE slug <> 'budget';
 
 -- User accounts (login credentials and office assignment)
@@ -57,6 +84,35 @@ INSERT INTO users (username, password_hash, office, created_by) VALUES
 ('vc_admin_finance_user', '$2y$10$sDFSq4d.H.1Rvh6NWFaYju/gWuqY1DGyygGoKnQk8RJcQFWHNMsE.', 'vc_admin_finance', 'system'),
 ('chancellor_user', '$2y$10$iBRKXmuuuhoV60EX7vssleWFVltRzRQtyB/GX94zDP7wlfIfaGcVO', 'chancellor', 'system'),
 ('academic_affairs_user', '$2y$10$IRoEwwoXNAPWT0wnv7UUXOP8K3VWgLBO2o2JAMW7opTAfU74OYEVi', 'academic_affairs', 'system');
+
+-- Requesting-office accounts use office-specific initial passwords listed in howtorun.txt.
+INSERT INTO users (username, password_hash, office, created_by) VALUES
+('property_supply_user', '$2y$10$LcxGKDcaUuP4UD276skASenYdKz/8Kkq1W5anb1ViC5p.XEmCHfxa', 'pso', 'system'),
+('ovc_dev_external_affairs_user', '$2y$10$VDwiKNN4GfEqagCeQGt.1eHUpv4rxxP58FAF6sqD/4/p6jPpbZptS', 'ovc_dev_external_affairs', 'system'),
+('ict_services_user', '$2y$10$.G2MlfesnqqAdi637kfzbulbWZTKzavYHBesOfYB2v1zjw5RRRYqK', 'ict_services', 'system'),
+('resource_generation_user', '$2y$10$.BUHLOYv6YyYJI0NwN8e2u73Lh4m8KfH6BwKICektcjgwbUGzzPAO', 'resource_generation', 'system'),
+('college_arts_sciences_user', '$2y$10$6sMhm.JD1UGJqx4y91TeOOMvRZ43Ay8YH3x1RhOGqz1BryI6opuGi', 'college_arts_sciences', 'system'),
+('college_accountancy_biz_econ_user', '$2y$10$BBg8Rs76E4FC0JXLCzw5Auwb2RS8cHVrrhvg.RGHGUMIMB/5RG9u2', 'college_accountancy_biz_econ', 'system'),
+('college_informatics_comp_sci_user', '$2y$10$gjK0eLvV37GCLMwwIGEDpO0xcVhU/K2nuZB72dl8gS0iwfJKzlCyO', 'college_informatics_comp_sci', 'system'),
+('college_engineering_technology_user', '$2y$10$PMjKSqiPQO.K7ITSIT4ceuNsdBgrRJX0xQc2vf7uZsG8HxhcAapTW', 'college_engineering_technology', 'system'),
+('college_teacher_education_user', '$2y$10$G5s4Scx03qufDJ8HG5ulsOI5IjcCkJvUnsBpm7yuYRmn2fc8gywvm', 'college_teacher_education', 'system'),
+('culture_arts_user', '$2y$10$KjjBpE4d2r8Hnt1YZb1fpuCsIYLuhjYBlZKd4xqC39cD3K5J9/WxS', 'culture_arts', 'system'),
+('medical_dental_user', '$2y$10$iiI.ucqAolWuZDNLvOVza.UpoZ8cTCllzsdIC2LAujmrf9Vp8BjBm', 'medical_dental', 'system'),
+('laboratory_user', '$2y$10$BFZyuv.HNnZGIyhYrAj2nuHBua1wqnm1ripHM9m7f7bsPpaHbOEry', 'laboratory', 'system'),
+('library_services_user', '$2y$10$asXox0JYAqh8VV1BF5b1SOPe8ZBVjRy2JU4rgJhOjCTQpBP7GkI/6', 'library_services', 'system'),
+('registration_services_user', '$2y$10$7MRzwLq5MfnGqD7z9PBVjuMBFFhIVXxRVi391MSUjmZ3N0Hl3Vt5u', 'registration_services', 'system'),
+('registration_services_grad_user', '$2y$10$2nV4pVuSR4Z.Z0dp8H12D.kfb1CrfHdklzFtDd1TvM8C7kt5kav7e', 'registration_services_grad', 'system'),
+('testing_admission_office_user', '$2y$10$t/utNc6DoACuxaD.XdLDY.pAmd2KrZB0GZRsveZ.oHGA42kmIcmmO', 'testing_admission_office', 'system'),
+('national_service_training_user', '$2y$10$aT9MgTI4/UbU9QsYBlmCYuuv2NTB.J0haW4k72OaevfF07VErpIg.', 'national_service_training', 'system'),
+('guidance_counseling_user', '$2y$10$4D6byDD7T.IYHPmaje7ABOGj4gKyY1pm2JdOupiqEm4QocYoPOMwm', 'guidance_counseling', 'system'),
+('student_publication_user', '$2y$10$hz2Y0YPQrJF0W4ZB8k9gQOFXKTlrsmuMbPU2AWZjDlYbBPDf3nt6G', 'student_publication', 'system'),
+('on_the_job_training_user', '$2y$10$NueJ0Wi8cd3ynq0R99NB/OVEjhKWk3kRZokAoFOcnL94rHfomOIKS', 'on_the_job_training', 'system'),
+('sports_development_user', '$2y$10$x1A9pP5Y203qwSYM5CpY0uDxRwh3IUXXleVciw616TQgjQBZ3b1gi', 'sports_development', 'system'),
+('sustainable_development_office_user', '$2y$10$2obvsPdLyM/MwBaiEK2zkuG4oX6VMSod4RCekcPuwt3CmXiju9jtK', 'sustainable_development_office', 'system'),
+('action_center_user', '$2y$10$24ykYi304./y3zjEjUgPye8kHZbJfNWfZGW2WLp3p4rE3f8jDxeSq', 'action_center', 'system'),
+('extension_services_office_user', '$2y$10$OpD7FzXWT/GmcuOyy.ZqbuIYl1zKZ.S7nCZXtvsL2zl5xQCtBnOuq', 'extension_services_office', 'system'),
+('research_office_user', '$2y$10$4z4gWQ0aH6OTIANjiBTulezXe3C9qBXl.M0gDtsRZ8s19V6zVhBlm', 'research_office', 'system')
+ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash);
 
 -- Main requests table (pre-seeded; no creation via UI)
 CREATE TABLE IF NOT EXISTS requests (
